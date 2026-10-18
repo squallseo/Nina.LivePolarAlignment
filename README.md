@@ -24,3 +24,4 @@ bootstrap은 Codex 설정을 수정하지 않습니다. MCP 등록은 REA setup�
 
 설치 프로그램과 실제 .NET 어셈블리를 구분해야 합니다. 네이티브 구성 요소는 별도 분석 엔진이 필요합니다.
 분석 계획과 근거는 [docs/research-plan.md](docs/research-plan.md)를 참고하세요.
+현재 PC에서의 설치 및 분석 결과는 [docs/initial-findings.md](docs/initial-findings.md)에 기록했습니다.

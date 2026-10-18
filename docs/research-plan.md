@@ -12,7 +12,7 @@ N.I.N.A. 안에서 극 근처 촬영, RA 회전 전후 보정, 반복 촬영을 
 - SharpCap 공개 동작 설명: https://docs.sharpcap.co.uk/4.1/9_PolarAlignment.htm
 - N.I.N.A. 플러그인 템플릿: https://github.com/isbeorn/nina.plugin.template
 - 로컬 N.I.N.A. 플러그인 프로젝트와 동일한 net8.0-windows / NINA.Plugin 3.2.0.9001로 시작한다.
-- 로컬 다운로드에 SharpCapInstall-4.1.14130.0-64bit.exe가 있다. 이는 설치 번들이며 실제 분석 대상 어셈블리 확인이 필요하다.
+- 로컬 다운로드의 SharpCapInstall-4.1.14130.0-64bit.exe를 추출하여 로더 어셈블리까지 정적 분석했다. [초기 결과](initial-findings.md)를 참고한다.
 - SharpCap 내부 알고리즘은 아직 검증되지 않았다. 아래 구조는 구현 제안이다.
 
 ## 조사 순서
