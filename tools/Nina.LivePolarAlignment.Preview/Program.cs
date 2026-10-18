@@ -300,14 +300,10 @@ internal static class Program {
         SampleCapture.UnsupportedAuto = false;
         await SelectScene(0);
         current!.AutoRaRotation = true;
-        current.RotationPathClear = true; current.RotationAngleDegrees = 80;
-        if (current.RotationAngleDegrees != 80 || current.RotationPathClear) throw new InvalidOperationException("Ten-degree angle change must clear path confirmation");
-        current.RotationAngleDegrees = 90;
-        if (current.RotationPathClear) throw new InvalidOperationException("Changing angle must clear path confirmation");
-        await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
-        if (!current.HasOperationError || current.WorkflowStep != 0 || SampleCapture.Rotations != 0)
-            throw new InvalidOperationException("Automatic RA must require a checked clear path before any capture/move");
-        current.RotationPathClear = true;
+        current.DecreaseRotationAngleCommand.Execute(null);
+        if (current.RotationAngleDegrees != 80) throw new InvalidOperationException("Decrement must change angle by ten degrees");
+        current.IncreaseRotationAngleCommand.Execute(null);
+        if (current.RotationAngleDegrees != 90) throw new InvalidOperationException("Increment must restore ninety degrees");
         var automatic = ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         while (!current.IsRotating && !automatic.IsCompleted) await Task.Delay(10);
         await Task.Delay(300);
@@ -315,14 +311,14 @@ internal static class Program {
         await automatic;
         if (current.WorkflowStep != 2 || current.HasOperationError || SampleCapture.Rotations != 1 || SampleCapture.LastRotationAngle != 90 || !SampleCapture.RotationStopped)
             throw new InvalidOperationException("Automatic RA must capture exactly two references around one stopped rotation");
-        current.ResetLiveCommand.Execute(null); current.RotationPathClear = true;
+        current.ResetLiveCommand.Execute(null);
         var interrupted = ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         while (!current.IsRotating && !interrupted.IsCompleted) await Task.Delay(10);
         current.StopLiveCommand.Execute(null); await interrupted;
         if (current.WorkflowStep != 0 || current.IsWorking || !SampleCapture.RotationStopped)
             throw new InvalidOperationException("Cancelled rotation must stop and discard the reference");
         current.Dispose();
-        await SelectScene(0); current!.AutoRaRotation = true; current.RotationPathClear = true;
+        await SelectScene(0); current!.AutoRaRotation = true;
         SampleCapture.FailRotation = true;
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         SampleCapture.FailRotation = false;
@@ -331,19 +327,19 @@ internal static class Program {
         await SelectScene(0); current!.RecordFieldSession = false;
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
-        if (current.VerifyAlignmentCommand.CanExecute(null)) throw new InvalidOperationException("Verification needs an explicit new path check");
-        current.VerificationPathClear = true;
+        if (!current.VerifyAlignmentCommand.CanExecute(null)) throw new InvalidOperationException("Verification must be ready without an extra confirmation switch");
+
         await ((IAsyncRelayCommand)current.VerifyAlignmentCommand).ExecuteAsync(null);
         if (current.HasOperationError || !current.HasVerificationResult || !current.HasStabilityResult || current.WorkflowStep != 2
             || current.FieldSessionDirectory != null)
             throw new InvalidOperationException("Verification and automatic stability must work without debug recording: " + current.OperationError);
         ((Expander)View.FindName("VerificationTools")).IsExpanded = true;
         Save(Path.Combine(directory, "ui-verification-1280.png"), 1280, 1000);
-        current.AutoVerificationStability = false; current.VerificationReverse = true; current.VerificationPathClear = true;
+        current.AutoVerificationStability = false; current.VerificationReverse = true;
         await ((IAsyncRelayCommand)current.VerifyAlignmentCommand).ExecuteAsync(null);
         if (current.HasOperationError || !current.HasVerificationResult || current.HasStabilityResult)
             throw new InvalidOperationException("Optional stability must be skipped when off: " + current.OperationError);
-        current.VerificationPathClear = true;
+
         var cancelledVerify = ((IAsyncRelayCommand)current.VerifyAlignmentCommand).ExecuteAsync(null);
         while (!current.IsRotating && !cancelledVerify.IsCompleted) await Task.Delay(10);
         current.StopLiveCommand.Execute(null); await cancelledVerify;
@@ -353,7 +349,7 @@ internal static class Program {
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         var originalFieldDirectory = current.FieldSessionDirectory;
-        current.VerificationPathClear = true;
+
         await ((IAsyncRelayCommand)current.VerifyAlignmentCommand).ExecuteAsync(null);
         var verificationReview = FieldSessionReview.Review(current.FieldSessionDirectory!, Path.Combine(directory, "verification-review"));
         if (current.HasOperationError || !current.HasVerificationResult || current.FieldSessionDirectory == originalFieldDirectory
@@ -383,7 +379,7 @@ internal static class Program {
         if (!current.HasOperationError || current.HasIndependentResult || !current.HasValidationWarning)
             throw new InvalidOperationException("Duplicate drift exposures must be inconclusive");
         SampleCapture.DriftFault = false; SampleCapture.DriftTestMode = false; current.Dispose();
-        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA path guard, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay; independent drift with no mount motion, realignment warning, duplicate rejection and offline drift replay passed. Synthetic inputs only.");
+        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA controls, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay; independent drift with no mount motion, realignment warning, duplicate rejection and offline drift replay passed. Synthetic inputs only.");
     }
 
     private static void Save(string path, int width, int height) {

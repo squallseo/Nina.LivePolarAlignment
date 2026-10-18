@@ -289,7 +289,7 @@
     <value>Requires an idle, unparked equatorial mount with RA MoveAxis and tracking control. Manual rotation remains available.</value>
   </data>
   <data name="AutoRaCheckPath" xml:space="preserve">
-    <value>Connect a supported mount and confirm the selected rotation path is clear before starting automatic calibration.</value>
+    <value>Automatic rotation is unavailable. Connect a supported mount or use manual rotation.</value>
   </data>
   <data name="AutoRaStart" xml:space="preserve">
     <value>Calibrate automatically</value>
@@ -401,7 +401,7 @@
   </data>
   <data name="AutoRaAngle" xml:space="preserve"><value>RA rotation angle (°)</value></data>
   <data name="ManualRotateBrief" xml:space="preserve"><value>Rotate RA only by 60–90°, then capture the second reference. Keep Dec and bolts fixed.</value></data>
-  <data name="AutoBrief" xml:space="preserve"><value>Start captures references and rotates RA automatically. Confirm the rotation path first.</value></data>
+  <data name="AutoBrief" xml:space="preserve"><value>Start captures references and rotates RA automatically.</value></data>
   <data name="ManualBrief" xml:space="preserve"><value>Point near the celestial pole, then press Start. Rotate RA manually when prompted.</value></data>
   <data name="AutoReady" xml:space="preserve"><value>Automatic polar alignment</value></data>
   <data name="ManualReady" xml:space="preserve"><value>Polar alignment</value></data>

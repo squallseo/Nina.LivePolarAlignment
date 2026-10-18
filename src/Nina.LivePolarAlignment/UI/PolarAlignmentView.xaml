@@ -2,7 +2,6 @@
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:ns="clr-namespace:NINA.Core.Locale;assembly=NINA.Core"
- xmlns:ninactrl="clr-namespace:NINA.CustomControlLibrary;assembly=NINA.CustomControlLibrary"
  xmlns:local="clr-namespace:Nina.LivePolarAlignment.UI"
  MinWidth="320" Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource PrimaryBrush}" FontFamily="Segoe UI" FontSize="12">
  <UserControl.Resources>
@@ -107,10 +106,9 @@
    <StackPanel Margin="0,0,0,8" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}">
     <DockPanel ToolTip="{Binding RotationStatus}" ToolTipService.ShowOnDisabled="True"><TextBlock Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" HorizontalAlignment="Right" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanUseAutoRotation}"/></DockPanel>
     <StackPanel Visibility="{Binding AutoRaRotation, Converter={StaticResource VisibleIf}}">
-     <DockPanel Margin="0,5,0,0"><ninactrl:IntStepperControl DockPanel.Dock="Right" Width="112" MinValue="60" MaxValue="90" StepSize="10" Value="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureRotation}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
 
      <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding ReverseRaRotation}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
-     <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding RotationPathClear}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{Binding RotationPathLabel}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
 
     </StackPanel>
    </StackPanel>
@@ -157,9 +155,8 @@
    <Expander x:Name="VerificationTools" Header="{local:UiLoc VerificationTitle}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0" Visibility="{Binding ShowVerification, Converter={StaticResource VisibleIf}}">
     <StackPanel Margin="2,6,2,0">
      <TextBlock Text="{Binding VerificationSummary}" Style="{StaticResource Caption}"/>
-     <DockPanel Margin="0,5,0,0"><ninactrl:IntStepperControl DockPanel.Dock="Right" Width="112" MinValue="60" MaxValue="90" StepSize="10" Value="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureVerification}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
      <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationReverse}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}"/></DockPanel>
-     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationPathClear}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{Binding RotationPathLabel}" Style="{StaticResource Caption}"/></DockPanel>
      <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoVerificationStability}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc VerificationStability}" Style="{StaticResource Caption}"/></DockPanel>
      <Button Content="{local:UiLoc VerificationStart}" Command="{Binding VerifyAlignmentCommand}" Style="{StaticResource AlignmentButton}" Margin="0,7,0,0" ToolTip="{local:UiLoc VerificationHint}"/>
      <TextBlock Text="{Binding StabilityStatus}" Style="{StaticResource Caption}" Margin="0,5,0,0"/>

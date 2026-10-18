@@ -94,8 +94,8 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private void ResetLive() {
         ResetDriftEvidence();
-        verificationResult = null; verificationPathClear = false;
-        automaticRotationCompleted = false; rotationPathClear = false; rotationProgress = 0;
+        verificationResult = null;
+        automaticRotationCompleted = false; rotationProgress = 0;
         EndFieldSession("reset"); fieldFailure = null; stabilityResult = null;
         session = null; livePreview = null; guidance = null; liveError = "—";
         calibrationSamples = 0; pixelScale = 0; operationError = null;
@@ -114,11 +114,9 @@ public sealed partial class PolarAlignmentDockableVM {
         await WithLiveOperation(async token => {
             if (session == null && calibrationSamples == 0) { verificationResult = null; stabilityResult = null; }
             if (AutoRaRotation && !captureService.SupportsAutoRaRotation) {
-                autoRaRotation = false; rotationPathClear = false;
+                autoRaRotation = false;
                 RecordFieldEvent("ra_rotation_fallback", new { reason = "unsupported", mode = "manual" }); NotifyLive();
             }
-            if (AutoRaRotation && !automaticRotationCompleted && !RotationPathClear)
-                throw new InvalidOperationException(UiText.Get("AutoRaCheckPath"));
             if (calibrationSamples == 1 && AutoRaRotation) await RotateForReferenceAsync(token);
             await CaptureReferenceFrameAsync(token);
             if (calibrationSamples == 1 && AutoRaRotation) {

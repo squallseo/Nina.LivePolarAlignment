@@ -12,14 +12,13 @@ public sealed record VerificationResult(DateTimeOffset CompletedAtUtc, PolarErro
 }
 
 public sealed partial class PolarAlignmentDockableVM {
-    private bool verificationInProgress, verificationPathClear, verificationReverse, autoVerificationStability = true;
+    private bool verificationInProgress, verificationReverse, autoVerificationStability = true;
     private VerificationResult? verificationResult;
     public ICommand VerifyAlignmentCommand { get; private set; } = null!;
     public bool CanConfigureVerification => !IndependentDriftEnabled && !liveBusy && !fieldSaving && session?.IsCalibrated == true;
     public bool ShowVerification => !IndependentDriftEnabled && (IsAdjustmentStep || verificationInProgress);
     public bool HasVerificationResult => verificationResult != null;
-    public bool VerificationPathClear { get => verificationPathClear; set { if (CanConfigureVerification) { verificationPathClear = value; NotifyVerification(); } } }
-    public bool VerificationReverse { get => verificationReverse; set { if (CanConfigureVerification) { verificationReverse = value; verificationPathClear = false; NotifyVerification(); } } }
+    public bool VerificationReverse { get => verificationReverse; set { if (CanConfigureVerification) { verificationReverse = value; NotifyVerification(); } } }
     public bool AutoVerificationStability { get => autoVerificationStability; set { if (!liveBusy) { autoVerificationStability = value; RaisePropertyChanged(); } } }
     public string VerificationSummary => verificationResult is { } result
         ? UiText.Format("VerificationResult", result.Before.TotalArcminutes, result.Remeasured.TotalArcminutes,
@@ -27,11 +26,11 @@ public sealed partial class PolarAlignmentDockableVM {
         : UiText.Get("VerificationHint");
     private void InitializeVerification() {
         VerifyAlignmentCommand = new AsyncRelayCommand(VerifyAlignmentAsync,
-            () => CanConfigureVerification && verificationPathClear && captureService.SupportsAutoRaRotation);
+            () => CanConfigureVerification && captureService.SupportsAutoRaRotation);
     }
     private async Task VerifyAlignmentAsync() {
         await WithLiveOperation(async token => {
-            if (fieldSaving || !verificationPathClear || !captureService.SupportsAutoRaRotation || session?.IsCalibrated != true)
+            if (fieldSaving || !captureService.SupportsAutoRaRotation || session?.IsCalibrated != true)
                 throw new InvalidOperationException(UiText.Get("AutoRaCheckPath"));
             ValidateSite();
             var previousSession = session;
@@ -41,7 +40,7 @@ public sealed partial class PolarAlignmentDockableVM {
             AbortStability("verification started"); stabilityResult = null;
             EndFieldSession("verification_started");
             session = null; calibrationSamples = 0; automaticRotationCompleted = false;
-            rotationPathClear = true; reverseRaRotation = verificationReverse;
+            reverseRaRotation = verificationReverse;
             latestError = null; guidance = null; NotifyLive();
             try {
                 var first = await CaptureReferenceFrameAsync(token);
@@ -69,14 +68,14 @@ public sealed partial class PolarAlignmentDockableVM {
                 session = null; calibrationSamples = 0; latestError = null; guidance = null;
                 verificationResult = null; EndFieldSession("verification_failed_or_cancelled"); throw;
             } finally {
-                verificationInProgress = false; verificationPathClear = false;
-                rotationPathClear = false; reverseRaRotation = previousReverse; NotifyLive();
+                verificationInProgress = false;
+                reverseRaRotation = previousReverse; NotifyLive();
             }
         });
     }
     private void NotifyVerification() {
         foreach (var name in new[] { nameof(CanConfigureVerification), nameof(ShowVerification), nameof(HasVerificationResult),
-            nameof(VerificationPathClear), nameof(VerificationReverse), nameof(AutoVerificationStability), nameof(VerificationSummary) }) RaisePropertyChanged(name);
+            nameof(VerificationReverse), nameof(AutoVerificationStability), nameof(VerificationSummary) }) RaisePropertyChanged(name);
         (VerifyAlignmentCommand as IRelayCommand)?.NotifyCanExecuteChanged();
     }
 }
