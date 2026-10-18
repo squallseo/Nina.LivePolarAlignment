@@ -19,6 +19,11 @@ public sealed class PolarFieldView : FrameworkElement {
     public PolarGuidance? Guidance { get => (PolarGuidance?)GetValue(GuidanceProperty); set => SetValue(GuidanceProperty, value); }
     public bool IsCurrent { get => (bool)GetValue(IsCurrentProperty); set => SetValue(IsCurrentProperty, value); }
     public double PixelScale { get => (double)GetValue(PixelScaleProperty); set => SetValue(PixelScaleProperty, value); }
+    public PolarFieldView() {
+        Loaded += (_, _) => UiText.Instance.PropertyChanged += LanguageChanged;
+        Unloaded += (_, _) => UiText.Instance.PropertyChanged -= LanguageChanged;
+    }
+    private void LanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvalidateVisual();
     private static Brush Color(string hex) => (Brush)new BrushConverter().ConvertFromString(hex)!;
     public static readonly DependencyProperty FocusAlignmentProperty = DependencyProperty.Register(nameof(FocusAlignment), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public bool FocusAlignment { get => (bool)GetValue(FocusAlignmentProperty); set => SetValue(FocusAlignmentProperty, value); }
@@ -53,7 +58,7 @@ public sealed class PolarFieldView : FrameworkElement {
             var gridPen = new Pen(Color("#142235"), 1);
             for (double x = 0; x < ActualWidth; x += 32) dc.DrawLine(gridPen, new Point(x, 0), new Point(x, ActualHeight));
             for (double y = 0; y < ActualHeight; y += 32) dc.DrawLine(gridPen, new Point(0, y), new Point(ActualWidth, y));
-            Label(dc, "별 영상이 여기에 표시됩니다", new Point(ActualWidth / 2 - 88, ActualHeight / 2 - 12), Muted, 13, false);
+            Label(dc, UiText.Get("Field0"), new Point(ActualWidth / 2 - 88, ActualHeight / 2 - 12), Muted, 13, false);
         }
         Point Map(PixelPoint p) => new(imageRect.Left + p.X * scale, imageRect.Top + p.Y * scale);
         if (IsCurrent && Guidance != null) {
@@ -84,7 +89,7 @@ public sealed class PolarFieldView : FrameworkElement {
                     dc.DrawLine(pen, new(mount.X - 13, mount.Y), new(mount.X + 13, mount.Y));
                     dc.DrawLine(pen, new(mount.X, mount.Y - 13), new(mount.X, mount.Y + 13));
                     Label(dc, "RA Axis", new Point(mount.X + 17, mount.Y - 7), Amber, 11);
-                } else EdgeMarker(dc, mount, "RA축 · 화면 밖", Amber, bounds);
+                } else EdgeMarker(dc, mount, UiText.Get("Field1"), Amber, bounds);
             }
             if (pole is { } celestial) {
                 if (bounds.Contains(celestial)) {
@@ -92,12 +97,12 @@ public sealed class PolarFieldView : FrameworkElement {
                     dc.DrawEllipse(null, pen, celestial, 6, 6);
                     dc.DrawEllipse(Mint, null, celestial, 1.8, 1.8);
                     Label(dc, "Celestial Pole", new Point(celestial.X + 12, celestial.Y + 9), Mint, 11);
-                } else EdgeMarker(dc, celestial, "천구극 · 화면 밖", Mint, bounds);
+                } else EdgeMarker(dc, celestial, UiText.Get("Field2"), Mint, bounds);
             }
         }
         if (Preview != null && !IsCurrent) {
             dc.DrawRectangle(Color("#66080F1B"), null, bounds);
-            Label(dc, "참고 영상 · 측정을 시작하면 안내가 갱신됩니다", new Point(12, 14), Muted, 11);
+            Label(dc, UiText.Get("Field3"), new Point(12, 14), Muted, 11);
         }
         dc.Pop();
     }

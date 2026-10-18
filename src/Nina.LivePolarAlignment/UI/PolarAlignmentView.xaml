@@ -10,11 +10,11 @@
   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="DividerColumn" Width="6"/><ColumnDefinition x:Name="ControlsColumn" Width="290" MinWidth="270" MaxWidth="480"/></Grid.ColumnDefinitions>
   <Border x:Name="ImagePanel" Grid.Row="1" Grid.Column="0" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="1" Padding="5">
    <DockPanel LastChildFill="True">
-    <Grid DockPanel.Dock="Top" Margin="3,0,3,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{ns:Loc LblImage}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/><StackPanel Grid.Column="1" Orientation="Horizontal"><TextBlock Text="Focus" VerticalAlignment="Center" Margin="0,0,6,0"/><CheckBox ToolTip="Zoom to the alignment markers. Turn off to fit the full image." IsChecked="{Binding FocusAlignment, ElementName=SkyField}"/></StackPanel></Grid>
+    <Grid DockPanel.Dock="Top" Margin="3,0,3,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{ns:Loc LblImage}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/><StackPanel Grid.Column="1" Orientation="Horizontal"><TextBlock Text="{local:UiLoc Focus}" VerticalAlignment="Center" Margin="0,0,6,0"/><CheckBox ToolTip="{local:UiLoc FocusTip}" IsChecked="{Binding FocusAlignment, ElementName=SkyField}"/></StackPanel></Grid>
     <local:PolarFieldView x:Name="SkyField" Preview="{Binding LivePreview}" Guidance="{Binding FieldGuidance}" IsCurrent="{Binding HasCurrentFieldGuidance}" PixelScale="{Binding PixelScaleArcseconds}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
    </DockPanel>
   </Border>
-  <GridSplitter x:Name="PanelDivider" Grid.Row="1" Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="{DynamicResource BorderBrush}" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" ShowsPreview="True" ToolTip="영상과 조작 패널 너비 조절"/>
+  <GridSplitter x:Name="PanelDivider" Grid.Row="1" Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="{DynamicResource BorderBrush}" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" ShowsPreview="True" ToolTip="{local:UiLoc View0}"/>
   <ScrollViewer x:Name="ControlScroll" Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
    <StackPanel Margin="0,0,2,0">
 
@@ -22,15 +22,15 @@
     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <Border Margin="0,0,5,0">
      <Border.Style><Style TargetType="Border" BasedOn="{StaticResource StepCard}"><Style.Triggers><DataTrigger Binding="{Binding WorkflowStep}" Value="0"><Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/></DataTrigger></Style.Triggers></Style></Border.Style>
-     <StackPanel><TextBlock Text="01" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="10"/><TextBlock Text="기준 촬영" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="01" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="10"/><TextBlock Text="{local:UiLoc View1}" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
     </Border>
     <Border Grid.Column="1" Margin="3,0,3,0">
      <Border.Style><Style TargetType="Border" BasedOn="{StaticResource StepCard}"><Style.Triggers><DataTrigger Binding="{Binding WorkflowStep}" Value="1"><Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/></DataTrigger></Style.Triggers></Style></Border.Style>
-     <StackPanel><TextBlock Text="02" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="10"/><TextBlock Text="RA 회전" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="02" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="10"/><TextBlock Text="{local:UiLoc View2}" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
     </Border>
     <Border Grid.Column="2" Margin="5,0,0,0">
      <Border.Style><Style TargetType="Border" BasedOn="{StaticResource StepCard}"><Style.Triggers><DataTrigger Binding="{Binding WorkflowStep}" Value="2"><Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/></DataTrigger></Style.Triggers></Style></Border.Style>
-     <StackPanel><TextBlock Text="03" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="10"/><TextBlock Text="볼트 조정" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="03" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="10"/><TextBlock Text="{local:UiLoc View3}" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
     </Border>
    </Grid>
 
@@ -51,7 +51,7 @@
         <TextBlock Text="RA" Canvas.Left="22" Canvas.Top="47" FontSize="12" Foreground="{DynamicResource PrimaryBrush}"/>
        </Canvas>
       </Viewbox>
-      <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="{Binding RotationReadout}" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontWeight="SemiBold"/><TextBlock Text="권장 각도 그림입니다. 실제 회전량은 촬영 후 계산됩니다." Style="{StaticResource Caption}" Margin="0,5,0,0"/></StackPanel>
+      <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="{Binding RotationReadout}" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontWeight="SemiBold"/><TextBlock Text="{local:UiLoc View4}" Style="{StaticResource Caption}" Margin="0,5,0,0"/></StackPanel>
      </Grid>
     </StackPanel>
    </Border>
@@ -60,20 +60,20 @@
     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <Button Foreground="{DynamicResource ButtonForegroundBrush}" Content="{Binding PrimaryActionLabel}" Command="{Binding PrimaryActionCommand}" Background="{DynamicResource ButtonBackgroundSelectedBrush}" BorderBrush="{DynamicResource ButtonBackgroundSelectedBrush}" Margin="0,0,8,0"/>
     <Button Foreground="{DynamicResource ButtonForegroundBrush}" Grid.Column="1" Content="{ns:Loc LblStop}" Command="{Binding StopLiveCommand}" Margin="0,0,8,0"/>
-    <Button Foreground="{DynamicResource ButtonForegroundBrush}" Grid.Column="2" Content="다시" ToolTip="기준을 초기화하고 처음부터 시작합니다" Command="{Binding ResetLiveCommand}" Padding="6,5"/>
+    <Button Foreground="{DynamicResource ButtonForegroundBrush}" Grid.Column="2" Content="{local:UiLoc View5}" ToolTip="{local:UiLoc View6}" Command="{Binding ResetLiveCommand}" Padding="6,5"/>
    </Grid>
    <Grid Margin="0,0,0,13">
     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <TextBlock Text="{ns:Loc LblExposureTime}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-    <TextBox Grid.Column="1" Width="60" Text="{Binding ExposureSeconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureLive}" AutomationProperties.Name="노출 시간(초)"/>
-    <TextBlock Grid.Column="2" Text="초" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryBrush}" Margin="7,0,0,0"/>
+    <TextBox Grid.Column="1" Width="60" Text="{Binding ExposureSeconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureLive}" AutomationProperties.Name="{local:UiLoc View7}"/>
+    <TextBlock Grid.Column="2" Text="{local:UiLoc View8}" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryBrush}" Margin="7,0,0,0"/>
    </Grid>
 
-   <Border Background="{DynamicResource PrimaryBrush}" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1" CornerRadius="1" Padding="5" Margin="0,0,0,12" Visibility="{Binding HasOperationError, Converter={StaticResource VisibleIf}}"><StackPanel><TextBlock Text="확인이 필요합니다" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/><TextBlock Text="{Binding OperationError}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,5,0,0"/></StackPanel></Border>
+   <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource NotificationErrorTextBrush}" BorderThickness="1" CornerRadius="1" Padding="5" Margin="0,0,0,12" Visibility="{Binding HasOperationError, Converter={StaticResource VisibleIf}}"><StackPanel><TextBlock Text="{local:UiLoc View9}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/><TextBlock Text="{Binding OperationError}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,5,0,0"/></StackPanel></Border>
 
    <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="1" Padding="5">
     <StackPanel>
-     <Grid Margin="0,0,0,6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="전체 극축 오차" Style="{StaticResource Caption}"/><TextBlock Grid.Column="1" Text="{Binding MeasurementState}" FontSize="10" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}"/></Grid>
+     <Grid Margin="0,0,0,6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{local:UiLoc View10}" Style="{StaticResource Caption}"/><TextBlock Grid.Column="1" Text="{Binding MeasurementState}" FontSize="10" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}"/></Grid>
      <TextBlock Text="{Binding LiveTotalError}" FontSize="30" FontWeight="Light" Margin="0,0,0,5">
       <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsMeasurementStale}" Value="True"><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/></DataTrigger><DataTrigger Binding="{Binding IsWithinTarget}" Value="True"><Setter Property="Foreground" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
      </TextBlock>
@@ -86,6 +86,6 @@
     </StackPanel>
    </Border>
    <TextBlock Text="{Binding LiveStatus}" Foreground="{DynamicResource PrimaryBrush}" LineHeight="18" Margin="2,12,2,8"/>
-   <TextBlock Text="방향 안내는 천구극을 바라보고 선 기준입니다. 경통 끝이 움직이는 방향이며 볼트를 돌리는 방향은 아닙니다." Style="{StaticResource Caption}" Margin="2,0,2,14"/>
+   <TextBlock Text="{local:UiLoc View11}" Style="{StaticResource Caption}" Margin="2,0,2,14"/>
 
-   <Expander Header="{ns:Loc LblDetails}"><TextBlock Text="Celestial Pole: target direction. RA Axis: measured rotation axis. Dashed rings show angular distance from the pole. Hardware accuracy has not yet been verified; atmospheric refraction is not applied." TextWrapping="Wrap"/></Expander></StackPanel></ScrollViewer></Grid></UserControl>
+   <Expander Header="{ns:Loc LblDetails}"><TextBlock Text="{local:UiLoc Details}" TextWrapping="Wrap"/></Expander></StackPanel></ScrollViewer></Grid></UserControl>

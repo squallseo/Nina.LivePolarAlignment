@@ -16,8 +16,10 @@ public class SampleProfile : DispatchProxy {
     public object? Active { get; set; }
     public object? Site { get; set; }
     public object? Theme { get; set; }
+    public object? Settings { get; set; }
+    public static string Language { get; set; } = "en-US";
     protected override object? Invoke(MethodInfo? method, object?[]? args) => method?.Name switch {
-        "get_ColorSchemaSettings" => Theme, "get_ActiveProfile" => Active, "get_AstrometrySettings" => Site,
+        "get_ApplicationSettings" => Settings, "get_Culture" => Language, "get_ColorSchemaSettings" => Theme, "get_ActiveProfile" => Active, "get_AstrometrySettings" => Site,
         "get_Latitude" => 37.5, "get_Longitude" => 127.0, _ => null
     };
 }
@@ -59,6 +61,7 @@ internal static class Program {
         Directory.CreateDirectory(sampleData);
         Environment.SetEnvironmentVariable("LOCALAPPDATA", sampleData);
         var application = new Application();
+        NINA.Core.Locale.Loc.Instance.ReloadLocale("en-US");
         application.Resources["PuzzlePieceSVG"] = new GeometryGroup();
         var theme = new NINA.Profile.ColorSchemaSettings();
         theme.ColorSchema = theme.ColorSchemas.Items.First(x => x.Name == "Persian");
@@ -112,6 +115,7 @@ internal static class Program {
             currentLoop = null;
             var site = DispatchProxy.Create<IAstrometrySettings, SampleProfile>();
             var profile = DispatchProxy.Create<IProfile, SampleProfile>(); ((SampleProfile)(object)profile).Site = site;
+            ((SampleProfile)(object)profile).Settings = DispatchProxy.Create<IApplicationSettings, SampleProfile>();
             var profiles = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)profiles).Active = profile;
             var capture = new SampleCapture();
             current = new PolarAlignmentDockableVM(profiles, capture);
@@ -130,9 +134,16 @@ internal static class Program {
         Directory.CreateDirectory(directory);
         for (int scene = 0; scene < 3; scene++) {
             await SelectScene(scene);
+            if (System.Text.RegularExpressions.Regex.IsMatch(current!.WorkflowTitle + current.WorkflowDescription + current.LiveStatus + current.FrameFreshness, @"[\uac00-\ud7af]")) throw new InvalidOperationException("Korean text in English workflow");
             if (current!.WorkflowStep != scene) throw new InvalidOperationException("Wrong workflow step");
             foreach (var size in new[] { (360, 1000), (1280, 800), (1920, 1080) }) Save(Path.Combine(directory, $"ui-step-{scene + 1}-{size.Item1}.png"), size.Item1, size.Item2);
         }
+        SampleProfile.Language = "ko-KR"; NINA.Core.Locale.Loc.Instance.ReloadLocale(SampleProfile.Language); UiText.Refresh();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(current!.WorkflowTitle, @"[\uac00-\ud7af]")) throw new InvalidOperationException("Korean locale missing");
+        Save(Path.Combine(directory, "ui-korean-1280.png"), 1280, 800);
+        SampleProfile.Language = "fr-FR"; UiText.Refresh();
+        if (!current.PrimaryActionLabel.StartsWith("Capturing / solving")) throw new InvalidOperationException("English fallback missing");
+        SampleProfile.Language = "en-US"; UiText.Refresh();
         current!.StopLiveCommand.Execute(null);
         await currentLoop!;
         if (!current.IsMeasurementStale || current.HasCurrentFieldGuidance) throw new InvalidOperationException("Old guidance survived stop");
