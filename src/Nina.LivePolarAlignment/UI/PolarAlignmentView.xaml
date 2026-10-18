@@ -47,13 +47,28 @@
    <Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="10,9"/>
   </Style>
  </UserControl.Resources>
- <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-  <StackPanel Margin="18,20,18,16">
-   <Grid Margin="0,0,0,18">
+ <Grid x:Name="WorkspaceGrid" Margin="14">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition x:Name="ImageRow" Height="*"/><RowDefinition x:Name="NarrowControlsRow" Height="0"/></Grid.RowDefinitions>
+  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="DividerColumn" Width="12"/><ColumnDefinition x:Name="ControlsColumn" Width="350" MinWidth="300" MaxWidth="480"/></Grid.ColumnDefinitions>
+   <Grid Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,12">
     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-    <StackPanel><TextBlock Text="LIVE POLAR ALIGNMENT" FontSize="10" Foreground="#68DEC5" FontWeight="SemiBold"/><TextBlock Text="극축 정렬" FontSize="25" FontWeight="SemiBold" Margin="0,3,0,0"/></StackPanel>
+    <StackPanel Orientation="Horizontal"><TextBlock Text="극축 정렬" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="LIVE POLAR ALIGNMENT" FontSize="10" Foreground="#68DEC5" VerticalAlignment="Center" Margin="14,0,0,0"/></StackPanel>
     <Border Grid.Column="1" Background="#17283A" CornerRadius="12" Padding="9,4" VerticalAlignment="Top"><TextBlock Text="실험 버전" FontSize="10" Foreground="#9EB3CD"/></Border>
    </Grid>
+
+  <Border x:Name="ImagePanel" Grid.Row="1" Grid.Column="0" Background="#080F1B" BorderBrush="#263750" BorderThickness="1" CornerRadius="12" Padding="10">
+   <DockPanel LastChildFill="True">
+    <Grid DockPanel.Dock="Top" Margin="3,0,3,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="하늘 영상" Foreground="#BACBDE" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="{Binding MeasurementState}" FontSize="10" Foreground="#68DEC5"/></Grid>
+    <StackPanel DockPanel.Dock="Bottom" Margin="3,8,3,0">
+     <WrapPanel><TextBlock Text="⊕ RA 회전 중심" Foreground="#F0BA72" FontSize="11" Margin="0,0,16,3"/><TextBlock Text="◎ 천구극 · 목표" Foreground="#68DEC5" FontSize="11"/></WrapPanel>
+     <TextBlock Text="천구극은 북극성과 다른 지점입니다. 점선 원은 천구극 주변의 각거리 눈금입니다." Style="{StaticResource Caption}"/>
+    </StackPanel>
+    <local:PolarFieldView x:Name="SkyField" Preview="{Binding LivePreview}" Guidance="{Binding FieldGuidance}" IsCurrent="{Binding HasCurrentFieldGuidance}" PixelScale="{Binding PixelScaleArcseconds}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+   </DockPanel>
+  </Border>
+  <GridSplitter x:Name="PanelDivider" Grid.Row="1" Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#203147" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" ShowsPreview="True" ToolTip="영상과 조작 패널 너비 조절"/>
+  <ScrollViewer x:Name="ControlScroll" Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+   <StackPanel Margin="0,0,2,0">
 
    <Grid Margin="0,0,0,14">
     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -114,9 +129,6 @@
      <TextBlock Text="{Binding LiveTotalError}" FontSize="46" FontWeight="Light" Margin="0,0,0,5">
       <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#EAF0F8"/><Style.Triggers><DataTrigger Binding="{Binding IsMeasurementStale}" Value="True"><Setter Property="Foreground" Value="#6F8199"/></DataTrigger><DataTrigger Binding="{Binding IsWithinTarget}" Value="True"><Setter Property="Foreground" Value="#68DEC5"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
      </TextBlock>
-     <local:PolarFieldView Preview="{Binding LivePreview}" Guidance="{Binding FieldGuidance}" IsCurrent="{Binding HasCurrentFieldGuidance}" PixelScale="{Binding PixelScaleArcseconds}"/>
-     <WrapPanel Margin="0,10,0,10"><TextBlock Text="⊕ RA 회전 중심" Foreground="#F0BA72" FontSize="11" Margin="0,0,16,0"/><TextBlock Text="◎ 천구극 · 목표" Foreground="#68DEC5" FontSize="11"/></WrapPanel>
-     <TextBlock Text="천구극은 북극성과 다른 지점입니다. 점선 원은 천구극 주변의 각거리 눈금입니다." Style="{StaticResource Caption}" Margin="0,0,0,12"/>
      <Grid>
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
       <Border Background="#152339" CornerRadius="8" Padding="11" Margin="0,0,5,0"><StackPanel><TextBlock Text="↕  고도" Style="{StaticResource Caption}"/><TextBlock Text="{Binding AltitudeValue}" FontSize="21" Margin="0,5,0,4"/><TextBlock Text="{Binding AltitudeAction}" FontSize="11" Foreground="#AEBFD4"/></StackPanel></Border>
@@ -138,6 +150,7 @@
     </StackPanel>
    </Expander>
    <TextBlock Text="실제 장비 정확도는 검증 전입니다 · 대기 굴절 보정 미적용" Foreground="#667B95" FontSize="10"/>
-  </StackPanel>
- </ScrollViewer>
+   </StackPanel>
+  </ScrollViewer>
+ </Grid>
 </UserControl>

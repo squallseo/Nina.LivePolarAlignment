@@ -73,8 +73,9 @@ internal static class Program {
         header.Children.Add(SceneButtons);
         DockPanel.SetDock(header, Dock.Top); layout.Children.Add(header); layout.Children.Add(View);
         var window = new Window {
-            Title = "극축 정렬 · 개선된 UI 미리보기", Content = layout, Width = 600,
-            Height = Math.Min(1180, SystemParameters.WorkArea.Height - 45), MinWidth = 380, MinHeight = 650,
+            Title = "극축 정렬 · 넓은 화면 미리보기", Content = layout, Width = 1440,
+            Height = Math.Min(960, SystemParameters.WorkArea.Height - 45), MinWidth = 380, MinHeight = 650,
+            WindowState = WindowState.Maximized,
             WindowStartupLocation = WindowStartupLocation.CenterScreen, Background = View.Background
         };
         window.Closed += (_, _) => current?.Dispose();
@@ -121,20 +122,28 @@ internal static class Program {
         for (int scene = 0; scene < 3; scene++) {
             await SelectScene(scene);
             if (current!.WorkflowStep != scene) throw new InvalidOperationException("Wrong workflow step");
-            foreach (int width in new[] { 360, 600 }) Save(Path.Combine(directory, $"ui-step-{scene + 1}-{width}.png"), width);
+            foreach (var size in new[] { (360, 1000), (1280, 800), (1920, 1080) }) Save(Path.Combine(directory, $"ui-step-{scene + 1}-{size.Item1}.png"), size.Item1, size.Item2);
         }
         current!.StopLiveCommand.Execute(null);
         await currentLoop!;
         if (!current.IsMeasurementStale || current.HasCurrentFieldGuidance) throw new InvalidOperationException("Old guidance survived stop");
-        Save(Path.Combine(directory, "ui-paused-600.png"), 600);
+        Save(Path.Combine(directory, "ui-paused-1280.png"), 1280, 800);
         current.Dispose();
-        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Three workflow stages, both widths, live publication, and stop/stale checks passed. Synthetic inputs only.");
+        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Three workflow stages at narrow, HD and Full HD sizes, live publication, and stop/stale checks passed. Synthetic inputs only.");
     }
 
-    private static void Save(string path, int width) {
-        View.Width = width; View.Height = 1150;
-        View.Measure(new Size(width, 1150)); View.Arrange(new Rect(0, 0, width, 1150)); View.UpdateLayout();
-        var bitmap = new RenderTargetBitmap(width, 1150, 96, 96, PixelFormats.Pbgra32); bitmap.Render(View);
+    private static void Save(string path, int width, int height) {
+        View.Width = width; View.Height = height;
+        View.Measure(new Size(width, height)); View.Arrange(new Rect(0, 0, width, height)); View.UpdateLayout();
+        var field = (FrameworkElement)View.FindName("SkyField");
+        var controls = (FrameworkElement)View.FindName("ControlScroll");
+        if (width >= 900) {
+            if (field.ActualWidth < width * .6 || field.ActualHeight < height * .65
+                || controls.TranslatePoint(new Point(), View).X < width * .6)
+                throw new InvalidOperationException("The wide layout did not prioritize the left image and right controls.");
+        } else if (controls.TranslatePoint(new Point(), View).Y < field.TranslatePoint(new Point(0, field.ActualHeight), View).Y)
+            throw new InvalidOperationException("Narrow controls overlap the image.");
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(View);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var file = File.Create(path); encoder.Save(file);
     }

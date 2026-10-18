@@ -23,7 +23,8 @@ public sealed class PolarFieldView : FrameworkElement {
 
     protected override Size MeasureOverride(Size availableSize) {
         double width = double.IsInfinity(availableSize.Width) ? 480 : availableSize.Width;
-        return new(width, Math.Clamp(width * .66, 200, 410));
+        double height = double.IsInfinity(availableSize.Height) ? Math.Clamp(width * .66, 200, 410) : availableSize.Height;
+        return new(width, height);
     }
 
     protected override void OnRender(DrawingContext dc) {
