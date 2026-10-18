@@ -19,7 +19,7 @@ public sealed partial class PolarAlignmentDockableVM {
     private CancellationTokenSource? liveCancellation;
     private bool liveBusy;
     private double calibrationLatitude, calibrationLongitude;
-    private string liveStatus = "Connect a camera and configure a plate solver in N.I.N.A. Then capture a reference near the celestial pole.";
+    private string liveStatus = "카메라 연결과 관측지 · plate solver 설정을 확인하세요.";
     private string liveError = "—";
     private BitmapSource? livePreview;
     private PolarGuidance? guidance;
@@ -41,8 +41,9 @@ public sealed partial class PolarAlignmentDockableVM {
     public string LiveAzimuthError => latestError is { } error ? $"Azimuth {error.AzimuthArcminutes:+0.00;-0.00;0.00}′" : "Azimuth —";
     public bool IsMeasurementStale => measurementStale || measuredAt is null || (DateTimeOffset.UtcNow - measuredAt.Value).TotalSeconds > Math.Max(15, ExposureSeconds * 3 + 5);
     public string FrameFreshness => measuredAt is { } time
-        ? $"{(IsMeasurementStale ? "STALE · " : "")}Last frame {Math.Max(0, (DateTimeOffset.UtcNow - time).TotalSeconds):0}s ago · capture + solve {lastCycleMilliseconds:0} ms"
-        : "Awaiting the first live measurement";
+        ? latestError == null ? $"기준 영상 · {Math.Max(0, (DateTimeOffset.UtcNow - time).TotalSeconds):0}초 전 촬영"
+        : $"{(IsMeasurementStale ? "이전 측정 · " : "")}프레임 {Math.Max(0, (DateTimeOffset.UtcNow - time).TotalSeconds):0}초 전 · 촬영 + 해석 {lastCycleMilliseconds / 1000:0.0}초"
+        : "첫 측정을 기다리고 있습니다";
     public BitmapSource? LivePreview => livePreview;
     public double ImageWidth => guidance?.Width ?? livePreview?.PixelWidth ?? 800;
     public double ImageHeight => guidance?.Height ?? livePreview?.PixelHeight ?? 600;
@@ -72,19 +73,21 @@ public sealed partial class PolarAlignmentDockableVM {
         freshnessTimer.Tick += (_, _) => {
             RaisePropertyChanged(nameof(FrameFreshness)); RaisePropertyChanged(nameof(IsMeasurementStale));
             RaisePropertyChanged(nameof(HasVisibleGuidance)); RaisePropertyChanged(nameof(GuidanceText));
+            NotifyWorkflow();
         };
         freshnessTimer.Start();
     }
     private void ResetLive() {
         session = null; livePreview = null; guidance = null; liveError = "—";
+        calibrationSamples = 0; pixelScale = 0; operationError = null;
         latestError = null; measuredAt = null; measurementStale = true;
-        liveStatus = "Calibration reset. Capture a reference near the celestial pole.";
+        liveStatus = "기준을 초기화했습니다. 첫 촬영부터 다시 시작하세요.";
         NotifyLive();
     }
     private void RequestStopLive() {
         if (liveCancellation == null) return;
         measurementStale = true; guidance = null;
-        liveStatus = "Stopping capture…";
+        liveStatus = "촬영을 중지하고 있습니다…";
         liveCancellation.Cancel(); NotifyLive();
     }
     private async Task CaptureReferenceAsync() {
@@ -95,22 +98,27 @@ public sealed partial class PolarAlignmentDockableVM {
                 session = new PolarAlignmentSession(calibrationLatitude, calibrationLongitude);
             }
             ValidateSite();
-            liveStatus = "Exposing and plate solving reference…"; NotifyLive();
+            liveStatus = "기준 영상을 촬영하고 별 패턴을 해석하고 있습니다…"; NotifyLive();
             var frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
             token.ThrowIfCancellationRequested();
             ValidateSite();
             livePreview = frame.Preview;
+            pixelScale = frame.PixelScaleArcseconds;
             int count = session.AddCalibration(frame);
+            calibrationSamples = count;
+            guidance = session.IsCalibrated ? session.GetGuidance(frame) : session.GetReferenceGuidance(frame);
+            measuredAt = frame.CapturedAtUtc;
+            measurementStale = false;
             liveStatus = session.IsCalibrated
-                ? "Calibration ready. Keep RA fixed. Start live measurement, then adjust the mount's altitude and azimuth bolts."
-                : $"Reference {count} captured. Rotate only RA by 60–90° (at least 30°), let the mount settle, then capture the rotated reference.";
+                ? "두 기준 촬영 완료 · 실시간 조정 시작 후 고도·방위각 볼트를 조정하세요."
+                : "첫 기준 해석 성공 · RA만 회전한 뒤 다음 기준을 촬영하세요.";
         });
     }
     private async Task RunLiveAsync() {
         await WithLiveOperation(async token => {
             while (!token.IsCancellationRequested) {
                 ValidateSite();
-                liveStatus = "Live: exposing and plate solving…"; NotifyLive();
+                liveStatus = "다음 영상을 촬영 · 해석 중입니다…"; NotifyLive();
                 var cycle = Stopwatch.StartNew();
                 var frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
                 token.ThrowIfCancellationRequested();
@@ -120,8 +128,9 @@ public sealed partial class PolarAlignmentDockableVM {
                 cycle.Stop(); lastCycleMilliseconds = cycle.Elapsed.TotalMilliseconds;
                 latestError = error; measuredAt = frame.CapturedAtUtc; measurementStale = false;
                 livePreview = frame.Preview;
+                pixelScale = frame.PixelScaleArcseconds;
                 liveError = $"{error.TotalArcminutes:0.00}′ total · altitude {error.AltitudeArcminutes:+0.00;-0.00;0.00}′ · azimuth {error.AzimuthArcminutes:+0.00;-0.00;0.00}′";
-                liveStatus = $"Measured {frame.CapturedAtUtc.ToLocalTime():HH:mm:ss}. Adjust gently and wait for the next measurement. Keep RA and camera orientation fixed.";
+                liveStatus = $"{frame.CapturedAtUtc.ToLocalTime():HH:mm:ss} 측정 완료 · 볼트를 조금씩 움직이고 다음 결과를 확인하세요.";
                 NotifyLive();
                 await Task.Delay(250, token);
             }
@@ -129,22 +138,24 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private async Task WithLiveOperation(Func<CancellationToken, Task> operation) {
         if (liveBusy) return;
-        liveBusy = true; liveCancellation = new CancellationTokenSource(); NotifyLive();
+        liveBusy = true; operationError = null; liveCancellation = new CancellationTokenSource(); NotifyLive();
         try { await operation(liveCancellation.Token); }
-        catch (OperationCanceledException) { liveStatus = "Stopped. Resume live measurement or reset calibration."; measurementStale = true; guidance = null; }
-        catch (Exception ex) { liveStatus = $"Measurement stopped: {ex.Message}"; liveError = "—"; guidance = null; measurementStale = true; }
+        catch (OperationCanceledException) { liveStatus = "측정을 멈췄습니다. 다시 시작하거나 기준을 초기화할 수 있습니다."; measurementStale = true; guidance = null; }
+        catch (Exception ex) { operationError = ex.Message; liveStatus = "측정을 완료하지 못했습니다. 아래 내용을 확인한 뒤 다시 시도하세요."; liveError = "—"; guidance = null; measurementStale = true; }
         finally { liveCancellation.Dispose(); liveCancellation = null; liveBusy = false; NotifyLive(); }
     }
     private void ValidateSite() {
         var site = profiles.ActiveProfile.AstrometrySettings;
         if (site.Latitude != calibrationLatitude || site.Longitude != calibrationLongitude) {
             session = null;
+            calibrationSamples = 0;
             throw new InvalidOperationException("Observing site changed. Reset and repeat calibration.");
         }
         if (!double.IsFinite(ExposureSeconds) || ExposureSeconds <= 0 || ExposureSeconds > 60)
             throw new InvalidOperationException("Exposure must be greater than 0 and no more than 60 seconds.");
     }
     private void NotifyLive() {
+        NotifyWorkflow();
         foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(LiveTotalError), nameof(LiveAltitudeError), nameof(LiveAzimuthError), nameof(FrameFreshness), nameof(IsMeasurementStale) }) RaisePropertyChanged(name);
         (CaptureReferenceCommand as IRelayCommand)?.NotifyCanExecuteChanged();

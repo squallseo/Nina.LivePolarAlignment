@@ -7,4 +7,5 @@ analysis/*
 *.user
 *.rea.backup*
 artifacts/
+**/*_wpftmp.csproj
 

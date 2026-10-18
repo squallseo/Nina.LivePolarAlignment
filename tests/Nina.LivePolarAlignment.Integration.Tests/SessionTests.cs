@@ -27,8 +27,12 @@ public sealed class SessionTests {
 
         Assert.Equal(1, session.AddCalibration(first));
         Assert.False(session.IsCalibrated);
+        var reference = session.GetReferenceGuidance(first);
+        Assert.Null(reference.MountAxis);
+        Assert.NotNull(reference.CelestialPole);
         Assert.Equal(2, session.AddCalibration(second));
         Assert.True(session.IsCalibrated);
+        Assert.InRange(session.RotationDegrees!.Value, 71.97, 72.03);
         Assert.True(session.UsedApproximateEarthRotation);
         AssertError(session.Measure(second), initialAxis, latitude);
 

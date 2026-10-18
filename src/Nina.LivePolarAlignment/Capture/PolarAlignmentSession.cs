@@ -28,8 +28,9 @@ public sealed class PolarAlignmentSession {
     }
 
     public bool IsCalibrated => calibration != null;
+    public double? RotationDegrees { get; private set; }
     public bool UsedApproximateEarthRotation { get; private set; }
-    public void Reset() { baseline = null; calibration = null; }
+    public void Reset() { baseline = null; calibration = null; RotationDegrees = null; }
 
     public int AddCalibration(SolvedPolarFrame frame) {
         if (IsCalibrated) throw new InvalidOperationException("Restart before taking another calibration.");
@@ -42,6 +43,7 @@ public sealed class PolarAlignmentSession {
         }
         ValidateCompatible(baseline, frame);
         var estimate = PolarAlignmentGeometry.EstimateAxis(first, orientation);
+        RotationDegrees = 2 * Math.Asin(Math.Clamp(estimate.Conditioning, 0, 1)) * 180 / Math.PI;
         if (estimate.Conditioning < Math.Sin(15 * Math.PI / 180))
             throw new InvalidOperationException("Rotate the RA axis at least 30 degrees; 60 to 90 degrees is recommended. Leave altitude and azimuth unchanged.");
         var pole = Pole;
@@ -55,6 +57,14 @@ public sealed class PolarAlignmentSession {
     }
 
     public PolarError Measure(SolvedPolarFrame frame) => GetGuidance(frame).Error;
+
+    public PolarGuidance GetReferenceGuidance(SolvedPolarFrame frame) {
+        ValidateFrame(frame);
+        var orientation = ToHorizon(frame);
+        return new(default, null,
+            PolarAlignmentGeometry.ProjectDirection(Pole, orientation, 206264.80624709636 / frame.PixelScaleArcseconds,
+                frame.Width / 2.0, frame.Height / 2.0), frame.Width, frame.Height);
+    }
 
     public PolarGuidance GetGuidance(SolvedPolarFrame frame) {
         if (calibration == null) throw new InvalidOperationException("Take both calibration frames first.");
