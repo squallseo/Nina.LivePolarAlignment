@@ -7,8 +7,8 @@ namespace Nina.LivePolarAlignment.UI;
 public sealed partial class PolarAlignmentDockableVM {
     private bool autoRaRotation = true, reverseRaRotation, rotationPathClear, rotationInProgress, automaticRotationCompleted;
     private double rotationProgress;
-    private int rotationAngleDegrees = 60;
-    public int[] RotationAngleChoices { get; } = { 60, 90 };
+    private int rotationAngleDegrees = 90;
+    public int[] RotationAngleChoices { get; } = { 90, 60 };
     public int RotationAngleDegrees {
         get => rotationAngleDegrees;
         set {

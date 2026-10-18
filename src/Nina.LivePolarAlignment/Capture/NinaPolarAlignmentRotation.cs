@@ -24,7 +24,7 @@ public sealed partial class NinaPolarAlignmentCaptureService {
             catch { return false; }
         }
     }
-    public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 60) {
+    public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
         if (!await captureGate.WaitAsync(0, token)) throw new InvalidOperationException("Another alignment operation is running.");
         try {
             var mount = new RotationMount(telescope);

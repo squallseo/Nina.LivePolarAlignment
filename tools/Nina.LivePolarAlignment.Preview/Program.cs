@@ -45,7 +45,7 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public void ValidateDriftTracking() { if (!DriftTestMode) throw new InvalidOperationException("Synthetic drift mode is off"); }
     public Nina.LivePolarAlignment.Core.DriftSample GetDriftSample(SolvedPolarFrame frame) =>
         new(frame.CapturedAtUtc, frame.DeclinationDegrees, frame.RightAscensionDegrees - 180, 40, frame.PixelScaleArcseconds);
-    public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 60) {
+    public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
         Rotations++; LastRotationAngle = targetDegrees; RotationStopped = false;
         try {
             if (FailRotation) throw new InvalidOperationException("Synthetic rotation failure");
@@ -171,7 +171,7 @@ internal static class Program {
             var profiles = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)profiles).Active = profile;
             var capture = new SampleCapture();
             current = new PolarAlignmentDockableVM(profiles, capture);
-            if (!current.AutoRaRotation || !current.UseStreaming) throw new InvalidOperationException("Acquisition defaults must be on");
+            if (!current.AutoRaRotation || !current.UseStreaming || current.RotationAngleDegrees != 90) throw new InvalidOperationException("Acquisition defaults must be on");
             current.AutoRaRotation = false; current.UseStreaming = false;
             capture.Step = () => current.WorkflowStep;
             View.DataContext = current;

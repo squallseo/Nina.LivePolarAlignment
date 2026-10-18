@@ -105,8 +105,8 @@
 
    <StackPanel Margin="0,0,0,8" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}">
     <DockPanel ToolTip="{Binding RotationStatus}" ToolTipService.ShowOnDisabled="True"><TextBlock Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" HorizontalAlignment="Right" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanUseAutoRotation}"/></DockPanel>
-     <DockPanel Margin="0,5,0,0"><ComboBox DockPanel.Dock="Right" Width="72" ItemsSource="{Binding RotationAngleChoices}" SelectedItem="{Binding RotationAngleDegrees}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
     <StackPanel Visibility="{Binding AutoRaRotation, Converter={StaticResource VisibleIf}}">
+     <DockPanel Margin="0,5,0,0"><ComboBox DockPanel.Dock="Right" Width="72" ItemsSource="{Binding RotationAngleChoices}" SelectedItem="{Binding RotationAngleDegrees}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
 
      <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding ReverseRaRotation}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
      <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding RotationPathClear}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{Binding RotationPathLabel}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>

@@ -33,7 +33,7 @@ public sealed class RaRotation {
         if (rates.Length == 0) throw new InvalidOperationException("No supported RA speed between 0.1 and 1 degree/s. Use manual rotation.");
         return rates.Max();
     }
-    public async Task RunAsync(IRaRotationMount mount, bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 60) {
+    public async Task RunAsync(IRaRotationMount mount, bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
         if (targetDegrees is not (60 or 90)) throw new ArgumentOutOfRangeException(nameof(targetDegrees));
         token.ThrowIfCancellationRequested();
         var initial = mount.Read(); var rate = SelectRate(initial);
