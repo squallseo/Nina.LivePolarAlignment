@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Live Polar Alignment: rotation orbit, axis target and pole star">
+ <defs><linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1d303d"/><stop offset="1" stop-color="#09121e"/></linearGradient></defs>
+ <rect width="512" height="512" rx="88" fill="url(#night)"/>
+ <g transform="translate(70 88) scale(12)">
+  <path fill="#31d2c1" d="M14 4 A12 12 0 1 0 26 16 L23.5 16 A9.5 9.5 0 1 1 14 6.5 Z"/>
+  <path fill="#f5f5f5" fill-rule="evenodd" d="M19 16 A5 5 0 1 1 9 16 A5 5 0 1 1 19 16 Z M16.5 16 A2.5 2.5 0 1 0 11.5 16 A2.5 2.5 0 1 0 16.5 16 Z"/>
+  <path fill="#f5f5f5" d="M13 8 L15 8 L15 12 L13 12 Z M13 20 L15 20 L15 24 L13 24 Z M6 15 L10 15 L10 17 L6 17 Z M18 15 L22 15 L22 17 L18 17 Z"/>
+  <path fill="#ffcb70" d="M24 0 L25.8 5.2 L31 7 L25.8 8.8 L24 14 L22.2 8.8 L17 7 L22.2 5.2 Z"/>
+ </g>
+</svg>

@@ -15,6 +15,7 @@ foreach ($file in @('Nina.LivePolarAlignment.dll','Nina.LivePolarAlignment.Core.
 Copy-Item (Join-Path $PSScriptRoot 'Install-Plugin.ps1') $stage
 Copy-Item (Join-Path $root 'docs\field-validation.md') $stage
 Copy-Item (Join-Path $root 'docs\install-package.txt') (Join-Path $stage 'INSTALL.txt')
+Copy-Item (Join-Path $root 'docs\images\plugin-icon.png') $stage
 $output = Join-Path $root 'downloads'
 New-Item -ItemType Directory -Force $output | Out-Null
 $zip = Join-Path $output "Nina.LivePolarAlignment.$version.zip"

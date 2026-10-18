@@ -1,5 +1,7 @@
 # N.I.N.A. Live Polar Alignment
 
+<img src="docs/images/plugin-icon.png" width="128" alt="Live Polar Alignment icon" />
+
 두 번의 기준 촬영 후 이미지 위 표시를 보며 적도의의 고도·방위각을 조정하는 N.I.N.A. 플러그인입니다.
 SharpCap의 직관적인 조정 흐름을 참고하여 자체 C# 코드로 구현하고 있습니다.
 
@@ -8,7 +10,7 @@ SharpCap의 직관적인 조정 흐름을 참고하여 자체 C# 코드로 구�
 
 ## 배포본 설치
 
-[0.1.0.6 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.6.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.6.zip.sha256)
+[0.1.0.7 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.7.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.7.zip.sha256)
 
 Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀고 N.I.N.A.를 종료한 뒤 `Install-Plugin.ps1`을 실행하거나, `plugin` 폴더 내용을 아래 로컬 설치 경로에 복사하세요. SDK나 소스 빌드는 필요하지 않습니다.
 

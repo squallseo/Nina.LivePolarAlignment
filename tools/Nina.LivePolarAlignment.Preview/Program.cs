@@ -165,6 +165,21 @@ internal static class Program {
         var iconBitmap = new RenderTargetBitmap(400, 160, 96, 96, PixelFormats.Pbgra32); iconBitmap.Render(iconVisual);
         var iconEncoder = new PngBitmapEncoder(); iconEncoder.Frames.Add(BitmapFrame.Create(iconBitmap));
         using (var iconFile = File.Create(Path.Combine(directory, "panel-icon.png"))) iconEncoder.Save(iconFile);
+        var brandVisual = new DrawingVisual();
+        using (var dc = brandVisual.RenderOpen()) {
+            var background = new LinearGradientBrush(Color.FromRgb(29, 48, 61), Color.FromRgb(9, 18, 30), 60);
+            dc.DrawRoundedRectangle(background, null, new Rect(0, 0, 512, 512), 88, 88);
+            dc.PushTransform(new TranslateTransform(70, 88));
+            dc.PushTransform(new ScaleTransform(12, 12));
+            dc.DrawGeometry(new SolidColorBrush(Color.FromRgb(49, 210, 193)), null, icon.Children[0]);
+            dc.DrawGeometry(Brushes.WhiteSmoke, null, icon.Children[1]);
+            dc.DrawGeometry(Brushes.WhiteSmoke, null, icon.Children[2]);
+            dc.DrawGeometry(new SolidColorBrush(Color.FromRgb(255, 203, 112)), null, icon.Children[3]);
+            dc.Pop(); dc.Pop();
+        }
+        var brandBitmap = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); brandBitmap.Render(brandVisual);
+        var brandEncoder = new PngBitmapEncoder(); brandEncoder.Frames.Add(BitmapFrame.Create(brandBitmap));
+        using (var brandFile = File.Create(Path.Combine(directory, "plugin-icon.png"))) brandEncoder.Save(brandFile);
         var optionProfile = DispatchProxy.Create<IProfile, SampleProfile>();
         ((SampleProfile)(object)optionProfile).Settings = DispatchProxy.Create<IApplicationSettings, SampleProfile>();
         var optionProfiles = DispatchProxy.Create<IProfileService, SampleProfile>();
