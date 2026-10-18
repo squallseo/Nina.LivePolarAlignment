@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace Nina.LivePolarAlignment.UI;
 
 public sealed partial class PolarAlignmentDockableVM {
-    private bool autoRaRotation, reverseRaRotation, rotationPathClear, rotationInProgress, automaticRotationCompleted;
+    private bool autoRaRotation = true, reverseRaRotation, rotationPathClear, rotationInProgress, automaticRotationCompleted;
     private double rotationProgress;
     private int rotationAngleDegrees = 60;
     public int[] RotationAngleChoices { get; } = { 60, 90 };
@@ -31,7 +31,7 @@ public sealed partial class PolarAlignmentDockableVM {
         set { if (CanConfigureRotation) { rotationPathClear = value; RaisePropertyChanged(); } }
     }
     public bool CanConfigureRotation => !IndependentDriftEnabled && !liveBusy && calibrationSamples < 2 && !automaticRotationCompleted;
-    public bool CanUseAutoRotation => CanConfigureRotation && captureService.SupportsAutoRaRotation;
+    public bool CanUseAutoRotation => CanConfigureRotation;
     public bool IsRotating => rotationInProgress;
     public string RotationStatus => rotationInProgress ? UiText.Format("AutoRaProgress", rotationProgress, RotationAngleDegrees)
         : UiText.Get(captureService.SupportsAutoRaRotation ? "AutoRaHint" : "AutoRaUnsupported");
@@ -51,6 +51,7 @@ public sealed partial class PolarAlignmentDockableVM {
             ValidateSite(); automaticRotationCompleted = true;
             RecordFieldEvent("ra_rotation_complete", new { reportedDegrees = rotationProgress });
         } catch {
+            autoRaRotation = false;
             // A partial rotation must never be retried against an old reference automatically.
             session = null; calibrationSamples = 0; guidance = null;
             EndFieldSession("ra_rotation_failed_or_cancelled");

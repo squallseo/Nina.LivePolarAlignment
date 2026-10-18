@@ -6,6 +6,10 @@ using NINA.Core.Model;
 
 namespace Nina.LivePolarAlignment.Capture;
 
+public sealed class StreamingCleanupException : InvalidOperationException {
+    public StreamingCleanupException(Exception inner) : base("Could not restore the camera after streaming. Reconnect before continuing.", inner) { }
+}
+
 public interface IPolarAlignmentCaptureService {
     bool SupportsStreaming => false;
     bool IsSynthetic => false;

@@ -10,7 +10,7 @@ SharpCap의 직관적인 조정 흐름을 참고하여 자체 C# 코드로 구�
 
 ## 배포본 설치
 
-[0.1.0.12 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.12.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.12.zip.sha256)
+[0.1.0.13 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.13.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.13.zip.sha256)
 
 Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀고 N.I.N.A.를 종료한 뒤 `Install-Plugin.ps1`을 실행하거나, `plugin` 폴더 내용을 아래 로컬 설치 경로에 복사하세요. SDK나 소스 빌드는 필요하지 않습니다.
 
@@ -24,7 +24,7 @@ Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀�
 4. `실시간 조정 시작`을 누르고, 고도·방위각 볼트를 조정해 주황색 RA 회전 중심과 청록색 천구극 표시를 겹칩니다.
 5. `중지`로 촬영을 중단합니다. 카메라 방향·설정이나 관측지를 바꿨다면 `다시`로 기준을 초기화합니다.
 
-기본은 수동 회전입니다. `Auto RA rotation (experimental)`을 켜면 첫 촬영 → RA 선택한 60° 또는 90° 회전 → 두 번째 촬영을 자동으로 수행합니다. 방향을 선택하고 경로의 간섭 여부를 확인한 뒤 시작하세요. 지원하지 않는 마운트는 수동 방식으로 진행합니다. [자동 RA 회전 안내](docs/auto-ra-rotation.md)
+자동 RA 회전은 기본 ON입니다. 실행 시 미지원 장비이면 알림창 없이 OFF로 전환하고 수동 회전을 안내합니다. `Auto RA rotation`을 켜면 첫 촬영 → RA 선택한 60° 또는 90° 회전 → 두 번째 촬영을 자동으로 수행합니다. 방향을 선택하고 경로의 간섭 여부를 확인한 뒤 시작하세요. 지원하지 않는 마운트는 수동 방식으로 진행합니다. [자동 RA 회전 안내](docs/auto-ra-rotation.md)
 
 좌표 GoTo·mount sync·자동 주차 해제·자동 복귀는 하지 않습니다. 볼트 조정 중 RA/Dec와 카메라 장착 상태를 유지해야 합니다.
 오차 부호는 기하학적 고도·방위각 차이이며 볼트를 돌리는 방향이 아닙니다.
@@ -74,9 +74,9 @@ Windows, .NET 8 SDK 및 Desktop Runtime이 필요합니다. N.I.N.A. API는 `NIN
 
 ## 갱신 속도
 
-기본은 단일 촬영 반복입니다. `Streaming (experimental)` 옵션을 켜면 조정 단계에서 네이티브 RAW 스트리밍을 사용합니다. 초기 두 기준은 항상 단일 촬영합니다. 지원 범위는 네이티브 ZWO ASI·ToupTek이며, ASCOM 등 다른 경로에서는 옵션이 비활성화됩니다.
+스트리밍은 기본 ON이며, 미지원 또는 스트림 시작·수신 실패 시 알림창 없이 OFF로 전환하고 단일 촬영을 이어갑니다. `Streaming` 옵션을 켜면 조정 단계에서 네이티브 RAW 스트리밍을 사용합니다. 초기 두 기준은 항상 단일 촬영합니다. 지원 범위는 네이티브 ZWO ASI·ToupTek이며, ASCOM 등 미지원 경로도 옵션을 선택할 수 있으며 실행 시 일반 촬영으로 전환합니다.
 
-스트리밍은 촬영과 해석을 겹치고 최신 프레임만 유지하지만, 표시하는 모든 측정에는 여전히 Plate Solve가 필요합니다. 해석이 느리면 효과가 제한됩니다. 기본값은 꺼짐이며 실제 장비의 속도·정확도는 검증 전입니다. 영상 프레임의 노출 시각도 수신 시각 기반 추정치입니다. [검토와 구현 범위](docs/streaming-review.md)를 참고하세요.
+스트리밍은 촬영과 해석을 겹치고 최신 프레임만 유지하지만, 표시하는 모든 측정에는 여전히 Plate Solve가 필요합니다. 해석이 느리면 효과가 제한됩니다. 실제 장비의 속도·정확도는 검증 전입니다. 영상 프레임의 노출 시각도 수신 시각 기반 추정치입니다. [검토와 구현 범위](docs/streaming-review.md)를 참고하세요.
 빠른 별 정합 코어도 구현했지만 실제 촬영 경로에 연결하기 전입니다. 코어 연산 시간만으로 전체 갱신 속도를 주장하지 않습니다.
 다음 단계는 극 주변의 빠른 해석 또는 검증된 별 정합 경로를 연결하고 실패 시 재해석하도록 만드는 것입니다.
 

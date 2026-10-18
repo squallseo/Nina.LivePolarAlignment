@@ -27,9 +27,11 @@ public class SampleProfile : DispatchProxy {
 
 internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public Func<int> Step { get; set; } = () => 0;
-    public bool SupportsStreaming => true;
+    public static bool UnsupportedStream, StreamCleanupFailure;
+    public bool SupportsStreaming => !UnsupportedStream;
     public bool IsSynthetic => true;
-    public bool SupportsAutoRaRotation => true;
+    public static bool UnsupportedAuto, FailRotation;
+    public bool SupportsAutoRaRotation => !UnsupportedAuto;
     public static int Rotations;
     public static double LastRotationAngle;
     public static bool RotationStopped;
@@ -46,6 +48,7 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 60) {
         Rotations++; LastRotationAngle = targetDegrees; RotationStopped = false;
         try {
+            if (FailRotation) throw new InvalidOperationException("Synthetic rotation failure");
             for (int i = 1; i <= targetDegrees; i++) { await Task.Delay(20, token); progress?.Report(i); }
             orientation += reverse ? -targetDegrees : targetDegrees; rotatedSinceReference = true;
         }
@@ -58,6 +61,7 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
         StreamFrames = 0;
         while (true) {
             await Task.Delay(100, token);
+            if (StreamCleanupFailure) throw new StreamingCleanupException(new InvalidOperationException("Synthetic restoration failure"));
             if (FailStream) throw new InvalidOperationException("Synthetic streaming failure");
             StreamFrames++;
             yield return new(0, 89.7, orientation, 6, 800, 600, false, DateTimeOffset.UtcNow, Image);
@@ -167,6 +171,8 @@ internal static class Program {
             var profiles = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)profiles).Active = profile;
             var capture = new SampleCapture();
             current = new PolarAlignmentDockableVM(profiles, capture);
+            if (!current.AutoRaRotation || !current.UseStreaming) throw new InvalidOperationException("Acquisition defaults must be on");
+            current.AutoRaRotation = false; current.UseStreaming = false;
             capture.Step = () => current.WorkflowStep;
             View.DataContext = current;
             for (int i = 0; i < scene; i++) await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
@@ -269,11 +275,29 @@ internal static class Program {
         current.StopLiveCommand.Execute(null); await currentLoop;
         if (current.HasCurrentFieldGuidance || !current.IsMeasurementStale) throw new InvalidOperationException("Stopped streaming retained guidance");
         SampleCapture.FailStream = true;
-        await ((IAsyncRelayCommand)current.StartLiveCommand).ExecuteAsync(null);
-        if (!current.HasOperationError || current.HasCurrentFieldGuidance || current.IsWorking) throw new InvalidOperationException("Streaming failure was not surfaced safely");
+        var fallbackLoop = ((IAsyncRelayCommand)current.StartLiveCommand).ExecuteAsync(null);
+        for (int i = 0; i < 200 && current.UseStreaming && !fallbackLoop.IsCompleted; i++) await Task.Delay(10);
+        if (current.UseStreaming || current.HasOperationError || fallbackLoop.IsCompleted) throw new InvalidOperationException("Streaming must fall back to ordinary exposures");
+        current.StopLiveCommand.Execute(null); await fallbackLoop;
         SampleCapture.FailStream = false;
+        current.UseStreaming = true; SampleCapture.UnsupportedStream = true;
+        var unsupportedLoop = ((IAsyncRelayCommand)current.StartLiveCommand).ExecuteAsync(null);
+        await Task.Delay(350);
+        if (current.UseStreaming || current.HasOperationError || unsupportedLoop.IsCompleted) throw new InvalidOperationException("Unsupported streaming must use still captures");
+        current.StopLiveCommand.Execute(null); await unsupportedLoop; SampleCapture.UnsupportedStream = false;
+        current.UseStreaming = true; SampleCapture.StreamCleanupFailure = true;
+        await ((IAsyncRelayCommand)current.StartLiveCommand).ExecuteAsync(null);
+        SampleCapture.StreamCleanupFailure = false;
+        if (!current.HasOperationError || current.IsWorking) throw new InvalidOperationException("Camera restoration failure must remain visible");
         current.Dispose();
         SampleCapture.Rotations = 0;
+        SampleCapture.UnsupportedAuto = true;
+        await SelectScene(0); current!.AutoRaRotation = true;
+        if (!current.CanUseAutoRotation || !current.CanUseStreaming) throw new InvalidOperationException("Options must remain selectable");
+        await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
+        if (current.AutoRaRotation || current.HasOperationError || current.WorkflowStep != 1 || SampleCapture.Rotations != 0)
+            throw new InvalidOperationException("Unsupported RA must quietly fall back to manual reference capture");
+        SampleCapture.UnsupportedAuto = false;
         await SelectScene(0);
         current!.AutoRaRotation = true;
         current.RotationPathClear = true; current.RotationAngleDegrees = 90;
@@ -296,6 +320,12 @@ internal static class Program {
         if (current.WorkflowStep != 0 || current.IsWorking || !SampleCapture.RotationStopped)
             throw new InvalidOperationException("Cancelled rotation must stop and discard the reference");
         current.Dispose();
+        await SelectScene(0); current!.AutoRaRotation = true; current.RotationPathClear = true;
+        SampleCapture.FailRotation = true;
+        await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
+        SampleCapture.FailRotation = false;
+        if (!current.HasOperationError || current.AutoRaRotation || current.WorkflowStep != 0)
+            throw new InvalidOperationException("A rotation fault must stop, disable auto and invalidate calibration");
         await SelectScene(0); current!.RecordFieldSession = false;
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);

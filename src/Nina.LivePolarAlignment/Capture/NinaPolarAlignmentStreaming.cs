@@ -124,6 +124,8 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                         }
                     }
                 }
+            } catch (Exception error) {
+                throw new StreamingCleanupException(error);
             } finally {
                 try { if (reserved) camera.ReleaseCaptureBlock(this); }
                 finally { captureGate.Release(); }

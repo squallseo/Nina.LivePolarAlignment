@@ -190,7 +190,7 @@
     <value>Celestial Pole: target direction. RA Axis: measured rotation axis. Dashed rings show angular distance from the pole. Hardware accuracy has not yet been verified; atmospheric refraction is not applied.</value>
   </data>
   <data name="StreamingOption" xml:space="preserve">
-    <value>Streaming (experimental)</value>
+    <value>Streaming</value>
   </data>
   <data name="StreamingMode" xml:space="preserve">
     <value>Native video - latest frame + plate solve</value>
@@ -271,7 +271,7 @@
     <value>Off by default. Applies to the next calibration (Reset first if needed). Records solved-frame data and saves RAW FITS for references and Mark samples in Local AppData/NINA/LivePolarAlignment/FieldSessions. Use Field validation in the imaging panel for Mark, Stability and Folder.</value>
   </data>
   <data name="AutoRaOption" xml:space="preserve">
-    <value>Auto RA rotation (experimental)</value>
+    <value>Auto RA rotation</value>
   </data>
   <data name="AutoRaReverse" xml:space="preserve">
     <value>Reverse RA direction</value>

@@ -28,12 +28,12 @@ public sealed partial class PolarAlignmentDockableVM {
     private double lastCycleMilliseconds;
     private bool measurementStale = true;
     private readonly DispatcherTimer freshnessTimer = new() { Interval = TimeSpan.FromSeconds(1) };
-    private bool useStreaming;
+    private bool useStreaming = true;
     public bool UseStreaming {
         get => useStreaming;
         set { if (liveBusy || useStreaming == value) return; useStreaming = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(AcquisitionMode)); }
     }
-    public bool CanUseStreaming => !liveBusy && captureService.SupportsStreaming;
+    public bool CanUseStreaming => !liveBusy;
     public string AcquisitionMode => UiText.Get(UseStreaming ? "StreamingMode" : "SingleMode");
     public string StreamingAvailability => UiText.Get(captureService.SupportsStreaming ? "StreamingHint" : "StreamingUnsupported");
     public double ExposureSeconds { get; set; } = 1;
@@ -113,7 +113,11 @@ public sealed partial class PolarAlignmentDockableVM {
     private async Task CaptureReferenceAsync() {
         await WithLiveOperation(async token => {
             if (session == null && calibrationSamples == 0) { verificationResult = null; stabilityResult = null; }
-            if (AutoRaRotation && !automaticRotationCompleted && (!RotationPathClear || !captureService.SupportsAutoRaRotation))
+            if (AutoRaRotation && !captureService.SupportsAutoRaRotation) {
+                autoRaRotation = false; rotationPathClear = false;
+                RecordFieldEvent("ra_rotation_fallback", new { reason = "unsupported", mode = "manual" }); NotifyLive();
+            }
+            if (AutoRaRotation && !automaticRotationCompleted && !RotationPathClear)
                 throw new InvalidOperationException(UiText.Get("AutoRaCheckPath"));
             if (calibrationSamples == 1 && AutoRaRotation) await RotateForReferenceAsync(token);
             await CaptureReferenceFrameAsync(token);
@@ -159,15 +163,26 @@ public sealed partial class PolarAlignmentDockableVM {
             var cycle = Stopwatch.StartNew();
             if (UseStreaming) {
                 ValidateSite();
-                if (!captureService.SupportsStreaming) throw new InvalidOperationException(UiText.Get("StreamingUnsupported"));
-                liveStatus = "StreamingStarting"; NotifyLive();
-                await foreach (var frame in captureService.StreamAndSolveAsync(ExposureSeconds, token)) {
-                    token.ThrowIfCancellationRequested(); ValidateSite();
-                    PublishMeasurement(frame, cycle.Elapsed.TotalMilliseconds);
-                    cycle.Restart();
+                if (captureService.SupportsStreaming) {
+                    liveStatus = "StreamingStarting"; NotifyLive();
+                    // Dispose the native stream before starting ordinary exposures.
+                    await using var frames = captureService.StreamAndSolveAsync(ExposureSeconds, token).GetAsyncEnumerator(token);
+                    while (true) {
+                        bool available;
+                        try { available = await frames.MoveNextAsync(); }
+                        catch (OperationCanceledException) { throw; }
+                        catch (Exception error) when (error is not StreamingCleanupException) {
+                            token.ThrowIfCancellationRequested();
+                            RecordFieldEvent("streaming_fallback", new { reason = error.ToString() }); break;
+                        }
+                        token.ThrowIfCancellationRequested();
+                        if (!available) break;
+                        ValidateSite(); PublishMeasurement(frames.Current, cycle.Elapsed.TotalMilliseconds);
+                        cycle.Restart();
+                    }
                 }
                 token.ThrowIfCancellationRequested();
-                throw new InvalidOperationException(UiText.Get("StreamingEnded"));
+                useStreaming = false; RaisePropertyChanged(nameof(UseStreaming)); NotifyLive();
             }
             while (!token.IsCancellationRequested) {
                 ValidateSite(); liveStatus = "Live6"; NotifyLive(); cycle.Restart();

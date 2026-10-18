@@ -190,7 +190,7 @@
     <value>천구극: 목표 방향. RA축: 측정한 회전축. 원은 천구극으로부터의 각거리입니다. 실제 장비 정확도 검증 전 ? 대기 굴절 보정 미적용.</value>
   </data>
   <data name="StreamingOption" xml:space="preserve">
-    <value>스트리밍 (실험적)</value>
+    <value>스트리밍</value>
   </data>
   <data name="StreamingMode" xml:space="preserve">
     <value>네이티브 영상 - 최신 프레임 + Plate Solve</value>
@@ -271,7 +271,7 @@
     <value>기본은 꺼짐입니다. 다음 기준 촬영부터 적용됩니다(필요하면 Reset). 측정 데이터와 기준/Mark 원본 FITS를 Local AppData/NINA/LivePolarAlignment/FieldSessions에 저장합니다. 이미징 패널의 현장 검증에서 Mark, Stability, Folder를 사용하세요.</value>
   </data>
   <data name="AutoRaOption" xml:space="preserve">
-    <value>자동 RA 회전 (실험적)</value>
+    <value>자동 RA 회전</value>
   </data>
   <data name="AutoRaReverse" xml:space="preserve">
     <value>RA 회전 방향 반전</value>

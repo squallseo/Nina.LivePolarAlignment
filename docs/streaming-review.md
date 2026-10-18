@@ -1,7 +1,6 @@
 ﻿# Streaming review and implementation
 
-The default remains repeated still captures. `Streaming (experimental)` is an opt-in
-for the **adjustment** stage. Both calibration references always use still captures.
+`Streaming` defaults on for the **adjustment** stage as of 0.1.0.13. Unsupported cameras quietly switch the option off and use repeated still captures. Both calibration references always use still captures.
 The first implementation accepts NINA's native ZWO ASI (`ZWOptical_`) and ToupTek
 (`ToupTek_`) RAW video paths. ASCOM, DSLR JPEG LiveView, QHY, and other drivers are
 not enabled by this option. This is a code-path support boundary, not a list of
@@ -40,14 +39,13 @@ Stop; no concurrent forced disposal is attempted.
 
 The streaming session saves binning, readout mode, gain, offset and ROI, restoring
 them for the same connected camera after shutdown. ToupTek asynchronous still-mode
-restoration is awaited. Failure is surfaced, guidance is invalidated, and streaming
-does not silently switch camera modes or restart still captures.
+restoration is awaited. Acquisition or solve failures switch streaming off and continue with still captures after the stream is disposed. Camera restoration failures remain visible and stop acquisition. Geometry errors and cancellation do not trigger fallback.
 
 Video drivers may timestamp download rather than the physical shutter. The initial
 streaming path uses receive time minus half the requested exposure as an estimated
 midpoint. Camera buffering/transfer latency is unknown. Hardware accuracy and
 cadence require real-camera verification; use still captures for final comparison.
-The option defaults off and cannot be changed while capture or solving is active.
+The option defaults on, remains selectable before camera connection, and cannot be changed while capture or solving is active.
 
 ## Evidence and validation
 
