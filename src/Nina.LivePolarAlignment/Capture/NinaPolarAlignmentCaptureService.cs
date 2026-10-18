@@ -108,7 +108,7 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
             }
             return new SolvedPolarFrame(result.Coordinates.RADegrees, result.Coordinates.Dec,
                 result.PositionAngle, result.Pixscale, dimensions.Width, dimensions.Height,
-                result.Flipped, capturedAt, preview);
+                result.Flipped, capturedAt, preview, image.RawImageData);
         } finally {
             try {
                 if (registered) camera.ReleaseCaptureBlock(this);

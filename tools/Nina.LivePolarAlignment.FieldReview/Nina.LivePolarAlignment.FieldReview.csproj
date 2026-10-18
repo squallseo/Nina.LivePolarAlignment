@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><PlatformTarget>x64</PlatformTarget><NinaInstallDirectory Condition="'$(NinaInstallDirectory)' == ''">$(ProgramFiles)\N.I.N.A. - Nighttime Imaging 'N' Astronomy</NinaInstallDirectory></PropertyGroup>
+ <ItemGroup><ProjectReference Include="../../src/Nina.LivePolarAlignment/Nina.LivePolarAlignment.csproj"/>
+ <None Include="$(NinaInstallDirectory)\External\x64\SOFA\SOFAlib.dll" Link="External/x64/SOFA/SOFAlib.dll" CopyToOutputDirectory="PreserveNewest"/>
+ <None Include="$(NinaInstallDirectory)\External\x64\NOVAS\NOVAS31lib.dll" Link="External/x64/NOVAS/NOVAS31lib.dll" CopyToOutputDirectory="PreserveNewest"/>
+ <None Include="$(NinaInstallDirectory)\External\JPLEPH" Link="External/JPLEPH" CopyToOutputDirectory="PreserveNewest"/>
+ </ItemGroup>
+</Project>
+

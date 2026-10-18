@@ -8,6 +8,7 @@ namespace Nina.LivePolarAlignment.Capture;
 
 public interface IPolarAlignmentCaptureService {
     bool SupportsStreaming => false;
+    bool IsSynthetic => false;
     System.Collections.Generic.IAsyncEnumerable<SolvedPolarFrame> StreamAndSolveAsync(double exposureSeconds, CancellationToken token) => throw new NotSupportedException("Streaming is unavailable for this camera.");
     Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token,
         IProgress<ApplicationStatus>? progress = null);
@@ -23,4 +24,6 @@ public sealed record SolvedPolarFrame(
     int Height,
     bool Flipped,
     DateTimeOffset CapturedAtUtc,
-    BitmapSource? Preview);
+    BitmapSource? Preview,
+    NINA.Image.Interfaces.IImageData? RawImage = null,
+    double? Dut1Seconds = null);

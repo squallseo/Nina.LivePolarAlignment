@@ -66,7 +66,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public string GuidanceText => measuredAt != null && IsMeasurementStale ? "Guidance paused. Resume live measurement before adjusting the mount." : guidance == null ? "Calibrate to display axis guidance." : HasVisibleGuidance
         ? "Orange: mount axis · green: celestial pole. Adjust bolts until the rings overlap."
         : "Axis or pole is outside this frame. Use the measured offsets; a wider field near the pole helps.";
-    public bool CanConfigureLive => !liveBusy;
+    public bool CanConfigureLive => !liveBusy && !fieldSaving;
 
     private void InitializeLive(IProfileService profileService, IPolarAlignmentCaptureService service) {
         profiles = profileService; captureService = service;
@@ -75,7 +75,8 @@ public sealed partial class PolarAlignmentDockableVM {
         CaptureReferenceCommand = new AsyncRelayCommand(CaptureReferenceAsync, () => !liveBusy && session?.IsCalibrated != true);
         StartLiveCommand = new AsyncRelayCommand(RunLiveAsync, () => !liveBusy && session?.IsCalibrated == true);
         StopLiveCommand = new RelayCommand(RequestStopLive, () => liveBusy);
-        ResetLiveCommand = new RelayCommand(ResetLive, () => !liveBusy);
+        ResetLiveCommand = new RelayCommand(ResetLive, () => !liveBusy && !fieldSaving);
+        InitializeField();
         PropertyChanged += (_, change) => {
             if ((change.PropertyName == nameof(IsClosed) && IsClosed)
                 || (change.PropertyName == nameof(IsVisible) && !IsVisible)) RequestStopLive();
@@ -85,11 +86,13 @@ public sealed partial class PolarAlignmentDockableVM {
             RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(StreamingAvailability));
             RaisePropertyChanged(nameof(FrameFreshness)); RaisePropertyChanged(nameof(IsMeasurementStale));
             RaisePropertyChanged(nameof(HasVisibleGuidance)); RaisePropertyChanged(nameof(GuidanceText));
-            NotifyWorkflow();
+            if (IsMeasurementStale) AbortStability("measurement became stale");
+            NotifyWorkflow(); NotifyField();
         };
         freshnessTimer.Start();
     }
     private void ResetLive() {
+        EndFieldSession("reset"); fieldFailure = null; stabilityResult = null;
         session = null; livePreview = null; guidance = null; liveError = "—";
         calibrationSamples = 0; pixelScale = 0; operationError = null;
         latestError = null; measuredAt = null; measurementStale = true;
@@ -98,12 +101,15 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private void RequestStopLive() {
         if (liveCancellation == null) return;
+        AbortStability("stop requested"); RecordFieldEvent("stop_requested", new { });
         measurementStale = true; guidance = null;
         liveStatus = "Live2";
         liveCancellation.Cancel(); NotifyLive();
     }
     private async Task CaptureReferenceAsync() {
         await WithLiveOperation(async token => {
+            EnsureFieldSession();
+            RecordFieldEvent("reference_start", new { exposureSeconds = ExposureSeconds });
             if (session == null) {
                 var site = profiles.ActiveProfile.AstrometrySettings;
                 calibrationLatitude = site.Latitude; calibrationLongitude = site.Longitude;
@@ -116,11 +122,15 @@ public sealed partial class PolarAlignmentDockableVM {
             ValidateSite();
             livePreview = frame.Preview;
             pixelScale = frame.PixelScaleArcseconds;
-            int count = session.AddCalibration(frame);
+            int count;
+            try { count = session.AddCalibration(frame); }
+            catch (Exception error) { RecordFieldFrame(frame, "reference", false, failure: error); throw; }
             calibrationSamples = count;
             guidance = session.IsCalibrated ? session.GetGuidance(frame) : session.GetReferenceGuidance(frame);
             measuredAt = frame.CapturedAtUtc;
             measurementStale = false;
+            RecordFieldFrame(frame, "reference", true);
+            await SaveReferenceEvidenceAsync(frame);
             liveStatus = session.IsCalibrated
                 ? "Live4"
                 : "Live5";
@@ -128,6 +138,7 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private async Task RunLiveAsync() {
         await WithLiveOperation(async token => {
+            RecordFieldEvent("live_start", new { acquisition = UseStreaming ? "native_streaming" : "single_frames", exposureSeconds = ExposureSeconds });
             var cycle = Stopwatch.StartNew();
             if (UseStreaming) {
                 ValidateSite();
@@ -151,21 +162,23 @@ public sealed partial class PolarAlignmentDockableVM {
         });
     }
     private void PublishMeasurement(SolvedPolarFrame frame, double cycleMilliseconds) {
-        guidance = session!.GetGuidance(frame);
+        try { guidance = session!.GetGuidance(frame); }
+        catch (Exception geometryError) { RecordFieldFrame(frame, "measurement", false, cycleMilliseconds, geometryError); throw; }
         var error = guidance.Error;
         lastCycleMilliseconds = cycleMilliseconds;
         latestError = error; measuredAt = frame.CapturedAtUtc; measurementStale = false;
         livePreview = frame.Preview; pixelScale = frame.PixelScaleArcseconds;
         liveError = $"{error.TotalArcminutes:0.00} total";
+        RecordFieldFrame(frame, "measurement", true, cycleMilliseconds);
         liveStatus = "MeasurementComplete"; NotifyLive();
     }
     private async Task WithLiveOperation(Func<CancellationToken, Task> operation) {
         if (liveBusy) return;
         liveBusy = true; operationError = null; liveCancellation = new CancellationTokenSource(); NotifyLive();
         try { await operation(liveCancellation.Token); }
-        catch (OperationCanceledException) { liveStatus = "Live7"; measurementStale = true; guidance = null; }
-        catch (Exception ex) { operationError = ex.Message; liveStatus = "Live8"; liveError = "—"; guidance = null; measurementStale = true; }
-        finally { liveCancellation.Dispose(); liveCancellation = null; liveBusy = false; NotifyLive(); }
+        catch (OperationCanceledException) { AbortStability("cancelled"); RecordFieldEvent("operation_cancelled", new { }); liveStatus = "Live7"; measurementStale = true; guidance = null; }
+        catch (Exception ex) { AbortStability("operation failed"); RecordFieldEvent("operation_failed", new { error = ex.ToString() }); operationError = ex.Message; liveStatus = "Live8"; liveError = "—"; guidance = null; measurementStale = true; }
+        finally { liveCancellation.Dispose(); liveCancellation = null; liveBusy = false; NotifyLive(); if (fieldDisposed && !fieldSaving) EndFieldSession("disposed"); }
     }
     private void ValidateSite() {
         var site = profiles.ActiveProfile.AstrometrySettings;
@@ -178,7 +191,7 @@ public sealed partial class PolarAlignmentDockableVM {
             throw new InvalidOperationException("Exposure must be greater than 0 and no more than 60 seconds.");
     }
     private void NotifyLive() {
-        NotifyWorkflow();
+        NotifyWorkflow(); NotifyField();
         RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(AcquisitionMode)); RaisePropertyChanged(nameof(StreamingAvailability));
         foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(LiveTotalError), nameof(LiveAltitudeError), nameof(LiveAzimuthError), nameof(FrameFreshness), nameof(IsMeasurementStale) }) RaisePropertyChanged(name);
@@ -188,5 +201,5 @@ public sealed partial class PolarAlignmentDockableVM {
         (ResetLiveCommand as IRelayCommand)?.NotifyCanExecuteChanged();
     }
     private void LocaleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => NotifyLive();
-    public void Dispose() { RequestStopLive(); freshnessTimer.Stop(); UiText.Instance.PropertyChanged -= LocaleChanged; }
+    public void Dispose() { fieldDisposed = true; RequestStopLive(); freshnessTimer.Stop(); UiText.Instance.PropertyChanged -= LocaleChanged; if (!liveBusy && !fieldSaving) EndFieldSession("disposed"); }
 }

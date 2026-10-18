@@ -79,7 +79,7 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                 }
                 yield return new SolvedPolarFrame(solution.Coordinates.RADegrees, solution.Coordinates.Dec,
                     solution.PositionAngle, solution.Pixscale, frame.Image.Properties.Width, frame.Image.Properties.Height,
-                    solution.Flipped, frame.CapturedAt, preview);
+                    solution.Flipped, frame.CapturedAt, preview, frame.Image);
             }
 
             async IAsyncEnumerable<StreamFrame> Receive([EnumeratorCancellation] CancellationToken ct) {

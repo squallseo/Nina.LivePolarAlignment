@@ -30,6 +30,7 @@ public sealed class PolarAlignmentSession {
     public bool IsCalibrated => calibration != null;
     public double? RotationDegrees { get; private set; }
     public bool UsedApproximateEarthRotation { get; private set; }
+    public double LastDut1Seconds { get; private set; }
     public void Reset() { baseline = null; calibration = null; RotationDegrees = null; }
 
     public int AddCalibration(SolvedPolarFrame frame) {
@@ -112,10 +113,11 @@ public sealed class PolarAlignmentSession {
         var utc = frame.CapturedAtUtc.UtcDateTime;
         var julianUtc = AstroUtil.GetJulianDate(utc);
         double dut1;
-        try { dut1 = AstroUtil.DeltaUT(utc); }
+        try { dut1 = frame.Dut1Seconds ?? AstroUtil.DeltaUT(utc); }
         catch { dut1 = double.NaN; }
         UsedApproximateEarthRotation = !double.IsFinite(dut1);
         if (UsedApproximateEarthRotation) dut1 = 0;
+        LastDut1Seconds = dut1;
         // Transform tiny tangent offsets with NINA's SOFA path so J2000 precession, Earth
         // rotation, and tangent orientation use the same exposure time. No atmospheric
         // refraction model is enabled in this prototype.

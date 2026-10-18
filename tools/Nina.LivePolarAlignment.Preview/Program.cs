@@ -27,6 +27,7 @@ public class SampleProfile : DispatchProxy {
 internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public Func<int> Step { get; set; } = () => 0;
     public bool SupportsStreaming => true;
+    public bool IsSynthetic => true;
     public static int StreamFrames { get; private set; }
     public static bool FailStream { get; set; }
     public async IAsyncEnumerable<SolvedPolarFrame> StreamAndSolveAsync(double exposureSeconds,
@@ -165,6 +166,20 @@ internal static class Program {
         currentLoop = ((IAsyncRelayCommand)current.StartLiveCommand).ExecuteAsync(null);
         while (SampleCapture.StreamFrames < 2 && !currentLoop.IsCompleted) await Task.Delay(25);
         if (!current.HasLiveMeasurement || !current.HasCurrentFieldGuidance || SampleCapture.StreamFrames < 2) throw new InvalidOperationException("Streaming workflow failed");
+        current.FieldNote = "Synthetic stationary window; not physical accuracy.";
+        current.CheckStabilityCommand.Execute(null);
+        while (!current.HasStabilityResult && !currentLoop.IsCompleted) await Task.Delay(25);
+        if (!current.HasStabilityResult || current.HasFieldFailure) throw new InvalidOperationException("Field stability collection failed: " + current.FieldRecordingStatus);
+        await ((IAsyncRelayCommand)current.MarkFieldSampleCommand).ExecuteAsync(null);
+        if (current.HasFieldFailure || current.FieldSessionDirectory == null) throw new InvalidOperationException("Field sample was not saved");
+        var review = FieldSessionReview.Review(current.FieldSessionDirectory, Path.Combine(directory, "field-review"));
+        if (!review.Synthetic || review.ReferenceFrames != 2 || review.MeasurementFrames < 20 || review.MarkedSamples != 1
+            || review.MaximumReplayDifferenceArcseconds > .000001 || review.Warnings.Any(w => w.Contains("replay failed")))
+            throw new InvalidOperationException("Field journal did not replay its recorded measurements");
+        File.WriteAllText(Path.Combine(directory, "field-session-path.txt"), current.FieldSessionDirectory);
+        ((Expander)View.FindName("FieldValidationTools")).IsExpanded = true;
+        Save(Path.Combine(directory, "ui-field-validation-1280.png"), 1280, 1000);
+        ((Expander)View.FindName("FieldValidationTools")).IsExpanded = false;
         Save(Path.Combine(directory, "ui-streaming-1280.png"), 1280, 800);
         current.StopLiveCommand.Execute(null); await currentLoop;
         if (current.HasCurrentFieldGuidance || !current.IsMeasurementStale) throw new InvalidOperationException("Stopped streaming retained guidance");
@@ -173,7 +188,7 @@ internal static class Program {
         if (!current.HasOperationError || current.HasCurrentFieldGuidance || current.IsWorking) throw new InvalidOperationException("Streaming failure was not surfaced safely");
         SampleCapture.FailStream = false;
         current.Dispose();
-        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Three workflow stages at narrow, HD and Full HD sizes, live publication, and stop/stale, streaming selection, repeated frames, cancellation, and failure checks passed. Synthetic inputs only.");
+        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Three workflow stages at narrow, HD and Full HD sizes, live publication, and stop/stale, streaming selection, repeated frames, cancellation, and failure, field recording, marked preview, 20-frame repeatability and offline WCS replay checks passed. Synthetic inputs only.");
     }
 
     private static void Save(string path, int width, int height) {
