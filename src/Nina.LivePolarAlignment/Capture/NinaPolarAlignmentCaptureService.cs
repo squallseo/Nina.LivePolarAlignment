@@ -16,7 +16,7 @@ namespace Nina.LivePolarAlignment.Capture;
 /// <summary>Uses the active NINA camera and solver configuration; never syncs or slews the mount.</summary>
 [Export(typeof(IPolarAlignmentCaptureService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
-public sealed class NinaPolarAlignmentCaptureService : IPolarAlignmentCaptureService {
+public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCaptureService {
     private readonly IProfileService profiles;
     private readonly ICameraMediator camera;
     private readonly IImagingMediator imaging;
@@ -34,6 +34,7 @@ public sealed class NinaPolarAlignmentCaptureService : IPolarAlignmentCaptureSer
 
     public async Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token,
         IProgress<ApplicationStatus>? progress = null) {
+        progress ??= SilentProgress.Instance;
         if (!double.IsFinite(exposureSeconds) || exposureSeconds <= 0)
             throw new ArgumentOutOfRangeException(nameof(exposureSeconds), "Exposure must be a positive number of seconds.");
         if (!await captureGate.WaitAsync(0, token))
@@ -44,7 +45,7 @@ public sealed class NinaPolarAlignmentCaptureService : IPolarAlignmentCaptureSer
             var info = camera.GetInfo();
             if (info == null || !info.Connected)
                 throw new InvalidOperationException("Connect a camera in NINA before capturing an alignment frame.");
-            if (info.IsExposing || !camera.IsFreeToCapture(this))
+            if (info.IsExposing || info.LiveViewEnabled || !camera.IsFreeToCapture(this))
                 throw new InvalidOperationException("The camera is busy. Stop the other capture or sequence first.");
             if ((info.ExposureMin > 0 && exposureSeconds < info.ExposureMin)
                 || (info.ExposureMax > 0 && exposureSeconds > info.ExposureMax))

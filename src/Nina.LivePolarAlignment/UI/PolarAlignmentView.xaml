@@ -62,6 +62,11 @@
     <Button Foreground="{DynamicResource ButtonForegroundBrush}" Grid.Column="1" Content="{ns:Loc LblStop}" Command="{Binding StopLiveCommand}" Margin="0,0,8,0"/>
     <Button Foreground="{DynamicResource ButtonForegroundBrush}" Grid.Column="2" Content="{local:UiLoc View5}" ToolTip="{local:UiLoc View6}" Command="{Binding ResetLiveCommand}" Padding="6,5"/>
    </Grid>
+   <StackPanel Margin="0,0,0,8">
+    <DockPanel><TextBlock Text="{local:UiLoc StreamingOption}" VerticalAlignment="Center"/><CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right" IsChecked="{Binding UseStreaming}" IsEnabled="{Binding CanUseStreaming}" ToolTip="{Binding StreamingAvailability}"/></DockPanel>
+    <TextBlock Text="{Binding AcquisitionMode}" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
+    <TextBlock Text="{Binding StreamingAvailability}" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
+   </StackPanel>
    <Grid Margin="0,0,0,13">
     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <TextBlock Text="{ns:Loc LblExposureTime}" VerticalAlignment="Center" Margin="0,0,8,0"/>

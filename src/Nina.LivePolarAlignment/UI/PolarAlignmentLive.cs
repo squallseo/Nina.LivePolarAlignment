@@ -28,6 +28,14 @@ public sealed partial class PolarAlignmentDockableVM {
     private double lastCycleMilliseconds;
     private bool measurementStale = true;
     private readonly DispatcherTimer freshnessTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private bool useStreaming;
+    public bool UseStreaming {
+        get => useStreaming;
+        set { if (liveBusy || useStreaming == value) return; useStreaming = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(AcquisitionMode)); }
+    }
+    public bool CanUseStreaming => !liveBusy && captureService.SupportsStreaming;
+    public string AcquisitionMode => UiText.Get(UseStreaming ? "StreamingMode" : "SingleMode");
+    public string StreamingAvailability => UiText.Get(captureService.SupportsStreaming ? "StreamingHint" : "StreamingUnsupported");
     public double ExposureSeconds { get; set; } = 1;
     public ICommand CaptureReferenceCommand { get; private set; } = null!;
     public ICommand StartLiveCommand { get; private set; } = null!;
@@ -74,6 +82,7 @@ public sealed partial class PolarAlignmentDockableVM {
         };
         freshnessTimer.Tick += (_, _) => {
             UiText.Refresh(); RaisePropertyChanged(nameof(LiveStatus));
+            RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(StreamingAvailability));
             RaisePropertyChanged(nameof(FrameFreshness)); RaisePropertyChanged(nameof(IsMeasurementStale));
             RaisePropertyChanged(nameof(HasVisibleGuidance)); RaisePropertyChanged(nameof(GuidanceText));
             NotifyWorkflow();
@@ -119,25 +128,36 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private async Task RunLiveAsync() {
         await WithLiveOperation(async token => {
-            while (!token.IsCancellationRequested) {
+            var cycle = Stopwatch.StartNew();
+            if (UseStreaming) {
                 ValidateSite();
-                liveStatus = "Live6"; NotifyLive();
-                var cycle = Stopwatch.StartNew();
-                var frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
+                if (!captureService.SupportsStreaming) throw new InvalidOperationException(UiText.Get("StreamingUnsupported"));
+                liveStatus = "StreamingStarting"; NotifyLive();
+                await foreach (var frame in captureService.StreamAndSolveAsync(ExposureSeconds, token)) {
+                    token.ThrowIfCancellationRequested(); ValidateSite();
+                    PublishMeasurement(frame, cycle.Elapsed.TotalMilliseconds);
+                    cycle.Restart();
+                }
                 token.ThrowIfCancellationRequested();
-                ValidateSite();
-                guidance = session!.GetGuidance(frame);
-                var error = guidance.Error;
-                cycle.Stop(); lastCycleMilliseconds = cycle.Elapsed.TotalMilliseconds;
-                latestError = error; measuredAt = frame.CapturedAtUtc; measurementStale = false;
-                livePreview = frame.Preview;
-                pixelScale = frame.PixelScaleArcseconds;
-                liveError = $"{error.TotalArcminutes:0.00}′ total · altitude {error.AltitudeArcminutes:+0.00;-0.00;0.00}′ · azimuth {error.AzimuthArcminutes:+0.00;-0.00;0.00}′";
-                liveStatus = "MeasurementComplete";
-                NotifyLive();
+                throw new InvalidOperationException(UiText.Get("StreamingEnded"));
+            }
+            while (!token.IsCancellationRequested) {
+                ValidateSite(); liveStatus = "Live6"; NotifyLive(); cycle.Restart();
+                var frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
+                token.ThrowIfCancellationRequested(); ValidateSite();
+                PublishMeasurement(frame, cycle.Elapsed.TotalMilliseconds);
                 await Task.Delay(250, token);
             }
         });
+    }
+    private void PublishMeasurement(SolvedPolarFrame frame, double cycleMilliseconds) {
+        guidance = session!.GetGuidance(frame);
+        var error = guidance.Error;
+        lastCycleMilliseconds = cycleMilliseconds;
+        latestError = error; measuredAt = frame.CapturedAtUtc; measurementStale = false;
+        livePreview = frame.Preview; pixelScale = frame.PixelScaleArcseconds;
+        liveError = $"{error.TotalArcminutes:0.00} total";
+        liveStatus = "MeasurementComplete"; NotifyLive();
     }
     private async Task WithLiveOperation(Func<CancellationToken, Task> operation) {
         if (liveBusy) return;
@@ -159,6 +179,7 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private void NotifyLive() {
         NotifyWorkflow();
+        RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(AcquisitionMode)); RaisePropertyChanged(nameof(StreamingAvailability));
         foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(LiveTotalError), nameof(LiveAltitudeError), nameof(LiveAzimuthError), nameof(FrameFreshness), nameof(IsMeasurementStale) }) RaisePropertyChanged(name);
         (CaptureReferenceCommand as IRelayCommand)?.NotifyCanExecuteChanged();

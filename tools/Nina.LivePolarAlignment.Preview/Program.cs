@@ -26,6 +26,19 @@ public class SampleProfile : DispatchProxy {
 
 internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public Func<int> Step { get; set; } = () => 0;
+    public bool SupportsStreaming => true;
+    public static int StreamFrames { get; private set; }
+    public static bool FailStream { get; set; }
+    public async IAsyncEnumerable<SolvedPolarFrame> StreamAndSolveAsync(double exposureSeconds,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token) {
+        StreamFrames = 0;
+        while (true) {
+            await Task.Delay(100, token);
+            if (FailStream) throw new InvalidOperationException("Synthetic streaming failure");
+            StreamFrames++;
+            yield return new(0, 89.7, 72, 6, 800, 600, false, DateTimeOffset.UtcNow, Image);
+        }
+    }
     public BitmapSource Image { get; } = MakeStars();
     public async Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token, IProgress<ApplicationStatus>? progress = null) {
         await Task.Delay(650, token);
@@ -141,15 +154,26 @@ internal static class Program {
         SampleProfile.Language = "ko-KR"; NINA.Core.Locale.Loc.Instance.ReloadLocale(SampleProfile.Language); UiText.Refresh();
         if (!System.Text.RegularExpressions.Regex.IsMatch(current!.WorkflowTitle, @"[\uac00-\ud7af]")) throw new InvalidOperationException("Korean locale missing");
         Save(Path.Combine(directory, "ui-korean-1280.png"), 1280, 800);
-        SampleProfile.Language = "fr-FR"; UiText.Refresh();
+        SampleProfile.Language = "fr-FR"; NINA.Core.Locale.Loc.Instance.ReloadLocale(SampleProfile.Language); UiText.Refresh();
         if (!current.PrimaryActionLabel.StartsWith("Capturing / solving")) throw new InvalidOperationException("English fallback missing");
-        SampleProfile.Language = "en-US"; UiText.Refresh();
+        SampleProfile.Language = "en-US"; NINA.Core.Locale.Loc.Instance.ReloadLocale(SampleProfile.Language); UiText.Refresh();
         current!.StopLiveCommand.Execute(null);
         await currentLoop!;
         if (!current.IsMeasurementStale || current.HasCurrentFieldGuidance) throw new InvalidOperationException("Old guidance survived stop");
         Save(Path.Combine(directory, "ui-paused-1280.png"), 1280, 800);
+        current.UseStreaming = true;
+        currentLoop = ((IAsyncRelayCommand)current.StartLiveCommand).ExecuteAsync(null);
+        while (SampleCapture.StreamFrames < 2 && !currentLoop.IsCompleted) await Task.Delay(25);
+        if (!current.HasLiveMeasurement || !current.HasCurrentFieldGuidance || SampleCapture.StreamFrames < 2) throw new InvalidOperationException("Streaming workflow failed");
+        Save(Path.Combine(directory, "ui-streaming-1280.png"), 1280, 800);
+        current.StopLiveCommand.Execute(null); await currentLoop;
+        if (current.HasCurrentFieldGuidance || !current.IsMeasurementStale) throw new InvalidOperationException("Stopped streaming retained guidance");
+        SampleCapture.FailStream = true;
+        await ((IAsyncRelayCommand)current.StartLiveCommand).ExecuteAsync(null);
+        if (!current.HasOperationError || current.HasCurrentFieldGuidance || current.IsWorking) throw new InvalidOperationException("Streaming failure was not surfaced safely");
+        SampleCapture.FailStream = false;
         current.Dispose();
-        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Three workflow stages at narrow, HD and Full HD sizes, live publication, and stop/stale checks passed. Synthetic inputs only.");
+        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Three workflow stages at narrow, HD and Full HD sizes, live publication, and stop/stale, streaming selection, repeated frames, cancellation, and failure checks passed. Synthetic inputs only.");
     }
 
     private static void Save(string path, int width, int height) {
