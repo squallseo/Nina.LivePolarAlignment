@@ -147,6 +147,24 @@ internal static class Program {
 
     private static async Task VerifyAndRender(string directory) {
         Directory.CreateDirectory(directory);
+        var icon = (GeometryGroup)new PolarAlignmentTemplates()["Nina.LivePolarAlignment.PolarAxisIcon"];
+        var iconVisual = new DrawingVisual();
+        using (var dc = iconVisual.RenderOpen()) {
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(36, 49, 55)), null, new Rect(0, 0, 400, 160));
+            dc.DrawRectangle(Brushes.WhiteSmoke, null, new Rect(0, 80, 400, 80));
+            foreach (var row in new[] { 0, 1 }) {
+                int x = 20;
+                foreach (var size in new[] { 16, 24, 32, 48, 64 }) {
+                    dc.PushTransform(new TranslateTransform(x, row * 80 + (80 - size) / 2d));
+                    dc.PushTransform(new ScaleTransform(size / 32d, size / 32d));
+                    dc.DrawGeometry(row == 0 ? Brushes.WhiteSmoke : Brushes.DarkSlateGray, null, icon);
+                    dc.Pop(); dc.Pop(); x += size + 25;
+                }
+            }
+        }
+        var iconBitmap = new RenderTargetBitmap(400, 160, 96, 96, PixelFormats.Pbgra32); iconBitmap.Render(iconVisual);
+        var iconEncoder = new PngBitmapEncoder(); iconEncoder.Frames.Add(BitmapFrame.Create(iconBitmap));
+        using (var iconFile = File.Create(Path.Combine(directory, "panel-icon.png"))) iconEncoder.Save(iconFile);
         var optionProfile = DispatchProxy.Create<IProfile, SampleProfile>();
         ((SampleProfile)(object)optionProfile).Settings = DispatchProxy.Create<IApplicationSettings, SampleProfile>();
         var optionProfiles = DispatchProxy.Create<IProfileService, SampleProfile>();

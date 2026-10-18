@@ -18,6 +18,9 @@ public sealed partial class PolarAlignmentDockableVM : DockableVM, IDisposable {
     [ImportingConstructor]
     public PolarAlignmentDockableVM(IProfileService profiles, Capture.IPolarAlignmentCaptureService captureService) : base(profiles) {
         Title = "Live Polar Alignment";
+        var iconResources = new PolarAlignmentTemplates();
+        ImageGeometry = (System.Windows.Media.GeometryGroup)iconResources["Nina.LivePolarAlignment.PolarAxisIcon"];
+        ImageGeometry.Freeze();
         StartCommand = new RelayCommand(Start, () => !running);
         CaptureCommand = new RelayCommand(Capture, () => running && samples < 2);
         StopCommand = new RelayCommand(Stop, () => running);
