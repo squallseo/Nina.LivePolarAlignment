@@ -1,0 +1,17 @@
+Live Polar Alignment - experimental field-test build
+Requires Windows x64 and N.I.N.A. 3.2.0.9001 or newer. No SDK or build required.
+
+1. Extract the entire ZIP. Close all N.I.N.A. instances.
+2. Run Install-Plugin.ps1 in PowerShell, or manually copy the contents of
+   plugin into %LOCALAPPDATA%\NINA\Plugins\3.0.0\Live Polar Alignment
+3. Start N.I.N.A. Open Plugins > Installed > Live Polar Alignment > Options.
+4. Enable debug recording before capturing the first reference (Reset if already calibrated).
+5. Open the imaging Live Polar Alignment panel. Field validation: Mark / Stability / Folder.
+
+Recording is off by default and stored per N.I.N.A. profile.
+Existing records are kept when off.
+Recordings: %LOCALAPPDATA%\NINA\LivePolarAlignment\FieldSessions
+Keep the entire session folder for later review. No automatic upload.
+Stability is repeatability, not absolute accuracy. Equipment accuracy remains unverified.
+Offline review is a separate developer tool; it is not required to collect field data.
+Source: https://github.com/squallseo/Nina.LivePolarAlignment

@@ -5,4 +5,11 @@
  <DataTemplate x:Key="Nina.LivePolarAlignment.UI.PolarAlignmentDockableVM_Dockable">
   <local:PolarAlignmentView/>
  </DataTemplate>
+ <DataTemplate x:Key="Live Polar Alignment_Options">
+  <StackPanel Margin="12" MaxWidth="420">
+   <TextBlock Text="{local:UiLoc DebugTitle}" FontWeight="Bold" Margin="0,0,0,8"/>
+   <CheckBox Content="{local:UiLoc DebugEnable}" IsChecked="{Binding EnableDebugRecording, Mode=TwoWay}" Margin="0,0,0,8"/>
+   <TextBlock Text="{local:UiLoc DebugHelp}" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryBrush}" FontSize="11"/>
+  </StackPanel>
+ </DataTemplate>
 </ResourceDictionary>

@@ -1,6 +1,6 @@
 ﻿# 현장 검증
 
-플러그인 0.1.0.4부터 우측 `Field validation`을 펼쳐 검증 자료를 남길 수 있습니다. UI 언어는 N.I.N.A. 설정을 따릅니다. 기록은 기본으로 켜져 있으며 첫 기준 촬영부터 시작합니다. 현장 정확도는 아직 검증 전입니다.
+플러그인 0.1.0.5부터 `Plugins → Installed → Live Polar Alignment → Options`의 **Enable debug recording**을 켜 검증 자료를 남길 수 있습니다. UI 언어는 N.I.N.A. 설정을 따릅니다. 기록은 기본 꺼짐이며 프로필별로 저장합니다. 첫 기준 촬영부터 기록하므로 이미 기준을 잡았다면 Reset 후 다시 시작하세요. 우측 `Field validation`에는 Mark·Stability·Folder가 있습니다. 현장 정확도는 아직 검증 전입니다.
 
 ## 현장에서
 

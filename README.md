@@ -6,6 +6,14 @@ SharpCap의 직관적인 조정 흐름을 참고하여 자체 C# 코드로 구�
 **현재 상태: 장비 검증 전 실험용 프로토타입.** 촬영·plate solve·정렬 계산·안내 화면은 연결했지만,
 실제 장비에서의 정확도와 SharpCap 수준의 갱신 속도는 아직 검증하지 않았습니다.
 
+## 배포본 설치
+
+[0.1.0.5 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.5.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.5.zip.sha256)
+
+Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀고 N.I.N.A.를 종료한 뒤 `Install-Plugin.ps1`을 실행하거나, `plugin` 폴더 내용을 아래 로컬 설치 경로에 복사하세요. SDK나 소스 빌드는 필요하지 않습니다.
+
+`Plugins → Installed → Live Polar Alignment → Options`에서 **Enable debug recording**을 켜면 현장 검증 자료를 기록합니다. 기본은 꺼짐이며 프로필별로 저장합니다. 다음 기준 촬영부터 적용하므로 이미 정렬 중이면 Reset 후 시작하세요. [설치 안내](docs/install-package.txt)
+
 ## 사용 흐름
 
 1. N.I.N.A.에 카메라를 연결하고 관측지, 초점거리, 픽셀 크기, plate solver를 설정합니다.

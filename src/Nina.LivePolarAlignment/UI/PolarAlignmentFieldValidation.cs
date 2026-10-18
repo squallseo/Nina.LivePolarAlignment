@@ -16,7 +16,7 @@ namespace Nina.LivePolarAlignment.UI;
 public sealed partial class PolarAlignmentDockableVM {
     private FieldJournal? fieldJournal;
     private string? fieldDirectory, fieldFailure;
-    private bool recordFieldSession = true, fieldSaving, fieldDisposed;
+    private bool recordFieldSession, fieldSaving, fieldDisposed;
     private SolvedPolarFrame? lastFieldFrame;
     private long lastFieldFrameId;
     private StabilityWindow? stability;
@@ -26,6 +26,7 @@ public sealed partial class PolarAlignmentDockableVM {
         set {
             if (!CanConfigureField || recordFieldSession == value) return;
             recordFieldSession = value; fieldFailure = null;
+            if (!captureService.IsSynthetic) profiles.ActiveProfile.PluginSettings.SetValue(Plugin.SettingsId, nameof(Plugin.EnableDebugRecording), value);
             if (!value) EndFieldSession("recording_disabled");
             RaisePropertyChanged(); NotifyField();
         }
@@ -48,6 +49,7 @@ public sealed partial class PolarAlignmentDockableVM {
     private bool CanMarkField => fieldJournal != null && fieldFailure == null && !fieldSaving && HasLiveMeasurement && !IsMeasurementStale && lastFieldFrame != null;
 
     private void InitializeField() {
+        recordFieldSession = captureService.IsSynthetic || Plugin.ReadDebugRecording(profiles);
         MarkFieldSampleCommand = new AsyncRelayCommand(MarkFieldSampleAsync, () => CanMarkField);
         CheckStabilityCommand = new RelayCommand(() => {
             stability = new StabilityWindow(); stabilityResult = null;
@@ -62,6 +64,7 @@ public sealed partial class PolarAlignmentDockableVM {
         }, () => fieldDirectory != null && Directory.Exists(fieldDirectory));
     }
     private void EnsureFieldSession() {
+        if (fieldJournal == null && !captureService.IsSynthetic) recordFieldSession = Plugin.ReadDebugRecording(profiles);
         if (!recordFieldSession || fieldJournal != null || fieldFailure != null) return;
         try {
             var profile = profiles.ActiveProfile;

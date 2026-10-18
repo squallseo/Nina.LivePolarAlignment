@@ -13,13 +13,14 @@ using Nina.LivePolarAlignment.UI;
 namespace Nina.LivePolarAlignment.Preview;
 
 public class SampleProfile : DispatchProxy {
+    public IPluginSettings PluginSettings { get; } = new NINA.Profile.PluginSettings();
     public object? Active { get; set; }
     public object? Site { get; set; }
     public object? Theme { get; set; }
     public object? Settings { get; set; }
     public static string Language { get; set; } = "en-US";
     protected override object? Invoke(MethodInfo? method, object?[]? args) => method?.Name switch {
-        "get_ApplicationSettings" => Settings, "get_Culture" => Language, "get_ColorSchemaSettings" => Theme, "get_ActiveProfile" => Active, "get_AstrometrySettings" => Site,
+        "get_PluginSettings" => PluginSettings, "get_ApplicationSettings" => Settings, "get_Culture" => Language, "get_ColorSchemaSettings" => Theme, "get_ActiveProfile" => Active, "get_AstrometrySettings" => Site,
         "get_Latitude" => 37.5, "get_Longitude" => 127.0, _ => null
     };
 }
@@ -146,6 +147,24 @@ internal static class Program {
 
     private static async Task VerifyAndRender(string directory) {
         Directory.CreateDirectory(directory);
+        var optionProfile = DispatchProxy.Create<IProfile, SampleProfile>();
+        ((SampleProfile)(object)optionProfile).Settings = DispatchProxy.Create<IApplicationSettings, SampleProfile>();
+        var optionProfiles = DispatchProxy.Create<IProfileService, SampleProfile>();
+        ((SampleProfile)(object)optionProfiles).Active = optionProfile;
+        var plugin = new Plugin(optionProfiles);
+        if (plugin.EnableDebugRecording) throw new InvalidOperationException("Debug must default off");
+        var optionResources = new PolarAlignmentTemplates();
+        var optionView = (StackPanel)((DataTemplate)optionResources["Live Polar Alignment_Options"]).LoadContent();
+        optionView.DataContext = plugin;
+        optionView.Measure(new Size(500, 300)); optionView.Arrange(new Rect(0, 0, 500, 300)); optionView.UpdateLayout();
+        var checkbox = optionView.Children.OfType<CheckBox>().Single();
+        checkbox.IsChecked = true;
+        if (!new Plugin(optionProfiles).EnableDebugRecording) throw new InvalidOperationException("Options binding did not persist debug recording");
+        checkbox.IsChecked = false;
+        if (new Plugin(optionProfiles).EnableDebugRecording) throw new InvalidOperationException("Options binding did not disable debug recording");
+        plugin.EnableDebugRecording = true;
+        ((SampleProfile)(object)optionProfiles).Active = DispatchProxy.Create<IProfile, SampleProfile>();
+        if (plugin.EnableDebugRecording) throw new InvalidOperationException("Debug setting leaked between profiles");
         for (int scene = 0; scene < 3; scene++) {
             await SelectScene(scene);
             if (System.Text.RegularExpressions.Regex.IsMatch(current!.WorkflowTitle + current.WorkflowDescription + current.LiveStatus + current.FrameFreshness, @"[\uac00-\ud7af]")) throw new InvalidOperationException("Korean text in English workflow");
