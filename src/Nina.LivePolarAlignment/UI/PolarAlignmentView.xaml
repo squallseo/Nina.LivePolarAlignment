@@ -3,14 +3,87 @@
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:ns="clr-namespace:NINA.Core.Locale;assembly=NINA.Core"
  xmlns:local="clr-namespace:Nina.LivePolarAlignment.UI"
- MinWidth="320" Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource PrimaryBrush}" FontSize="12">
- <UserControl.Resources><Style TargetType="TextBlock" BasedOn="{StaticResource StandardTextBlock}"><Setter Property="TextWrapping" Value="Wrap"/></Style><BooleanToVisibilityConverter x:Key="VisibleIf"/><Style x:Key="Caption" TargetType="TextBlock"><Setter Property="FontSize" Value="11"/><Setter Property="TextWrapping" Value="Wrap"/></Style><Style x:Key="StepCard" TargetType="Border"><Setter Property="Padding" Value="4"/></Style></UserControl.Resources>
+ MinWidth="320" Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource PrimaryBrush}" FontFamily="Segoe UI" FontSize="12">
+ <UserControl.Resources>
+      <Style x:Key="AlignmentButton" TargetType="Button">
+        <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="Normal"/><Setter Property="MinHeight" Value="28" />
+        <Setter Property="Padding" Value="9,3" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="Button">
+              <Border x:Name="Surface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" TextElement.Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                  <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ButtonBackgroundSelectedBrush}" />
+                  <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                  <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource SecondaryBrush}" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                  <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
+                  <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter TargetName="Surface" Property="Opacity" Value="0.4" />
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+      <Style x:Key="AlignmentSwitch" TargetType="ToggleButton">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="ToggleButton">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11" />
+                <Border x:Name="Track" Width="30" Height="16" CornerRadius="8" Background="{DynamicResource ButtonBackgroundBrush}" BorderBrush="{DynamicResource SecondaryBrush}" BorderThickness="1">
+                  <Ellipse x:Name="Thumb" Width="10" Height="10" Fill="{DynamicResource PrimaryBrush}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0" />
+                </Border>
+              </StackPanel>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                  <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right" />
+                  <Setter TargetName="Track" Property="Background" Value="{DynamicResource SecondaryBrush}" />
+                  <Setter TargetName="Thumb" Property="Fill" Value="{DynamicResource BackgroundBrush}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                  <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.4" />
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+      <Style TargetType="TextBox">
+        <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="CaretBrush" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="Padding" Value="6,3" />
+      </Style>
+
+<Style TargetType="TextBlock" BasedOn="{StaticResource StandardTextBlock}"><Setter Property="TextWrapping" Value="Wrap"/></Style><BooleanToVisibilityConverter x:Key="VisibleIf"/><Style x:Key="Caption" TargetType="TextBlock" BasedOn="{StaticResource StandardTextBlock}"><Setter Property="Foreground" Value="{DynamicResource SecondaryBrush}"/><Setter Property="FontSize" Value="11"/><Setter Property="TextWrapping" Value="Wrap"/></Style><Style x:Key="StepCard" TargetType="Border"><Setter Property="Padding" Value="4"/></Style></UserControl.Resources>
  <Grid x:Name="WorkspaceGrid" Margin="4">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition x:Name="ImageRow" Height="*"/><RowDefinition x:Name="NarrowControlsRow" Height="0"/></Grid.RowDefinitions>
   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="DividerColumn" Width="6"/><ColumnDefinition x:Name="ControlsColumn" Width="290" MinWidth="270" MaxWidth="480"/></Grid.ColumnDefinitions>
   <Border x:Name="ImagePanel" Grid.Row="1" Grid.Column="0" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="1" Padding="5">
    <DockPanel LastChildFill="True">
-    <Grid DockPanel.Dock="Top" Margin="3,0,3,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{ns:Loc LblImage}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/><StackPanel Grid.Column="1" Orientation="Horizontal"><TextBlock Text="{local:UiLoc Focus}" VerticalAlignment="Center" Margin="0,0,6,0"/><CheckBox ToolTip="{local:UiLoc FocusTip}" IsChecked="{Binding FocusAlignment, ElementName=SkyField}"/></StackPanel></Grid>
+    <Grid DockPanel.Dock="Top" Margin="3,0,3,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{ns:Loc LblImage}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/><StackPanel Grid.Column="1" Orientation="Horizontal"><TextBlock Text="{local:UiLoc Focus}" VerticalAlignment="Center" Margin="0,0,6,0"/><ToggleButton Style="{StaticResource AlignmentSwitch}" ToolTip="{local:UiLoc FocusTip}" IsChecked="{Binding FocusAlignment, ElementName=SkyField}"/></StackPanel></Grid>
     <local:PolarFieldView x:Name="SkyField" Preview="{Binding LivePreview}" Guidance="{Binding FieldGuidance}" IsCurrent="{Binding HasCurrentFieldGuidance}" PixelScale="{Binding PixelScaleArcseconds}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
    </DockPanel>
   </Border>
@@ -22,22 +95,22 @@
     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <Border Margin="0,0,5,0">
      <Border.Style><Style TargetType="Border" BasedOn="{StaticResource StepCard}"><Style.Triggers><DataTrigger Binding="{Binding WorkflowStep}" Value="0"><Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/></DataTrigger></Style.Triggers></Style></Border.Style>
-     <StackPanel><TextBlock Text="01" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="10"/><TextBlock Text="{local:UiLoc View1}" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="01" Foreground="{DynamicResource SecondaryBrush}" FontSize="11"/><TextBlock Text="{local:UiLoc View1}" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
     </Border>
     <Border Grid.Column="1" Margin="3,0,3,0">
      <Border.Style><Style TargetType="Border" BasedOn="{StaticResource StepCard}"><Style.Triggers><DataTrigger Binding="{Binding WorkflowStep}" Value="1"><Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/></DataTrigger></Style.Triggers></Style></Border.Style>
-     <StackPanel><TextBlock Text="02" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="10"/><TextBlock Text="{local:UiLoc View2}" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="02" Foreground="{DynamicResource SecondaryBrush}" FontSize="11"/><TextBlock Text="{local:UiLoc View2}" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
     </Border>
     <Border Grid.Column="2" Margin="5,0,0,0">
      <Border.Style><Style TargetType="Border" BasedOn="{StaticResource StepCard}"><Style.Triggers><DataTrigger Binding="{Binding WorkflowStep}" Value="2"><Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/></DataTrigger></Style.Triggers></Style></Border.Style>
-     <StackPanel><TextBlock Text="03" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="10"/><TextBlock Text="{local:UiLoc View3}" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="03" Foreground="{DynamicResource SecondaryBrush}" FontSize="11"/><TextBlock Text="{local:UiLoc View3}" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
     </Border>
    </Grid>
 
-   <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="1" Padding="5" Margin="0,0,0,6">
+   <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="8" Margin="0,0,0,6">
     <StackPanel>
-     <TextBlock Text="{Binding WorkflowTitle}" FontSize="15" FontWeight="SemiBold"/>
-     <TextBlock Text="{Binding WorkflowDescription}" Foreground="{DynamicResource PrimaryBrush}" LineHeight="19" Margin="0,7,0,0"/>
+     <TextBlock Text="{Binding WorkflowTitle}" FontSize="12" FontWeight="SemiBold"/>
+     <TextBlock Text="{Binding WorkflowDescription}" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
      <TextBlock Text="{Binding RotationReadout}" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}" FontSize="11" Margin="0,8,0,0" Visibility="{Binding IsAdjustmentStep, Converter={StaticResource VisibleIf}}"/>
      <Grid Margin="0,12,0,0" Visibility="{Binding IsRotationStep, Converter={StaticResource VisibleIf}}">
       <Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -58,12 +131,12 @@
 
    <Grid Margin="0,0,0,10">
     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-    <Button Foreground="{DynamicResource ButtonForegroundBrush}" Content="{Binding PrimaryActionLabel}" Command="{Binding PrimaryActionCommand}" Background="{DynamicResource ButtonBackgroundSelectedBrush}" BorderBrush="{DynamicResource ButtonBackgroundSelectedBrush}" Margin="0,0,8,0"/>
-    <Button Foreground="{DynamicResource ButtonForegroundBrush}" Grid.Column="1" Content="{ns:Loc LblStop}" Command="{Binding StopLiveCommand}" Margin="0,0,8,0"/>
-    <Button Foreground="{DynamicResource ButtonForegroundBrush}" Grid.Column="2" Content="{local:UiLoc View5}" ToolTip="{local:UiLoc View6}" Command="{Binding ResetLiveCommand}" Padding="6,5"/>
+    <Button Style="{StaticResource AlignmentButton}" Content="{Binding PrimaryActionLabel}" Command="{Binding PrimaryActionCommand}" Margin="0,0,8,0"/>
+    <Button Style="{StaticResource AlignmentButton}" Grid.Column="1" Content="{ns:Loc LblStop}" Command="{Binding StopLiveCommand}" Margin="0,0,8,0"/>
+    <Button Style="{StaticResource AlignmentButton}" Grid.Column="2" Content="{local:UiLoc View5}" ToolTip="{local:UiLoc View6}" Command="{Binding ResetLiveCommand}"/>
    </Grid>
    <StackPanel Margin="0,0,0,8">
-    <DockPanel><TextBlock Text="{local:UiLoc StreamingOption}" VerticalAlignment="Center"/><CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right" IsChecked="{Binding UseStreaming}" IsEnabled="{Binding CanUseStreaming}" ToolTip="{Binding StreamingAvailability}"/></DockPanel>
+    <DockPanel><TextBlock Text="{local:UiLoc StreamingOption}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" DockPanel.Dock="Right" HorizontalAlignment="Right" IsChecked="{Binding UseStreaming}" IsEnabled="{Binding CanUseStreaming}" ToolTip="{Binding StreamingAvailability}"/></DockPanel>
     <TextBlock Text="{Binding AcquisitionMode}" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
     <TextBlock Text="{Binding StreamingAvailability}" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
    </StackPanel>
@@ -79,18 +152,18 @@
    <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="1" Padding="5">
     <StackPanel>
      <Grid Margin="0,0,0,6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{local:UiLoc View10}" Style="{StaticResource Caption}"/><TextBlock Grid.Column="1" Text="{Binding MeasurementState}" FontSize="10" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}"/></Grid>
-     <TextBlock Text="{Binding LiveTotalError}" FontSize="30" FontWeight="Light" Margin="0,0,0,5">
+     <TextBlock Text="{Binding LiveTotalError}" FontSize="26" FontWeight="SemiBold" Margin="0,0,0,5">
       <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsMeasurementStale}" Value="True"><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/></DataTrigger><DataTrigger Binding="{Binding IsWithinTarget}" Value="True"><Setter Property="Foreground" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
      </TextBlock>
      <Grid>
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="0,0,5,0"><StackPanel><TextBlock Text="{ns:Loc LblAltitude}" Style="{StaticResource Caption}"/><TextBlock Text="{Binding AltitudeValue}" FontSize="21" Margin="0,5,0,4"/><TextBlock Text="{Binding AltitudeAction}" FontSize="11" Foreground="{DynamicResource PrimaryBrush}"/></StackPanel></Border>
-      <Border Grid.Column="1" Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="5,0,0,0"><StackPanel><TextBlock Text="{ns:Loc LblAzimuth}" Style="{StaticResource Caption}"/><TextBlock Text="{Binding AzimuthValue}" FontSize="21" Margin="0,5,0,4"/><TextBlock Text="{Binding AzimuthAction}" FontSize="11" Foreground="{DynamicResource PrimaryBrush}"/></StackPanel></Border>
+      <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="0,0,5,0"><StackPanel><TextBlock Text="{ns:Loc LblAltitude}" Style="{StaticResource Caption}"/><TextBlock Text="{Binding AltitudeValue}" FontSize="18" Margin="0,5,0,4"/><TextBlock Text="{Binding AltitudeAction}" Style="{StaticResource Caption}"/></StackPanel></Border>
+      <Border Grid.Column="1" Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="5,0,0,0"><StackPanel><TextBlock Text="{ns:Loc LblAzimuth}" Style="{StaticResource Caption}"/><TextBlock Text="{Binding AzimuthValue}" FontSize="18" Margin="0,5,0,4"/><TextBlock Text="{Binding AzimuthAction}" Style="{StaticResource Caption}"/></StackPanel></Border>
      </Grid>
      <TextBlock Text="{Binding FrameFreshness}" Style="{StaticResource Caption}" Margin="0,11,0,0"/>
     </StackPanel>
    </Border>
-   <TextBlock Text="{Binding LiveStatus}" Foreground="{DynamicResource PrimaryBrush}" LineHeight="18" Margin="2,12,2,8"/>
+   <TextBlock Text="{Binding LiveStatus}" Style="{StaticResource Caption}" Margin="2,6,2,6"/>
    <TextBlock Text="{local:UiLoc View11}" Style="{StaticResource Caption}" Margin="2,0,2,14"/>
 
-   <Expander Header="{ns:Loc LblDetails}"><TextBlock Text="{local:UiLoc Details}" TextWrapping="Wrap"/></Expander></StackPanel></ScrollViewer></Grid></UserControl>
+   <Expander Header="{ns:Loc LblDetails}"><TextBlock Text="{local:UiLoc Details}" Style="{StaticResource Caption}"/></Expander></StackPanel></ScrollViewer></Grid></UserControl>
