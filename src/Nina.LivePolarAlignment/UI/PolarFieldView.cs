@@ -29,6 +29,12 @@ public sealed class PolarFieldView : FrameworkElement {
     public bool FocusAlignment { get => (bool)GetValue(FocusAlignmentProperty); set => SetValue(FocusAlignmentProperty, value); }
     public static readonly DependencyProperty DetailModeProperty = DependencyProperty.Register(nameof(DetailMode), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
     public bool DetailMode { get => (bool)GetValue(DetailModeProperty); set => SetValue(DetailModeProperty, value); }
+    private static readonly DependencyPropertyKey ImageScalePropertyKey = DependencyProperty.RegisterReadOnly(nameof(ImageScale), typeof(double), typeof(PolarFieldView), new PropertyMetadata(1.0));
+    public static readonly DependencyProperty ImageScaleProperty = ImageScalePropertyKey.DependencyProperty;
+    public double ImageScale => (double)GetValue(ImageScaleProperty);
+    public static readonly DependencyProperty ReferenceScaleProperty = DependencyProperty.Register(nameof(ReferenceScale), typeof(double), typeof(PolarFieldView), new FrameworkPropertyMetadata(1.0, FrameworkPropertyMetadataOptions.AffectsRender));
+    public double ReferenceScale { get => (double)GetValue(ReferenceScaleProperty); set => SetValue(ReferenceScaleProperty, value); }
+    public Rect VisibleImageRegion { get; private set; }
     private Brush Mint => TryFindResource("ButtonBackgroundSelectedBrush") as Brush ?? Brushes.LightGray;
     private Brush Amber => TryFindResource("CrosshairBrush") as Brush ?? Brushes.Gray;
     private Brush Muted => TryFindResource("PrimaryBrush") as Brush ?? Brushes.LightGray;
@@ -50,12 +56,19 @@ public sealed class PolarFieldView : FrameworkElement {
         double scale = Math.Min(ActualWidth / width, ActualHeight / height);
         double cx = width / 2, cy = height / 2;
         if ((FocusAlignment || DetailMode) && IsCurrent && Guidance?.CelestialPole is { } target) {
-            var axis = Guidance.MountAxis ?? target;
-            cx = (target.X + axis.X) / 2; cy = (target.Y + axis.Y) / 2;
-            double minimumFraction = DetailMode ? .08 : .32;
-            double padding = DetailMode ? 1.6 : 2.5;
-            scale = Math.Max(scale, Math.Min(ActualWidth / Math.Max(width * minimumFraction, Math.Abs(target.X - axis.X) * padding), ActualHeight / Math.Max(height * minimumFraction, Math.Abs(target.Y - axis.Y) * padding)));
+            if (DetailMode) {
+                // The target remains fixed at the center. Never fit both markers: an
+                // off-screen RA axis is shown by the existing edge-direction indicator.
+                cx = target.X; cy = target.Y;
+                scale = Math.Max(8, ReferenceScale * 2);
+            } else {
+                var axis = Guidance.MountAxis ?? target;
+                cx = (target.X + axis.X) / 2; cy = (target.Y + axis.Y) / 2;
+                scale = Math.Max(scale, Math.Min(ActualWidth / Math.Max(width * .32, Math.Abs(target.X - axis.X) * 2.5), ActualHeight / Math.Max(height * .32, Math.Abs(target.Y - axis.Y) * 2.5)));
+            }
         }
+        SetValue(ImageScalePropertyKey, scale);
+        VisibleImageRegion = new Rect(cx - ActualWidth / (2 * scale), cy - ActualHeight / (2 * scale), ActualWidth / scale, ActualHeight / scale);
         var imageRect = new Rect(ActualWidth / 2 - cx * scale, ActualHeight / 2 - cy * scale, width * scale, height * scale);
         if (Preview != null) dc.DrawImage(Preview, imageRect);
         else {
@@ -93,7 +106,7 @@ public sealed class PolarFieldView : FrameworkElement {
                     dc.DrawLine(pen, new(mount.X - 13, mount.Y), new(mount.X + 13, mount.Y));
                     dc.DrawLine(pen, new(mount.X, mount.Y - 13), new(mount.X, mount.Y + 13));
                     Label(dc, "RA Axis", DetailMode ? new Point(mount.X - 44, mount.Y - 28) : new Point(mount.X + 17, mount.Y - 7), Amber, DetailMode ? 10 : 11);
-                } else EdgeMarker(dc, mount, UiText.Get("Field1"), Amber, bounds);
+                } else EdgeMarker(dc, mount, DetailMode ? "RA Axis" : UiText.Get("Field1"), Amber, bounds);
             }
             if (pole is { } celestial) {
                 if (bounds.Contains(celestial)) {
@@ -154,6 +167,6 @@ public sealed class PolarFieldView : FrameworkElement {
         var normal = new Vector(-direction.Y, direction.X);
         dc.DrawLine(new Pen(brush, 2), point - direction * 10 + normal * 5, point);
         dc.DrawLine(new Pen(brush, 2), point - direction * 10 - normal * 5, point);
-        Label(dc, label, point - direction * 32, brush, 11);
+        Label(dc, label, DetailMode ? point - direction * 70 + normal * 18 : point - direction * 32, brush, 11);
     }
 }

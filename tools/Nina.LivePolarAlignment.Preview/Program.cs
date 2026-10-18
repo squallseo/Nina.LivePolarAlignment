@@ -197,6 +197,13 @@ internal static class Program {
         } else if (controls.TranslatePoint(new Point(), View).Y < field.TranslatePoint(new Point(0, field.ActualHeight), View).Y)
             throw new InvalidOperationException("Narrow controls overlap the image.");
         var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(View);
+        if (current!.HasAlignmentDetail && detail.Guidance?.CelestialPole is { } pole) {
+            var region = detail.VisibleImageRegion;
+            if (Math.Abs(region.Left + region.Width / 2 - pole.X) > .001
+                || Math.Abs(region.Top + region.Height / 2 - pole.Y) > .001
+                || detail.ImageScale < 8 || detail.ImageScale + .001 < ((PolarFieldView)field).ImageScale * 2)
+                throw new InvalidOperationException("Close-up must center the pole and magnify at least twice the main view");
+        }
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var file = File.Create(path); encoder.Save(file);
     }

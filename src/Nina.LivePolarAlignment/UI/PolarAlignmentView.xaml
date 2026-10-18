@@ -161,7 +161,7 @@
      <StackPanel x:Name="AlignmentDetailPanel" Visibility="{Binding HasAlignmentDetail, Converter={StaticResource VisibleIf}}" Margin="0,8,0,0">
       <TextBlock Text="{local:UiLoc AlignmentCloseUp}" Style="{StaticResource Caption}" Margin="0,0,0,4"/>
       <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="5" ClipToBounds="True">
-       <local:PolarFieldView x:Name="AlignmentDetailView" Height="186" DetailMode="True" Preview="{Binding LivePreview}" Guidance="{Binding FieldGuidance}" IsCurrent="{Binding HasCurrentFieldGuidance}" PixelScale="{Binding PixelScaleArcseconds}"/>
+       <local:PolarFieldView x:Name="AlignmentDetailView" Height="186" DetailMode="True" ReferenceScale="{Binding ImageScale, ElementName=SkyField}" Preview="{Binding LivePreview}" Guidance="{Binding FieldGuidance}" IsCurrent="{Binding HasCurrentFieldGuidance}" PixelScale="{Binding PixelScaleArcseconds}"/>
       </Border>
      </StackPanel>
      <TextBlock Text="{Binding FrameFreshness}" Style="{StaticResource Caption}" Margin="0,11,0,0"/>
