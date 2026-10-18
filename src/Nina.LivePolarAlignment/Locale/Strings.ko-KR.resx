@@ -407,4 +407,4 @@
   <data name="ManualReady" xml:space="preserve"><value>극축 정렬</value></data>
   <data name="ActionStart" xml:space="preserve"><value>시작</value></data>
   <data name="AdjustBrief" xml:space="preserve"><value>고도·방위각 볼트로 RA 회전 중심을 천구극에 맞추세요. RA와 카메라는 고정하세요.</value></data>
-</root>
+  <data name="RotationDirectionHint" xml:space="preserve"><value>상대적인 RA 명령 방향입니다. 실제 움직임은 N.I.N.A. 수동 이동 반전 설정과 마운트 자세에 따릅니다.</value></data></root>

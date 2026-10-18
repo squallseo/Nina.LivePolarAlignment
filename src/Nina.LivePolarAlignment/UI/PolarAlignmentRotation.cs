@@ -29,6 +29,7 @@ public sealed partial class PolarAlignmentDockableVM {
         set { if (!CanConfigureRotation) return; reverseRaRotation = value; NotifyRotation(); }
     }
     public bool CanConfigureRotation => !IndependentDriftEnabled && !liveBusy && calibrationSamples < 2 && !automaticRotationCompleted;
+    public bool CanConfigureAutoRotation => AutoRaRotation && CanConfigureRotation;
     public bool CanUseAutoRotation => CanConfigureRotation;
     public bool IsRotating => rotationInProgress;
     public string RotationStatus => rotationInProgress ? UiText.Format("AutoRaProgress", rotationProgress, RotationAngleDegrees)
@@ -60,6 +61,6 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private void NotifyRotation() {
         foreach (var name in new[] { nameof(RotationAngleDegrees), nameof(AutoRaRotation), nameof(ReverseRaRotation),
-            nameof(CanConfigureRotation), nameof(CanUseAutoRotation), nameof(IsRotating), nameof(RotationStatus) }) RaisePropertyChanged(name);
+            nameof(CanConfigureAutoRotation), nameof(CanConfigureRotation), nameof(CanUseAutoRotation), nameof(IsRotating), nameof(RotationStatus) }) RaisePropertyChanged(name);
     }
 }

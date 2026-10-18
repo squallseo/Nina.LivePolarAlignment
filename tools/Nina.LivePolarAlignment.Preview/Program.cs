@@ -299,7 +299,16 @@ internal static class Program {
             throw new InvalidOperationException("Unsupported RA must quietly fall back to manual reference capture");
         SampleCapture.UnsupportedAuto = false;
         await SelectScene(0);
+        var settingsPanel = (StackPanel)View.FindName("RotationSettingsPanel");
+        Save(Path.Combine(directory, "ui-manual-settings-1280.png"), 1280, 800);
+        var manualHeight = settingsPanel.ActualHeight;
+        if (settingsPanel.Visibility != Visibility.Visible || settingsPanel.IsEnabled) throw new InvalidOperationException("Manual mode must retain disabled rotation settings");
         current!.AutoRaRotation = true;
+        Save(Path.Combine(directory, "ui-auto-settings-1280.png"), 1280, 800);
+        if (!settingsPanel.IsEnabled || Math.Abs(settingsPanel.ActualHeight - manualHeight) > .1) throw new InvalidOperationException("Automatic mode must preserve rotation settings layout");
+        current.ReverseRaRotation = true;
+        Save(Path.Combine(directory, "ui-reversed-settings-1280.png"), 1280, 800);
+        current.ReverseRaRotation = false;
         current.DecreaseRotationAngleCommand.Execute(null);
         if (current.RotationAngleDegrees != 80) throw new InvalidOperationException("Decrement must change angle by ten degrees");
         current.IncreaseRotationAngleCommand.Execute(null);

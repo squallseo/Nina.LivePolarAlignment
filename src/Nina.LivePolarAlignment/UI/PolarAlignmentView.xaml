@@ -5,6 +5,12 @@
  xmlns:local="clr-namespace:Nina.LivePolarAlignment.UI"
  MinWidth="320" Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource PrimaryBrush}" FontFamily="Segoe UI" FontSize="12">
  <UserControl.Resources>
+      <DataTemplate x:Key="RotationDirectionIcon">
+        <Path Width="20" Height="20" Stretch="Uniform" Stroke="{DynamicResource PrimaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M 4,15 A 7,7 0 1 1 16,15 M 16,9 L 16,15 L 10,15" RenderTransformOrigin="0.5,0.5">
+          <Path.Style><Style TargetType="Path"><Style.Triggers><DataTrigger Binding="{Binding}" Value="True"><Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="-1"/></Setter.Value></Setter></DataTrigger></Style.Triggers></Style></Path.Style>
+        </Path>
+      </DataTemplate>
+
       <Style x:Key="AlignmentButton" TargetType="Button">
         <Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="Normal"/><Setter Property="MinHeight" Value="28" />
         <Setter Property="Padding" Value="9,3" />
@@ -98,17 +104,18 @@
   <ScrollViewer x:Name="ControlScroll" Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
    <StackPanel Margin="0,0,2,0">
 
-   <StackPanel Margin="2,0,2,8">
+   <StackPanel Margin="2,0,2,8" MinHeight="60">
     <TextBlock Text="{Binding WorkflowTitle}" FontWeight="SemiBold"/>
     <TextBlock Text="{Binding WorkflowDescription}" Style="{StaticResource Caption}" Margin="0,4,0,0" ToolTip="{Binding WorkflowHelp}"/>
    </StackPanel>
 
    <StackPanel Margin="0,0,0,8" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}">
     <DockPanel ToolTip="{Binding RotationStatus}" ToolTipService.ShowOnDisabled="True"><TextBlock Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" HorizontalAlignment="Right" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanUseAutoRotation}"/></DockPanel>
-    <StackPanel Visibility="{Binding AutoRaRotation, Converter={StaticResource VisibleIf}}">
+    <StackPanel x:Name="RotationSettingsPanel" IsEnabled="{Binding CanConfigureAutoRotation}">
+     <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger></Style.Triggers></Style></StackPanel.Style>
      <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureRotation}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
 
-     <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding ReverseRaRotation}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
+     <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding ReverseRaRotation}" IsEnabled="{Binding CanConfigureRotation}"/><ContentControl DockPanel.Dock="Right" Margin="6,0,6,0" VerticalAlignment="Center" Content="{Binding ReverseRaRotation}" ContentTemplate="{StaticResource RotationDirectionIcon}" ToolTip="{local:UiLoc RotationDirectionHint}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
 
     </StackPanel>
    </StackPanel>
@@ -156,7 +163,7 @@
     <StackPanel Margin="2,6,2,0">
      <TextBlock Text="{Binding VerificationSummary}" Style="{StaticResource Caption}"/>
      <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureVerification}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
-     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationReverse}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationReverse}" IsEnabled="{Binding CanConfigureVerification}"/><ContentControl DockPanel.Dock="Right" Margin="6,0,6,0" VerticalAlignment="Center" Content="{Binding VerificationReverse}" ContentTemplate="{StaticResource RotationDirectionIcon}" ToolTip="{local:UiLoc RotationDirectionHint}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}"/></DockPanel>
      <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoVerificationStability}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc VerificationStability}" Style="{StaticResource Caption}"/></DockPanel>
      <Button Content="{local:UiLoc VerificationStart}" Command="{Binding VerifyAlignmentCommand}" Style="{StaticResource AlignmentButton}" Margin="0,7,0,0" ToolTip="{local:UiLoc VerificationHint}"/>
      <TextBlock Text="{Binding StabilityStatus}" Style="{StaticResource Caption}" Margin="0,5,0,0"/>
