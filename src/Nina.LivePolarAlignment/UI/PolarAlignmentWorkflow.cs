@@ -20,20 +20,20 @@ public sealed partial class PolarAlignmentDockableVM {
     public bool HasCurrentFieldGuidance => guidance != null && (calibrationSamples < 2 || !IsMeasurementStale);
     public Capture.PolarGuidance? FieldGuidance => guidance;
     public double PixelScaleArcseconds => pixelScale;
-    public string PrimaryActionLabel => liveBusy ? UiText.Get("Workflow0") : WorkflowStep switch {
-        0 => UiText.Get("Workflow1"),
-        1 => UiText.Get("Workflow2"),
+    public string PrimaryActionLabel => IsRotating ? UiText.Get("AutoRaWorking") : liveBusy ? UiText.Get("Workflow0") : WorkflowStep switch {
+        0 => UiText.Get(AutoRaRotation ? "AutoRaStart" : "Workflow1"),
+        1 => UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoRaSecond" : "Workflow2"),
         _ => UiText.Get("Workflow3")
     };
     public ICommand PrimaryActionCommand => IsAdjustmentStep ? StartLiveCommand : CaptureReferenceCommand;
-    public string WorkflowTitle => WorkflowStep switch {
+    public string WorkflowTitle => IsRotating ? UiText.Get("AutoRaWorking") : WorkflowStep switch {
         0 => UiText.Get("Workflow4"),
         1 => UiText.Get("Workflow5"),
         _ => liveBusy ? UiText.Get("Workflow6") : UiText.Get("Workflow7")
     };
     public string WorkflowDescription => WorkflowStep switch {
-        0 => UiText.Get("Workflow8"),
-        1 => UiText.Get("Workflow9"),
+        0 => UiText.Get(AutoRaRotation ? "AutoRaHint" : "Workflow8"),
+        1 => UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoRaHint" : "Workflow9"),
         _ => UiText.Get("Workflow10")
     };
     public string RotationReadout => session?.RotationDegrees is { } rotation

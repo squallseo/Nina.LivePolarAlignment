@@ -13,7 +13,7 @@ using NINA.Profile.Interfaces;
 
 namespace Nina.LivePolarAlignment.Capture;
 
-/// <summary>Uses the active NINA camera and solver configuration; never syncs or slews the mount.</summary>
+/// <summary>Uses NINA capture/solve settings with separately requested, opt-in primary-axis rotation. Never syncs or GoTo.</summary>
 [Export(typeof(IPolarAlignmentCaptureService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCaptureService {

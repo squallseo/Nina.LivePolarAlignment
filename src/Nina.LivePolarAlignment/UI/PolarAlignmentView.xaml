@@ -135,6 +135,14 @@
     <Button Style="{StaticResource AlignmentButton}" Grid.Column="1" Content="{ns:Loc LblStop}" Command="{Binding StopLiveCommand}" Margin="0,0,8,0"/>
     <Button Style="{StaticResource AlignmentButton}" Grid.Column="2" Content="{local:UiLoc View5}" ToolTip="{local:UiLoc View6}" Command="{Binding ResetLiveCommand}"/>
    </Grid>
+   <StackPanel Margin="0,0,0,8">
+    <DockPanel ToolTip="{Binding RotationStatus}" ToolTipService.ShowOnDisabled="True"><TextBlock Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" HorizontalAlignment="Right" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanUseAutoRotation}"/></DockPanel>
+    <StackPanel Visibility="{Binding AutoRaRotation, Converter={StaticResource VisibleIf}}">
+     <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding ReverseRaRotation}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
+     <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding RotationPathClear}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaClear}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
+     <TextBlock Text="{Binding RotationStatus}" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
+    </StackPanel>
+   </StackPanel>
    <StackPanel Margin="0,0,0,8" ToolTip="{Binding StreamingAvailability}" ToolTipService.ShowOnDisabled="True">
     <DockPanel><TextBlock Text="{local:UiLoc StreamingOption}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" DockPanel.Dock="Right" HorizontalAlignment="Right" IsChecked="{Binding UseStreaming}" IsEnabled="{Binding CanUseStreaming}" ToolTip="{Binding StreamingAvailability}"/></DockPanel>
    </StackPanel>

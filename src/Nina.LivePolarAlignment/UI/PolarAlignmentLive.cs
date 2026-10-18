@@ -41,7 +41,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public ICommand StartLiveCommand { get; private set; } = null!;
     public ICommand StopLiveCommand { get; private set; } = null!;
     public ICommand ResetLiveCommand { get; private set; } = null!;
-    public string LiveStatus => liveStatus == "MeasurementComplete" ? UiText.Format(liveStatus, measuredAt?.ToLocalTime() ?? DateTimeOffset.Now) : UiText.Get(liveStatus);
+    public string LiveStatus => IsRotating ? RotationStatus : liveStatus == "MeasurementComplete" ? UiText.Format(liveStatus, measuredAt?.ToLocalTime() ?? DateTimeOffset.Now) : UiText.Get(liveStatus);
     public string LiveError => liveError;
     public string LiveTotalError => latestError is { } error ? $"{error.TotalArcminutes:0.00}′" : "—";
     public string LiveAltitudeError => latestError is { } error
@@ -84,6 +84,7 @@ public sealed partial class PolarAlignmentDockableVM {
         freshnessTimer.Tick += (_, _) => {
             UiText.Refresh(); RaisePropertyChanged(nameof(LiveStatus));
             RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(StreamingAvailability));
+            NotifyRotation();
             RaisePropertyChanged(nameof(FrameFreshness)); RaisePropertyChanged(nameof(IsMeasurementStale));
             RaisePropertyChanged(nameof(HasVisibleGuidance)); RaisePropertyChanged(nameof(GuidanceText));
             if (IsMeasurementStale) AbortStability("measurement became stale");
@@ -92,6 +93,7 @@ public sealed partial class PolarAlignmentDockableVM {
         freshnessTimer.Start();
     }
     private void ResetLive() {
+        automaticRotationCompleted = false; rotationPathClear = false; rotationProgress = 0;
         EndFieldSession("reset"); fieldFailure = null; stabilityResult = null;
         session = null; livePreview = null; guidance = null; liveError = "—";
         calibrationSamples = 0; pixelScale = 0; operationError = null;
@@ -108,33 +110,44 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private async Task CaptureReferenceAsync() {
         await WithLiveOperation(async token => {
-            EnsureFieldSession();
-            RecordFieldEvent("reference_start", new { exposureSeconds = ExposureSeconds });
-            if (session == null) {
-                var site = profiles.ActiveProfile.AstrometrySettings;
-                calibrationLatitude = site.Latitude; calibrationLongitude = site.Longitude;
-                session = new PolarAlignmentSession(calibrationLatitude, calibrationLongitude);
+            if (AutoRaRotation && !automaticRotationCompleted && (!RotationPathClear || !captureService.SupportsAutoRaRotation))
+                throw new InvalidOperationException(UiText.Get("AutoRaCheckPath"));
+            if (calibrationSamples == 1 && AutoRaRotation) await RotateForReferenceAsync(token);
+            await CaptureReferenceFrameAsync(token);
+            if (calibrationSamples == 1 && AutoRaRotation) {
+                await RotateForReferenceAsync(token);
+                await CaptureReferenceFrameAsync(token);
             }
-            ValidateSite();
-            liveStatus = "Live3"; NotifyLive();
-            var frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
-            token.ThrowIfCancellationRequested();
-            ValidateSite();
-            livePreview = frame.Preview;
-            pixelScale = frame.PixelScaleArcseconds;
-            int count;
-            try { count = session.AddCalibration(frame); }
-            catch (Exception error) { RecordFieldFrame(frame, "reference", false, failure: error); throw; }
-            calibrationSamples = count;
-            guidance = session.IsCalibrated ? session.GetGuidance(frame) : session.GetReferenceGuidance(frame);
-            measuredAt = frame.CapturedAtUtc;
-            measurementStale = false;
-            RecordFieldFrame(frame, "reference", true);
-            await SaveReferenceEvidenceAsync(frame);
-            liveStatus = session.IsCalibrated
-                ? "Live4"
-                : "Live5";
         });
+    }
+    private async Task CaptureReferenceFrameAsync(CancellationToken token) {
+        EnsureFieldSession();
+        RecordFieldEvent("reference_start", new { exposureSeconds = ExposureSeconds });
+        if (session == null) {
+            var site = profiles.ActiveProfile.AstrometrySettings;
+            calibrationLatitude = site.Latitude; calibrationLongitude = site.Longitude;
+            session = new PolarAlignmentSession(calibrationLatitude, calibrationLongitude);
+        }
+        ValidateSite();
+        liveStatus = "Live3"; NotifyLive();
+        var frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
+        token.ThrowIfCancellationRequested();
+        ValidateSite();
+        livePreview = frame.Preview;
+        pixelScale = frame.PixelScaleArcseconds;
+        int count;
+        try { count = session.AddCalibration(frame); }
+        catch (Exception error) { RecordFieldFrame(frame, "reference", false, failure: error); throw; }
+        calibrationSamples = count;
+        guidance = session.IsCalibrated ? session.GetGuidance(frame) : session.GetReferenceGuidance(frame);
+        measuredAt = frame.CapturedAtUtc;
+        measurementStale = false;
+        RecordFieldFrame(frame, "reference", true);
+        await SaveReferenceEvidenceAsync(frame);
+        liveStatus = session.IsCalibrated
+            ? "Live4"
+            : "Live5";
+
     }
     private async Task RunLiveAsync() {
         await WithLiveOperation(async token => {
@@ -191,7 +204,7 @@ public sealed partial class PolarAlignmentDockableVM {
             throw new InvalidOperationException("Exposure must be greater than 0 and no more than 60 seconds.");
     }
     private void NotifyLive() {
-        NotifyWorkflow(); NotifyField();
+        NotifyWorkflow(); NotifyField(); NotifyRotation();
         RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(AcquisitionMode)); RaisePropertyChanged(nameof(StreamingAvailability));
         foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(LiveTotalError), nameof(LiveAltitudeError), nameof(LiveAzimuthError), nameof(FrameFreshness), nameof(IsMeasurementStale) }) RaisePropertyChanged(name);

@@ -9,6 +9,8 @@ namespace Nina.LivePolarAlignment.Capture;
 public interface IPolarAlignmentCaptureService {
     bool SupportsStreaming => false;
     bool IsSynthetic => false;
+    bool SupportsAutoRaRotation => false;
+    Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token) => throw new NotSupportedException("Automatic RA rotation is unavailable. Use manual rotation.");
     System.Collections.Generic.IAsyncEnumerable<SolvedPolarFrame> StreamAndSolveAsync(double exposureSeconds, CancellationToken token) => throw new NotSupportedException("Streaming is unavailable for this camera.");
     Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token,
         IProgress<ApplicationStatus>? progress = null);

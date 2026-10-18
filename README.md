@@ -10,7 +10,7 @@ SharpCap의 직관적인 조정 흐름을 참고하여 자체 C# 코드로 구�
 
 ## 배포본 설치
 
-[0.1.0.7 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.7.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.7.zip.sha256)
+[0.1.0.8 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.8.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.8.zip.sha256)
 
 Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀고 N.I.N.A.를 종료한 뒤 `Install-Plugin.ps1`을 실행하거나, `plugin` 폴더 내용을 아래 로컬 설치 경로에 복사하세요. SDK나 소스 빌드는 필요하지 않습니다.
 
@@ -24,7 +24,9 @@ Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀�
 4. `실시간 조정 시작`을 누르고, 고도·방위각 볼트를 조정해 주황색 RA 회전 중심과 청록색 천구극 표시를 겹칩니다.
 5. `중지`로 촬영을 중단합니다. 카메라 방향·설정이나 관측지를 바꿨다면 `다시`로 기준을 초기화합니다.
 
-자동 이동·mount sync는 하지 않습니다. 조정 중 RA/Dec와 카메라 장착 상태를 유지해야 합니다.
+기본은 수동 회전입니다. `Auto RA rotation (experimental)`을 켜면 첫 촬영 → RA 약 60° 회전 → 두 번째 촬영을 자동으로 수행합니다. 방향을 선택하고 경로의 간섭 여부를 확인한 뒤 시작하세요. 지원하지 않는 마운트는 수동 방식으로 진행합니다. [자동 RA 회전 안내](docs/auto-ra-rotation.md)
+
+좌표 GoTo·mount sync·자동 주차 해제·자동 복귀는 하지 않습니다. 볼트 조정 중 RA/Dec와 카메라 장착 상태를 유지해야 합니다.
 오차 부호는 기하학적 고도·방위각 차이이며 볼트를 돌리는 방향이 아닙니다.
 대기 굴절 보정은 아직 적용하지 않습니다. 위도 절댓값 1–89.5°에서 시작할 수 있습니다.
 장비 없는 합성 데모는 아래의 독립 미리보기에서 실행합니다.

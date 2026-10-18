@@ -29,6 +29,14 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public Func<int> Step { get; set; } = () => 0;
     public bool SupportsStreaming => true;
     public bool IsSynthetic => true;
+    public bool SupportsAutoRaRotation => true;
+    public static int Rotations;
+    public static bool RotationStopped;
+    public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token) {
+        Rotations++; RotationStopped = false;
+        try { for (int i = 1; i <= 60; i++) { await Task.Delay(20, token); progress?.Report(i); } }
+        finally { RotationStopped = true; }
+    }
     public static int StreamFrames { get; private set; }
     public static bool FailStream { get; set; }
     public async IAsyncEnumerable<SolvedPolarFrame> StreamAndSolveAsync(double exposureSeconds,
@@ -240,7 +248,28 @@ internal static class Program {
         if (!current.HasOperationError || current.HasCurrentFieldGuidance || current.IsWorking) throw new InvalidOperationException("Streaming failure was not surfaced safely");
         SampleCapture.FailStream = false;
         current.Dispose();
-        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Three workflow stages at narrow, HD and Full HD sizes, live publication, and stop/stale, streaming selection, repeated frames, cancellation, and failure, field recording, marked preview, 20-frame repeatability and offline WCS replay checks passed. Synthetic inputs only.");
+        SampleCapture.Rotations = 0;
+        await SelectScene(0);
+        current!.AutoRaRotation = true;
+        await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
+        if (!current.HasOperationError || current.WorkflowStep != 0 || SampleCapture.Rotations != 0)
+            throw new InvalidOperationException("Automatic RA must require a checked clear path before any capture/move");
+        current.RotationPathClear = true;
+        var automatic = ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
+        while (!current.IsRotating && !automatic.IsCompleted) await Task.Delay(10);
+        await Task.Delay(300);
+        Save(Path.Combine(directory, "ui-auto-ra-1280.png"), 1280, 1000);
+        await automatic;
+        if (current.WorkflowStep != 2 || current.HasOperationError || SampleCapture.Rotations != 1 || !SampleCapture.RotationStopped)
+            throw new InvalidOperationException("Automatic RA must capture exactly two references around one stopped rotation");
+        current.ResetLiveCommand.Execute(null); current.RotationPathClear = true;
+        var interrupted = ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
+        while (!current.IsRotating && !interrupted.IsCompleted) await Task.Delay(10);
+        current.StopLiveCommand.Execute(null); await interrupted;
+        if (current.WorkflowStep != 0 || current.IsWorking || !SampleCapture.RotationStopped)
+            throw new InvalidOperationException("Cancelled rotation must stop and discard the reference");
+        current.Dispose();
+        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA path guard, two-reference sequence and cancellation passed. Synthetic inputs only.");
     }
 
     private static void Save(string path, int width, int height) {
