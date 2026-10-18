@@ -15,8 +15,9 @@ namespace Nina.LivePolarAlignment.Preview;
 public class SampleProfile : DispatchProxy {
     public object? Active { get; set; }
     public object? Site { get; set; }
+    public object? Theme { get; set; }
     protected override object? Invoke(MethodInfo? method, object?[]? args) => method?.Name switch {
-        "get_ActiveProfile" => Active, "get_AstrometrySettings" => Site,
+        "get_ColorSchemaSettings" => Theme, "get_ActiveProfile" => Active, "get_AstrometrySettings" => Site,
         "get_Latitude" => 37.5, "get_Longitude" => 127.0, _ => null
     };
 }
@@ -27,7 +28,7 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public async Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token, IProgress<ApplicationStatus>? progress = null) {
         await Task.Delay(650, token);
         int step = Step();
-        return new(0, step == 2 ? 89.7 : 89.6, step == 0 ? 0 : 72, 30, 800, 600, false, DateTimeOffset.UtcNow, Image);
+        return new(0, step == 2 ? 89.7 : 89.6, step == 0 ? 0 : 72, 6, 800, 600, false, DateTimeOffset.UtcNow, Image);
     }
     private static BitmapSource MakeStars() {
         var visual = new DrawingVisual();
@@ -48,7 +49,7 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
 internal static class Program {
     private static PolarAlignmentDockableVM? current;
     private static Task? currentLoop;
-    private static readonly PolarAlignmentView View = new();
+    private static PolarAlignmentView View = null!;
     private static readonly StackPanel SceneButtons = new() { Orientation = Orientation.Horizontal };
 
     [STAThread]
@@ -59,6 +60,14 @@ internal static class Program {
         Environment.SetEnvironmentVariable("LOCALAPPDATA", sampleData);
         var application = new Application();
         application.Resources["PuzzlePieceSVG"] = new GeometryGroup();
+        var theme = new NINA.Profile.ColorSchemaSettings();
+        theme.ColorSchema = theme.ColorSchemas.Items.First(x => x.Name == "Persian");
+        var tp = DispatchProxy.Create<IProfile, SampleProfile>(); ((SampleProfile)(object)tp).Theme = theme;
+        var ts = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)ts).Active = tp;
+        application.Resources["ProfileService"] = ts;
+        foreach (var r in new[] { "StaticResources/Brushes.xaml", "Styles/Button.xaml", "Styles/TextBlock.xaml", "Styles/TextBox.xaml", "Styles/CheckBox.xaml", "Styles/Expander.xaml" })
+            application.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/NINA.WPF.Base;component/Resources/" + r) });
+        View = new PolarAlignmentView();
         var layout = new DockPanel();
         var header = new StackPanel { Background = new SolidColorBrush(Color.FromRgb(34, 44, 60)) };
         header.Children.Add(new TextBlock {
@@ -66,7 +75,7 @@ internal static class Program {
             Foreground = new SolidColorBrush(Color.FromRgb(240, 186, 114)), Margin = new Thickness(14, 11, 14, 7)
         });
         foreach (var item in new[] { ("1. 첫 화면", 0), ("2. RA 회전", 1), ("3. 조정 화면", 2) }) {
-            var button = new Button { Content = item.Item1, Style = (Style)View.Resources[typeof(Button)], Margin = new Thickness(4, 0, 4, 9), Padding = new Thickness(10, 5, 10, 5) };
+            var button = new Button { Content = item.Item1, Foreground = Brushes.White, Margin = new Thickness(4, 0, 4, 9), Padding = new Thickness(10, 5, 10, 5) };
             button.Click += async (_, _) => await SelectScene(item.Item2);
             SceneButtons.Children.Add(button);
         }

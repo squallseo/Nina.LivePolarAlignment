@@ -17,9 +17,9 @@ public partial class PolarAlignmentView : UserControl {
         bool wide = width >= 900;
         if (wideLayout != wide) {
             wideLayout = wide;
-            ControlsColumn.MinWidth = wide ? 300 : 0;
-            ControlsColumn.Width = new GridLength(wide ? 350 : 0);
-            DividerColumn.Width = new GridLength(wide ? 12 : 0);
+            ControlsColumn.MinWidth = wide ? 270 : 0;
+            ControlsColumn.Width = new GridLength(wide ? 290 : 0);
+            DividerColumn.Width = new GridLength(wide ? 6 : 0);
             PanelDivider.Visibility = wide ? Visibility.Visible : Visibility.Collapsed;
             NarrowControlsRow.Height = wide ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
             Grid.SetRow(ControlScroll, wide ? 1 : 2);

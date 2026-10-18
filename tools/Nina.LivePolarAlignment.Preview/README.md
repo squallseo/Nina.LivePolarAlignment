@@ -27,3 +27,6 @@ dotnet run --project tools/Nina.LivePolarAlignment.Preview -c Release -- --rende
 This checks all three stages, the image area and control positions, live publication and cancellation/stale behavior,
 and writes PNGs plus `preview-verification.txt`. It does not test actual camera
 capture, external plate solving or accuracy of a physical mount.
+
+The preview loads NINA's actual Persian color schema and WPF control dictionaries. The plugin inherits host theme brushes and fonts. Focus follows the celestial pole and measured RA axis without changing the astrometric projection; switch it off to fit the complete frame. The synthetic camera uses 6 arcseconds/pixel. Common labels use NINA's locale resources; plugin-specific workflow instructions currently remain Korean.
+

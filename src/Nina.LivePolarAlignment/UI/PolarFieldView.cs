@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Documents;
 using System.Windows.Media.Imaging;
 using Nina.LivePolarAlignment.Capture;
 using Nina.LivePolarAlignment.Core;
@@ -19,7 +20,11 @@ public sealed class PolarFieldView : FrameworkElement {
     public bool IsCurrent { get => (bool)GetValue(IsCurrentProperty); set => SetValue(IsCurrentProperty, value); }
     public double PixelScale { get => (double)GetValue(PixelScaleProperty); set => SetValue(PixelScaleProperty, value); }
     private static Brush Color(string hex) => (Brush)new BrushConverter().ConvertFromString(hex)!;
-    private static readonly Brush Mint = Color("#68DEC5"), Amber = Color("#F0BA72"), Muted = Color("#8395AC");
+    public static readonly DependencyProperty FocusAlignmentProperty = DependencyProperty.Register(nameof(FocusAlignment), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+    public bool FocusAlignment { get => (bool)GetValue(FocusAlignmentProperty); set => SetValue(FocusAlignmentProperty, value); }
+    private Brush Mint => TryFindResource("ButtonBackgroundSelectedBrush") as Brush ?? Brushes.LightGray;
+    private Brush Amber => TryFindResource("CrosshairBrush") as Brush ?? Brushes.Gray;
+    private Brush Muted => TryFindResource("PrimaryBrush") as Brush ?? Brushes.LightGray;
 
     protected override Size MeasureOverride(Size availableSize) {
         double width = double.IsInfinity(availableSize.Width) ? 480 : availableSize.Width;
@@ -36,7 +41,13 @@ public sealed class PolarFieldView : FrameworkElement {
         double width = Guidance?.Width ?? Preview?.PixelWidth ?? 800;
         double height = Guidance?.Height ?? Preview?.PixelHeight ?? 600;
         double scale = Math.Min(ActualWidth / width, ActualHeight / height);
-        var imageRect = new Rect((ActualWidth - width * scale) / 2, (ActualHeight - height * scale) / 2, width * scale, height * scale);
+        double cx = width / 2, cy = height / 2;
+        if (FocusAlignment && IsCurrent && Guidance?.CelestialPole is { } target) {
+            var axis = Guidance.MountAxis ?? target;
+            cx = (target.X + axis.X) / 2; cy = (target.Y + axis.Y) / 2;
+            scale = Math.Max(scale, Math.Min(ActualWidth / Math.Max(width * .32, Math.Abs(target.X - axis.X) * 2.5), ActualHeight / Math.Max(height * .32, Math.Abs(target.Y - axis.Y) * 2.5)));
+        }
+        var imageRect = new Rect(ActualWidth / 2 - cx * scale, ActualHeight / 2 - cy * scale, width * scale, height * scale);
         if (Preview != null) dc.DrawImage(Preview, imageRect);
         else {
             var gridPen = new Pen(Color("#142235"), 1);
@@ -54,7 +65,7 @@ public sealed class PolarFieldView : FrameworkElement {
                 foreach (double degrees in new[] { 1.0 / 60, 5.0 / 60, .25, .5, 1, 2, 5 }) {
                     double radius = Math.Tan(degrees * Math.PI / 180) * 206264.80624709636 / PixelScale * scale;
                     if (radius < 30 || radius > Math.Max(ActualWidth, ActualHeight) * .8) continue;
-                    var ringPen = new Pen(Color("#35685F"), .8) { DashStyle = DashStyles.Dash };
+                    var ringPen = new Pen(Amber, .8) { DashStyle = DashStyles.Dash };
                     var path = AngularRing(Guidance.CelestialPole!.Value, width, height, degrees, Map);
                     dc.DrawGeometry(null, ringPen, path);
                     var labelPosition = new Point(center.X + radius + 3, center.Y - 8);
@@ -67,20 +78,20 @@ public sealed class PolarFieldView : FrameworkElement {
                 dc.DrawLine(connector, axisPoint, polePoint);
             }
             if (axis is { } mount) {
-                if (imageRect.Contains(mount)) {
+                if (bounds.Contains(mount)) {
                     var pen = new Pen(Amber, 1.8);
                     dc.DrawEllipse(null, pen, mount, 8, 8);
                     dc.DrawLine(pen, new(mount.X - 13, mount.Y), new(mount.X + 13, mount.Y));
                     dc.DrawLine(pen, new(mount.X, mount.Y - 13), new(mount.X, mount.Y + 13));
-                    Label(dc, "RA 회전 중심", new Point(mount.X + 16, mount.Y - 30), Amber, 11);
+                    Label(dc, "RA Axis", new Point(mount.X + 17, mount.Y - 7), Amber, 11);
                 } else EdgeMarker(dc, mount, "RA축 · 화면 밖", Amber, bounds);
             }
             if (pole is { } celestial) {
-                if (imageRect.Contains(celestial)) {
+                if (bounds.Contains(celestial)) {
                     var pen = new Pen(Mint, 2);
                     dc.DrawEllipse(null, pen, celestial, 6, 6);
                     dc.DrawEllipse(Mint, null, celestial, 1.8, 1.8);
-                    Label(dc, "천구극 · 목표", new Point(celestial.X + 14, celestial.Y + 17), Mint, 11);
+                    Label(dc, "Celestial Pole", new Point(celestial.X + 12, celestial.Y + 9), Mint, 11);
                 } else EdgeMarker(dc, celestial, "천구극 · 화면 밖", Mint, bounds);
             }
         }
@@ -116,7 +127,7 @@ public sealed class PolarFieldView : FrameworkElement {
 
     private void Label(DrawingContext dc, string text, Point position, Brush foreground, double size, bool background = true) {
         var formatted = new FormattedText(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
-            new Typeface("Segoe UI"), size, foreground, VisualTreeHelper.GetDpi(this).PixelsPerDip);
+            new Typeface(TextElement.GetFontFamily(this), TextElement.GetFontStyle(this), TextElement.GetFontWeight(this), TextElement.GetFontStretch(this)), size, foreground, VisualTreeHelper.GetDpi(this).PixelsPerDip);
         double x = Math.Clamp(position.X, 6, Math.Max(6, ActualWidth - formatted.Width - 12));
         double y = Math.Clamp(position.Y, 6, Math.Max(6, ActualHeight - formatted.Height - 12));
         if (background) dc.DrawRoundedRectangle(Color("#D90B1522"), null, new Rect(x - 4, y - 3, formatted.Width + 8, formatted.Height + 6), 4, 4);
