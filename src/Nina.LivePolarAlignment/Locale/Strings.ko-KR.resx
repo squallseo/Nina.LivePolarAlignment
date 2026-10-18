@@ -300,4 +300,22 @@
   <data name="AutoRaWorking" xml:space="preserve">
     <value>RA 회전 중…</value>
   </data>
+  <data name="VerificationTitle" xml:space="preserve">
+    <value>정렬 재측정</value>
+  </data>
+  <data name="VerificationHint" xml:space="preserve">
+    <value>Dec와 고도·방위각 볼트를 고정하세요. 현재 위치에서 새 기준을 찍고 RA를 추가로 60도 회전해 다시 계산합니다. 새로운 회전 경로를 확인하세요. 같은 solver를 쓰므로 독립적인 정확도 검사는 아닙니다.</value>
+  </data>
+  <data name="VerificationStability" xml:space="preserve">
+    <value>이어서 고정 상태 20프레임 측정</value>
+  </data>
+  <data name="VerificationStart" xml:space="preserve">
+    <value>자동 RA 회전으로 재측정</value>
+  </data>
+  <data name="VerificationResult" xml:space="preserve">
+    <value>이전 {0:0.00}′ / 재측정 {1:0.00}′ · 차이: 고도 {2:+0.0;-0.0;0.0}″ / 방위각 {3:+0.0;-0.0;0.0}″ · 마운트를 고정하세요.</value>
+  </data>
+  <data name="VerificationComplete" xml:space="preserve">
+    <value>재측정을 마쳤습니다. 추가 조정 전에 측정 차이와 반복성을 확인하세요.</value>
+  </data>
 </root>

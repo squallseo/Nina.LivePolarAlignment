@@ -84,7 +84,14 @@
   <Border x:Name="ImagePanel" Grid.Row="1" Grid.Column="0" Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="1" Padding="5">
    <DockPanel LastChildFill="True">
     <Grid DockPanel.Dock="Top" Margin="3,0,3,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{ns:Loc LblImage}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/><StackPanel Grid.Column="1" Orientation="Horizontal"><TextBlock Text="{local:UiLoc Focus}" VerticalAlignment="Center" Margin="0,0,6,0"/><ToggleButton Style="{StaticResource AlignmentSwitch}" ToolTip="{local:UiLoc FocusTip}" IsChecked="{Binding FocusAlignment, ElementName=SkyField}"/></StackPanel></Grid>
-    <local:PolarFieldView x:Name="SkyField" Preview="{Binding LivePreview}" Guidance="{Binding FieldGuidance}" IsCurrent="{Binding HasCurrentFieldGuidance}" PixelScale="{Binding PixelScaleArcseconds}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+    <Grid>
+     <local:PolarFieldView x:Name="SkyField" Preview="{Binding LivePreview}" Guidance="{Binding FieldGuidance}" IsCurrent="{Binding HasCurrentFieldGuidance}" PixelScale="{Binding PixelScaleArcseconds}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+     <StackPanel x:Name="EmptyImagePlaceholder" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+      <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasPreview}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+      <Path Data="{DynamicResource PictureSVG}" Width="100" Height="100" Margin="5" Stretch="Uniform" Fill="{DynamicResource ButtonForegroundDisabledBrush}" Opacity="0.4" UseLayoutRounding="True"/>
+      <TextBlock Text="{ns:Loc LblNoImage}" HorizontalAlignment="Center" Foreground="{DynamicResource ButtonForegroundDisabledBrush}" Margin="0,8,0,0"/>
+     </StackPanel>
+    </Grid>
    </DockPanel>
   </Border>
   <GridSplitter x:Name="PanelDivider" Grid.Row="1" Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="{DynamicResource BorderBrush}" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" ShowsPreview="True" ToolTip="{local:UiLoc View0}"/>
@@ -177,6 +184,16 @@
    </Border>
    <TextBlock Text="{Binding LiveStatus}" Style="{StaticResource Caption}" Margin="2,6,2,6"/>
 
+   <Expander x:Name="VerificationTools" Header="{local:UiLoc VerificationTitle}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0" Visibility="{Binding ShowVerification, Converter={StaticResource VisibleIf}}">
+    <StackPanel Margin="2,6,2,0">
+     <TextBlock Text="{Binding VerificationSummary}" Style="{StaticResource Caption}"/>
+     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationReverse}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationPathClear}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc AutoRaClear}" Style="{StaticResource Caption}"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoVerificationStability}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc VerificationStability}" Style="{StaticResource Caption}"/></DockPanel>
+     <Button Content="{local:UiLoc VerificationStart}" Command="{Binding VerifyAlignmentCommand}" Style="{StaticResource AlignmentButton}" Margin="0,7,0,0" ToolTip="{local:UiLoc VerificationHint}"/>
+     <TextBlock Text="{Binding StabilityStatus}" Style="{StaticResource Caption}" Margin="0,5,0,0"/>
+    </StackPanel>
+   </Expander>
    <Expander x:Name="FieldValidationTools" Header="{local:UiLoc FieldValidation}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0">
     <StackPanel Margin="2,6,2,0">
      <DockPanel><TextBlock Text="{local:UiLoc FieldRecord}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" HorizontalAlignment="Right" IsChecked="{Binding RecordFieldSession}" IsEnabled="{Binding CanConfigureField}" ToolTip="{local:UiLoc FieldRecordHint}"/></DockPanel>

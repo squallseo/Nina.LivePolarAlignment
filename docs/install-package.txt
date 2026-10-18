@@ -9,6 +9,9 @@ Requires Windows x64 and N.I.N.A. 3.2.0.9001 or newer. No SDK or build required.
 5. Open the imaging Live Polar Alignment panel. Field validation: Mark / Stability / Folder.
 6. Optional Auto RA rotation (experimental): choose direction and confirm the clear
    60-degree path before Calibrate automatically. Default is manual. See auto-ra-rotation.md.
+7. After adjustment, Stop and expand Verify alignment for optional fresh-pair
+   remeasurement with a further RA rotation. Dec stays fixed. A 20-frame Stability
+   check follows by default; it can be turned off. See verification.md.
 
 Recording is off by default and stored per N.I.N.A. profile.
 Existing records are kept when off.

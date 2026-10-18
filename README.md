@@ -10,7 +10,7 @@ SharpCap의 직관적인 조정 흐름을 참고하여 자체 C# 코드로 구�
 
 ## 배포본 설치
 
-[0.1.0.8 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.8.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.8.zip.sha256)
+[0.1.0.9 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.9.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.9.zip.sha256)
 
 Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀고 N.I.N.A.를 종료한 뒤 `Install-Plugin.ps1`을 실행하거나, `plugin` 폴더 내용을 아래 로컬 설치 경로에 복사하세요. SDK나 소스 빌드는 필요하지 않습니다.
 
@@ -40,6 +40,8 @@ Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀�
 현재는 천구극과 RA 회전 중심을 표시하며, 북극성 자체의 식별 표시나 기준 별→목표점 화살표는 아직 구현하지 않았습니다.
 
 ## 현장 검증
+
+정렬 후 `Verify alignment`에서 새 기준 두 장과 **추가 RA 60° 회전**으로 선택적으로 재측정할 수 있습니다. Dec와 볼트는 고정합니다. 재측정 뒤 Stability 20프레임은 기본 자동이며 옵션으로 끌 수 있습니다. 일반 실시간 조정 중 Stability는 수동 시작입니다. 디버그 파일 기록 없이도 사용할 수 있습니다. [재측정 안내](docs/verification.md)
 
 우측 `Field validation`에서 자동 세션 기록, `Mark` 원본·메모 저장, `Stability` 20프레임 반복성 검사를 사용할 수 있습니다.
 현장에서는 [검증 절차와 오프라인 분석 안내](docs/field-validation.md)를 따라 기록하고 세션 폴더 전체를 보관하세요.
@@ -77,6 +79,8 @@ Windows, .NET 8 SDK 및 Desktop Runtime이 필요합니다. N.I.N.A. API는 `NIN
 다음 단계는 극 주변의 빠른 해석 또는 검증된 별 정합 경로를 연결하고 실패 시 재해석하도록 만드는 것입니다.
 
 ## 화면 미리보기
+
+빈 영상 화면은 N.I.N.A. 기본 이미지 뷰와 같은 테마 배경·PictureSVG 아이콘·`No image` 문구를 사용합니다.
 
 ![합성 입력으로 검증한 조정 화면](docs/images/live-synthetic-preview.png)
 

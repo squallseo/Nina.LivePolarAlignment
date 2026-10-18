@@ -76,7 +76,7 @@ public sealed partial class PolarAlignmentDockableVM {
         StartLiveCommand = new AsyncRelayCommand(RunLiveAsync, () => !liveBusy && session?.IsCalibrated == true);
         StopLiveCommand = new RelayCommand(RequestStopLive, () => liveBusy);
         ResetLiveCommand = new RelayCommand(ResetLive, () => !liveBusy && !fieldSaving);
-        InitializeField();
+        InitializeField(); InitializeVerification();
         PropertyChanged += (_, change) => {
             if ((change.PropertyName == nameof(IsClosed) && IsClosed)
                 || (change.PropertyName == nameof(IsVisible) && !IsVisible)) RequestStopLive();
@@ -93,6 +93,7 @@ public sealed partial class PolarAlignmentDockableVM {
         freshnessTimer.Start();
     }
     private void ResetLive() {
+        verificationResult = null; verificationPathClear = false;
         automaticRotationCompleted = false; rotationPathClear = false; rotationProgress = 0;
         EndFieldSession("reset"); fieldFailure = null; stabilityResult = null;
         session = null; livePreview = null; guidance = null; liveError = "—";
@@ -120,7 +121,7 @@ public sealed partial class PolarAlignmentDockableVM {
             }
         });
     }
-    private async Task CaptureReferenceFrameAsync(CancellationToken token) {
+    private async Task<SolvedPolarFrame> CaptureReferenceFrameAsync(CancellationToken token) {
         EnsureFieldSession();
         RecordFieldEvent("reference_start", new { exposureSeconds = ExposureSeconds });
         if (session == null) {
@@ -147,6 +148,7 @@ public sealed partial class PolarAlignmentDockableVM {
         liveStatus = session.IsCalibrated
             ? "Live4"
             : "Live5";
+        return frame;
 
     }
     private async Task RunLiveAsync() {
@@ -183,6 +185,7 @@ public sealed partial class PolarAlignmentDockableVM {
         livePreview = frame.Preview; pixelScale = frame.PixelScaleArcseconds;
         liveError = $"{error.TotalArcminutes:0.00} total";
         RecordFieldFrame(frame, "measurement", true, cycleMilliseconds);
+        UpdateStability(frame);
         liveStatus = "MeasurementComplete"; NotifyLive();
     }
     private async Task WithLiveOperation(Func<CancellationToken, Task> operation) {
@@ -204,7 +207,7 @@ public sealed partial class PolarAlignmentDockableVM {
             throw new InvalidOperationException("Exposure must be greater than 0 and no more than 60 seconds.");
     }
     private void NotifyLive() {
-        NotifyWorkflow(); NotifyField(); NotifyRotation();
+        NotifyWorkflow(); NotifyField(); NotifyRotation(); NotifyVerification();
         RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(AcquisitionMode)); RaisePropertyChanged(nameof(StreamingAvailability));
         foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(LiveTotalError), nameof(LiveAltitudeError), nameof(LiveAzimuthError), nameof(FrameFreshness), nameof(IsMeasurementStale) }) RaisePropertyChanged(name);

@@ -19,6 +19,7 @@ public sealed partial class PolarAlignmentDockableVM {
     private bool recordFieldSession, fieldSaving, fieldDisposed;
     private SolvedPolarFrame? lastFieldFrame;
     private long lastFieldFrameId;
+    private long stabilitySequence;
     private StabilityWindow? stability;
     private StabilityResult? stabilityResult;
     public bool RecordFieldSession {
@@ -51,11 +52,7 @@ public sealed partial class PolarAlignmentDockableVM {
     private void InitializeField() {
         recordFieldSession = captureService.IsSynthetic || Plugin.ReadDebugRecording(profiles);
         MarkFieldSampleCommand = new AsyncRelayCommand(MarkFieldSampleAsync, () => CanMarkField);
-        CheckStabilityCommand = new RelayCommand(() => {
-            stability = new StabilityWindow(); stabilityResult = null;
-            RecordFieldEvent("stability_start", new { samples = 20, note = FieldNote, assumption = "Operator holds mount still; scatter is not absolute accuracy." });
-            NotifyField();
-        }, () => CanMarkField && stability == null);
+        CheckStabilityCommand = new RelayCommand(StartStability, () => HasLiveMeasurement && !IsMeasurementStale && liveBusy && stability == null);
         OpenFieldFolderCommand = new RelayCommand(() => {
             if (fieldDirectory != null) {
                 try { Process.Start(new ProcessStartInfo(fieldDirectory) { UseShellExecute = true }); }
@@ -72,7 +69,7 @@ public sealed partial class PolarAlignmentDockableVM {
                 ? Path.Combine(Path.GetTempPath(), "NinaPolarFieldSynthetic")
                 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NINA", "LivePolarAlignment", "FieldSessions");
             fieldJournal = new FieldJournal(root, new {
-                synthetic = captureService.IsSynthetic,
+                synthetic = captureService.IsSynthetic, purpose = verificationInProgress ? "verification" : "alignment",
                 pluginVersion = typeof(Plugin).Assembly.GetName().Version?.ToString(),
                 ninaCoreVersion = typeof(NINA.Core.Utility.CoreUtil).Assembly.GetName().Version?.ToString(),
                 profile = captureService.IsSynthetic ? "synthetic" : profile.Name,
@@ -91,7 +88,7 @@ public sealed partial class PolarAlignmentDockableVM {
     private void RecordFieldEvent(string type, object data) {
         if (fieldJournal == null || fieldFailure != null) return;
         try { fieldJournal.WriteEvent(type, data); }
-        catch (Exception error) { fieldFailure = error.Message; stability = null; NotifyField(); }
+        catch (Exception error) { fieldFailure = error.Message; NotifyField(); }
     }
     private void RecordFieldFrame(SolvedPolarFrame frame, string kind, bool accepted, double cycleMs = 0, Exception? failure = null) {
         if (fieldJournal == null || fieldFailure != null) return;
@@ -101,7 +98,7 @@ public sealed partial class PolarAlignmentDockableVM {
             var record = new FieldFrameRecord(0, kind, accepted,
                 new(frame.RightAscensionDegrees, frame.DeclinationDegrees, frame.PositionAngleDegrees, frame.PixelScaleArcseconds,
                     frame.Width, frame.Height, frame.Flipped, frame.CapturedAtUtc, session?.LastDut1Seconds),
-                kind == "reference" ? "still_reference" : UseStreaming ? "native_streaming" : "single_frames",
+                kind == "reference" ? "still_reference" : UseStreaming && !verificationInProgress ? "native_streaming" : "single_frames",
                 ExposureSeconds, cycleMs, (DateTimeOffset.UtcNow - frame.CapturedAtUtc).TotalSeconds,
                 session?.RotationDegrees, session?.UsedApproximateEarthRotation ?? false,
                 error?.AltitudeArcminutes * 60, error?.AzimuthArcminutes * 60, error?.TotalArcminutes * 60,
@@ -109,18 +106,25 @@ public sealed partial class PolarAlignmentDockableVM {
                 pointGuidance?.CelestialPole?.X, pointGuidance?.CelestialPole?.Y, failure?.Message);
             var id = fieldJournal.WriteFrame(record);
             if (accepted) { lastFieldFrame = frame; lastFieldFrameId = id; }
-            if (kind == "measurement" && accepted && error is { } offset && stability is { } window) {
-                if (IsMeasurementStale) AbortStability("stale frame");
-                else {
-                    try { window.Add(id, frame.CapturedAtUtc, offset.AltitudeArcminutes * 60, offset.AzimuthArcminutes * 60); }
-                    catch (ArgumentException) { AbortStability("duplicate or out-of-order exposure"); return; }
-                    if (window.Complete) {
-                        stabilityResult = window.Result(); stability = null;
-                        RecordFieldEvent("stability_result", stabilityResult);
-                    }
-                }
-            }
-        } catch (Exception error) { fieldFailure = error.Message; stability = null; }
+        } catch (Exception error) { fieldFailure = error.Message; }
+        NotifyField();
+    }
+    private void StartStability() {
+        stability = new StabilityWindow(); stabilityResult = null;
+        RecordFieldEvent("stability_start", new { samples = 20, note = FieldNote, assumption = "Operator holds mount still; scatter is not absolute accuracy." });
+        NotifyField();
+    }
+    private void UpdateStability(SolvedPolarFrame frame) {
+        if (stability is not { } window || latestError is not { } offset) return;
+        if (IsMeasurementStale) { AbortStability("stale frame"); return; }
+        var id = fieldJournal != null && fieldFailure == null ? lastFieldFrameId : Math.Max(stabilitySequence + 1, lastFieldFrameId + 1);
+        stabilitySequence = id;
+        try { window.Add(id, frame.CapturedAtUtc, offset.AltitudeArcminutes * 60, offset.AzimuthArcminutes * 60); }
+        catch (ArgumentException) { AbortStability("duplicate or out-of-order exposure"); return; }
+        if (window.Complete) {
+            stabilityResult = window.Result(); stability = null;
+            RecordFieldEvent("stability_result", stabilityResult);
+        }
         NotifyField();
     }
     private async Task SaveFieldImagesAsync(FieldJournal journal, SolvedPolarFrame frame, long frameId, string kind, string note) {
@@ -174,6 +178,7 @@ public sealed partial class PolarAlignmentDockableVM {
         fieldJournal = null; lastFieldFrame = null;
     }
     private void NotifyField() {
+        NotifyVerification();
         foreach (var property in new[] { nameof(HasStabilityResult), nameof(CanConfigureField), nameof(FieldRecordingStatus), nameof(StabilityStatus), nameof(HasFieldFailure), nameof(FieldSessionDirectory) }) RaisePropertyChanged(property);
         (MarkFieldSampleCommand as IRelayCommand)?.NotifyCanExecuteChanged();
         (CheckStabilityCommand as IRelayCommand)?.NotifyCanExecuteChanged();

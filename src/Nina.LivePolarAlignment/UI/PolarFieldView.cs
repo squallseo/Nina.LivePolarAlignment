@@ -50,6 +50,10 @@ public sealed class PolarFieldView : FrameworkElement {
         var bounds = new Rect(0, 0, ActualWidth, ActualHeight);
         if (bounds.Width <= 0 || bounds.Height <= 0) return;
         dc.PushClip(new RectangleGeometry(bounds, 10, 10));
+        if (Preview == null) {
+            dc.DrawRectangle(TryFindResource("BackgroundBrush") as Brush ?? Color("#202020"), null, bounds);
+            dc.Pop(); return;
+        }
         dc.DrawRectangle(Color("#080F1B"), null, bounds);
         double width = Guidance?.Width ?? Preview?.PixelWidth ?? 800;
         double height = Guidance?.Height ?? Preview?.PixelHeight ?? 600;
@@ -71,12 +75,6 @@ public sealed class PolarFieldView : FrameworkElement {
         VisibleImageRegion = new Rect(cx - ActualWidth / (2 * scale), cy - ActualHeight / (2 * scale), ActualWidth / scale, ActualHeight / scale);
         var imageRect = new Rect(ActualWidth / 2 - cx * scale, ActualHeight / 2 - cy * scale, width * scale, height * scale);
         if (Preview != null) dc.DrawImage(Preview, imageRect);
-        else {
-            var gridPen = new Pen(Color("#142235"), 1);
-            for (double x = 0; x < ActualWidth; x += 32) dc.DrawLine(gridPen, new Point(x, 0), new Point(x, ActualHeight));
-            for (double y = 0; y < ActualHeight; y += 32) dc.DrawLine(gridPen, new Point(0, y), new Point(ActualWidth, y));
-            Label(dc, UiText.Get("Field0"), new Point(ActualWidth / 2 - 88, ActualHeight / 2 - 12), Muted, 13, false);
-        }
         Point Map(PixelPoint p) => new(imageRect.Left + p.X * scale, imageRect.Top + p.Y * scale);
         if (IsCurrent && Guidance != null) {
             Point? pole = Guidance.CelestialPole is { } p ? Map(p) : null;

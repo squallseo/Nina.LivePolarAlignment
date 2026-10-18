@@ -32,9 +32,14 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public bool SupportsAutoRaRotation => true;
     public static int Rotations;
     public static bool RotationStopped;
+    private double orientation;
+    private bool rotatedSinceReference;
     public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token) {
         Rotations++; RotationStopped = false;
-        try { for (int i = 1; i <= 60; i++) { await Task.Delay(20, token); progress?.Report(i); } }
+        try {
+            for (int i = 1; i <= 60; i++) { await Task.Delay(20, token); progress?.Report(i); }
+            orientation += reverse ? -72 : 72; rotatedSinceReference = true;
+        }
         finally { RotationStopped = true; }
     }
     public static int StreamFrames { get; private set; }
@@ -46,14 +51,16 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
             await Task.Delay(100, token);
             if (FailStream) throw new InvalidOperationException("Synthetic streaming failure");
             StreamFrames++;
-            yield return new(0, 89.7, 72, 6, 800, 600, false, DateTimeOffset.UtcNow, Image);
+            yield return new(0, 89.7, orientation, 6, 800, 600, false, DateTimeOffset.UtcNow, Image);
         }
     }
     public BitmapSource Image { get; } = MakeStars();
     public async Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token, IProgress<ApplicationStatus>? progress = null) {
         await Task.Delay(650, token);
         int step = Step();
-        return new(0, step == 2 ? 89.7 : 89.6, step == 0 ? 0 : 72, 6, 800, 600, false, DateTimeOffset.UtcNow, Image);
+        if (step == 0) rotatedSinceReference = false;
+        if (step == 1 && !rotatedSinceReference) { orientation += 72; rotatedSinceReference = true; }
+        return new(0, step == 2 ? 89.7 : 89.6, orientation, 6, 800, 600, false, DateTimeOffset.UtcNow, Image);
     }
     private static BitmapSource MakeStars() {
         var visual = new DrawingVisual();
@@ -91,7 +98,7 @@ internal static class Program {
         var tp = DispatchProxy.Create<IProfile, SampleProfile>(); ((SampleProfile)(object)tp).Theme = theme;
         var ts = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)ts).Active = tp;
         application.Resources["ProfileService"] = ts;
-        foreach (var r in new[] { "StaticResources/Brushes.xaml", "Styles/Button.xaml", "Styles/TextBlock.xaml", "Styles/TextBox.xaml", "Styles/CheckBox.xaml", "Styles/Expander.xaml" })
+        foreach (var r in new[] { "StaticResources/SVGDictionary.xaml", "StaticResources/Brushes.xaml", "Styles/Button.xaml", "Styles/TextBlock.xaml", "Styles/TextBox.xaml", "Styles/CheckBox.xaml", "Styles/Expander.xaml" })
             application.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/NINA.WPF.Base;component/Resources/" + r) });
         View = new PolarAlignmentView();
         var layout = new DockPanel();
@@ -269,13 +276,49 @@ internal static class Program {
         if (current.WorkflowStep != 0 || current.IsWorking || !SampleCapture.RotationStopped)
             throw new InvalidOperationException("Cancelled rotation must stop and discard the reference");
         current.Dispose();
-        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA path guard, two-reference sequence and cancellation passed. Synthetic inputs only.");
+        await SelectScene(0); current!.RecordFieldSession = false;
+        await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
+        await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
+        if (current.VerifyAlignmentCommand.CanExecute(null)) throw new InvalidOperationException("Verification needs an explicit new path check");
+        current.VerificationPathClear = true;
+        await ((IAsyncRelayCommand)current.VerifyAlignmentCommand).ExecuteAsync(null);
+        if (current.HasOperationError || !current.HasVerificationResult || !current.HasStabilityResult || current.WorkflowStep != 2
+            || current.FieldSessionDirectory != null)
+            throw new InvalidOperationException("Verification and automatic stability must work without debug recording: " + current.OperationError);
+        ((Expander)View.FindName("VerificationTools")).IsExpanded = true;
+        Save(Path.Combine(directory, "ui-verification-1280.png"), 1280, 1000);
+        current.AutoVerificationStability = false; current.VerificationReverse = true; current.VerificationPathClear = true;
+        await ((IAsyncRelayCommand)current.VerifyAlignmentCommand).ExecuteAsync(null);
+        if (current.HasOperationError || !current.HasVerificationResult || current.HasStabilityResult)
+            throw new InvalidOperationException("Optional stability must be skipped when off: " + current.OperationError);
+        current.VerificationPathClear = true;
+        var cancelledVerify = ((IAsyncRelayCommand)current.VerifyAlignmentCommand).ExecuteAsync(null);
+        while (!current.IsRotating && !cancelledVerify.IsCompleted) await Task.Delay(10);
+        current.StopLiveCommand.Execute(null); await cancelledVerify;
+        if (current.HasVerificationResult || current.WorkflowStep != 0 || !SampleCapture.RotationStopped)
+            throw new InvalidOperationException("Cancelled verification must discard its reference and result");
+        current.RecordFieldSession = true;
+        await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
+        await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
+        var originalFieldDirectory = current.FieldSessionDirectory;
+        current.VerificationPathClear = true;
+        await ((IAsyncRelayCommand)current.VerifyAlignmentCommand).ExecuteAsync(null);
+        var verificationReview = FieldSessionReview.Review(current.FieldSessionDirectory!, Path.Combine(directory, "verification-review"));
+        if (current.HasOperationError || !current.HasVerificationResult || current.FieldSessionDirectory == originalFieldDirectory
+            || verificationReview.ReferenceFrames != 2 || verificationReview.MeasurementFrames != 1
+            || verificationReview.MaximumReplayDifferenceArcseconds > 1e-6)
+            throw new InvalidOperationException("Verification must keep an independent replayable journal: " + current.OperationError);
+        current.Dispose();
+        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA path guard, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay passed. Synthetic inputs only.");
     }
 
     private static void Save(string path, int width, int height) {
         View.Width = width; View.Height = height;
         View.Measure(new Size(width, height)); View.Arrange(new Rect(0, 0, width, height)); View.UpdateLayout();
         var field = (FrameworkElement)View.FindName("SkyField");
+        var placeholder = (FrameworkElement)View.FindName("EmptyImagePlaceholder");
+        if ((placeholder.Visibility == Visibility.Visible) == current!.HasPreview)
+            throw new InvalidOperationException("Empty placeholder must only show without an image");
         var controls = (FrameworkElement)View.FindName("ControlScroll");
         var detailPanel = (FrameworkElement)View.FindName("AlignmentDetailPanel");
         var detail = (PolarFieldView)View.FindName("AlignmentDetailView");

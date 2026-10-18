@@ -60,6 +60,30 @@ public sealed class SessionTests {
         AssertError(session.Measure(still with { CapturedAtUtc = still.CapturedAtUtc.ToOffset(TimeSpan.FromHours(9)) }), correctedAxis, latitude);
     }
 
+    [Theory]
+    [InlineData(37.5, false)] [InlineData(37.5, true)]
+    [InlineData(-33.9, false)] [InlineData(-33.9, true)]
+    public void FreshPairInTheNextRaIntervalConfirmsTheAdjustedAxis(double latitude, bool flipped) {
+        var oldAxis = Axis(latitude, .6, -.8);
+        var camera = Camera(oldAxis, flipped);
+        var oldSecond = Rotate(camera, oldAxis, 60 * Radians);
+        var original = new PolarAlignmentSession(latitude, Longitude);
+        original.AddCalibration(Frame(camera, latitude, flipped, Start));
+        original.AddCalibration(Frame(oldSecond, latitude, flipped, Start.AddMinutes(2)));
+        var alignedAxis = Axis(latitude, .02, -.03);
+        var correctionAxis = oldAxis.Cross(alignedAxis).Normalized();
+        var correctionAngle = Math.Atan2(oldAxis.Cross(alignedAxis).Length, oldAxis.Dot(alignedAxis));
+        var adjusted = Rotate(oldSecond, correctionAxis, correctionAngle);
+        var verificationFirst = Frame(adjusted, latitude, flipped, Start.AddMinutes(10));
+        var verificationSecond = Frame(Rotate(adjusted, alignedAxis, 60 * Radians), latitude, flipped, Start.AddMinutes(12));
+        var before = original.Measure(verificationFirst);
+        var independentPair = new PolarAlignmentSession(latitude, Longitude);
+        independentPair.AddCalibration(verificationFirst); independentPair.AddCalibration(verificationSecond);
+        var after = independentPair.Measure(verificationSecond);
+        AssertError(before, alignedAxis, latitude); AssertError(after, alignedAxis, latitude);
+        Assert.InRange(Math.Abs(before.TotalArcminutes - after.TotalArcminutes), 0, .03);
+    }
+
     [Fact]
     public void CalibrationStateAndInvalidTransitionsAreExplicit() {
         var session = new PolarAlignmentSession(37.5, Longitude);
