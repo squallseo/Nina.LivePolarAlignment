@@ -1,0 +1,14 @@
+using System.Reflection;
+using System.Runtime.InteropServices;
+
+[assembly: Guid("a1968bf0-8fc3-4605-bf07-b29799485257")]
+[assembly: AssemblyVersion("0.1.0.0")]
+[assembly: AssemblyFileVersion("0.1.0.0")]
+[assembly: AssemblyTitle("Live Polar Alignment")]
+[assembly: AssemblyDescription("Live polar alignment research prototype for N.I.N.A.; alignment workflow is not implemented yet.")]
+[assembly: AssemblyCompany("squallseo")]
+[assembly: AssemblyProduct("Nina.LivePolarAlignment")]
+[assembly: AssemblyMetadata("MinimumApplicationVersion", "3.2.0.9001")]
+[assembly: AssemblyMetadata("Repository", "https://github.com/squallseo/Nina.LivePolarAlignment")]
+[assembly: AssemblyMetadata("Tags", "Polar Alignment,Imaging")]
+[assembly: ComVisible(false)]
