@@ -10,7 +10,7 @@ SharpCap의 직관적인 조정 흐름을 참고하여 자체 C# 코드로 구�
 
 ## 배포본 설치
 
-[0.1.0.14 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.14.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.14.zip.sha256)
+[0.1.0.15 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.15.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.15.zip.sha256)
 
 Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀고 N.I.N.A.를 종료한 뒤 `Install-Plugin.ps1`을 실행하거나, `plugin` 폴더 내용을 아래 로컬 설치 경로에 복사하세요. SDK나 소스 빌드는 필요하지 않습니다.
 
@@ -24,7 +24,7 @@ Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀�
 4. `실시간 조정 시작`을 누르고, 고도·방위각 볼트를 조정해 주황색 RA 회전 중심과 청록색 천구극 표시를 겹칩니다.
 5. `중지`로 촬영을 중단합니다. 카메라 방향·설정이나 관측지를 바꿨다면 `다시`로 기준을 초기화합니다.
 
-자동 RA 회전은 기본 ON입니다. 실행 시 미지원 장비이면 알림창 없이 OFF로 전환하고 수동 회전을 안내합니다. `Auto RA rotation`을 켜면 첫 촬영 → RA 선택한 60° 또는 90° 회전 → 두 번째 촬영을 자동으로 수행합니다. 방향을 선택하고 경로의 간섭 여부를 확인한 뒤 시작하세요. 지원하지 않는 마운트는 수동 방식으로 진행합니다. [자동 RA 회전 안내](docs/auto-ra-rotation.md)
+자동 RA 회전은 기본 ON입니다. 실행 시 미지원 장비이면 알림창 없이 OFF로 전환하고 수동 회전을 안내합니다. `Auto RA rotation`을 켜면 첫 촬영 → RA 선택한 60–90° 회전 → 두 번째 촬영을 자동으로 수행합니다. 방향을 선택하고 경로의 간섭 여부를 확인한 뒤 시작하세요. 지원하지 않는 마운트는 수동 방식으로 진행합니다. [자동 RA 회전 안내](docs/auto-ra-rotation.md)
 
 좌표 GoTo·mount sync·자동 주차 해제·자동 복귀는 하지 않습니다. 볼트 조정 중 RA/Dec와 카메라 장착 상태를 유지해야 합니다.
 오차 부호는 기하학적 고도·방위각 차이이며 볼트를 돌리는 방향이 아닙니다.
@@ -43,7 +43,7 @@ Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀�
 
 `Independent drift verification`에서 천구 적도 근처의 두 위치를 직접 선택하고 추적 중 Dec 드리프트를 관측하는 별도 검사도 사용할 수 있습니다. 재측정·Stability·드리프트 결과를 종합해 재정렬 권고, 검사 불일치, 판정 불가 등을 표시합니다. 기본 목표는 60″이며 변경할 수 있습니다. [독립 검증과 판정 안내](docs/independent-drift.md)
 
-정렬 후 `Verify alignment`에서 새 기준 두 장과 **추가 RA 60° 또는 90° 회전**으로 선택적으로 재측정할 수 있습니다. Dec와 볼트는 고정합니다. 재측정 뒤 Stability 20프레임은 기본 자동이며 옵션으로 끌 수 있습니다. 일반 실시간 조정 중 Stability는 수동 시작입니다. 디버그 파일 기록 없이도 사용할 수 있습니다. [재측정 안내](docs/verification.md)
+정렬 후 `Verify alignment`에서 새 기준 두 장과 **추가 RA 60–90° 회전**으로 선택적으로 재측정할 수 있습니다. Dec와 볼트는 고정합니다. 재측정 뒤 Stability 20프레임은 기본 자동이며 옵션으로 끌 수 있습니다. 일반 실시간 조정 중 Stability는 수동 시작입니다. 디버그 파일 기록 없이도 사용할 수 있습니다. [재측정 안내](docs/verification.md)
 
 우측 `Field validation`에서 자동 세션 기록, `Mark` 원본·메모 저장, `Stability` 20프레임 반복성 검사를 사용할 수 있습니다.
 현장에서는 [검증 절차와 오프라인 분석 안내](docs/field-validation.md)를 따라 기록하고 세션 폴더 전체를 보관하세요.

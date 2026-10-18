@@ -120,7 +120,7 @@ internal static class Program {
         var tp = DispatchProxy.Create<IProfile, SampleProfile>(); ((SampleProfile)(object)tp).Theme = theme;
         var ts = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)ts).Active = tp;
         application.Resources["ProfileService"] = ts;
-        foreach (var r in new[] { "StaticResources/SVGDictionary.xaml", "StaticResources/Brushes.xaml", "Styles/Button.xaml", "Styles/TextBlock.xaml", "Styles/TextBox.xaml", "Styles/CheckBox.xaml", "Styles/ComboBox.xaml", "Styles/Expander.xaml" })
+        foreach (var r in new[] { "StaticResources/SVGDictionary.xaml", "StaticResources/Brushes.xaml", "Styles/Button.xaml", "Styles/TextBlock.xaml", "Styles/TextBox.xaml", "Styles/CheckBox.xaml", "Styles/ComboBox.xaml", "Styles/StepperControl.xaml", "Styles/Expander.xaml" })
             application.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/NINA.WPF.Base;component/Resources/" + r) });
         View = new PolarAlignmentView();
         var layout = new DockPanel();
@@ -300,7 +300,9 @@ internal static class Program {
         SampleCapture.UnsupportedAuto = false;
         await SelectScene(0);
         current!.AutoRaRotation = true;
-        current.RotationPathClear = true; current.RotationAngleDegrees = 90;
+        current.RotationPathClear = true; current.RotationAngleDegrees = 80;
+        if (current.RotationAngleDegrees != 80 || current.RotationPathClear) throw new InvalidOperationException("Ten-degree angle change must clear path confirmation");
+        current.RotationAngleDegrees = 90;
         if (current.RotationPathClear) throw new InvalidOperationException("Changing angle must clear path confirmation");
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         if (!current.HasOperationError || current.WorkflowStep != 0 || SampleCapture.Rotations != 0)

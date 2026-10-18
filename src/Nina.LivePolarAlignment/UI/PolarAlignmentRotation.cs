@@ -8,12 +8,11 @@ public sealed partial class PolarAlignmentDockableVM {
     private bool autoRaRotation = true, reverseRaRotation, rotationPathClear, rotationInProgress, automaticRotationCompleted;
     private double rotationProgress;
     private int rotationAngleDegrees = 90;
-    public int[] RotationAngleChoices { get; } = { 90, 60 };
     public int RotationAngleDegrees {
         get => rotationAngleDegrees;
         set {
-            if (!(CanConfigureRotation || CanConfigureVerification) || value is not (60 or 90)) return;
-            rotationAngleDegrees = value; rotationPathClear = false; verificationPathClear = false;
+            if (!(CanConfigureRotation || CanConfigureVerification)) return;
+            rotationAngleDegrees = (int)Math.Clamp(Math.Round(value / 10d) * 10, 60, 90); rotationPathClear = false; verificationPathClear = false;
             NotifyRotation(); NotifyVerification(); NotifyWorkflow();
         }
     }

@@ -30,7 +30,7 @@ public sealed class RaRotationTests {
     private static RaRotation Controller() => new((_, token) => { token.ThrowIfCancellationRequested(); return Task.CompletedTask; });
 
     [Theory]
-    [InlineData(45)] [InlineData(double.NaN)]
+    [InlineData(45)] [InlineData(65)] [InlineData(100)] [InlineData(double.NaN)]
     public async Task InvalidAngleDoesNotChangeMount(double angle) {
         var mount = new Mount();
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Controller().RunAsync(mount, false, null, default, angle));
@@ -38,7 +38,7 @@ public sealed class RaRotationTests {
     }
 
     [Theory]
-    [InlineData(false, 60)] [InlineData(true, 60)] [InlineData(false, 90)] [InlineData(true, 90)]
+    [InlineData(false, 60)] [InlineData(true, 60)] [InlineData(false, 70)] [InlineData(true, 70)] [InlineData(false, 80)] [InlineData(true, 80)] [InlineData(false, 90)] [InlineData(true, 90)]
     public async Task RotatesAcrossRaWrapAndStopsBeforeRestoringTracking(bool reverse, double targetDegrees) {
         var mount = new Mount();
         await Controller().RunAsync(mount, reverse, null, default, targetDegrees);

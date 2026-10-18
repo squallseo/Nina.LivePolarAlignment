@@ -34,7 +34,7 @@ public sealed class RaRotation {
         return rates.Max();
     }
     public async Task RunAsync(IRaRotationMount mount, bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
-        if (targetDegrees is not (60 or 90)) throw new ArgumentOutOfRangeException(nameof(targetDegrees));
+        if (!double.IsFinite(targetDegrees) || targetDegrees < 60 || targetDegrees > 90 || targetDegrees % 10 != 0) throw new ArgumentOutOfRangeException(nameof(targetDegrees));
         token.ThrowIfCancellationRequested();
         var initial = mount.Read(); var rate = SelectRate(initial);
         bool owned = false, stopped = false;
