@@ -6,4 +6,5 @@ analysis/*
 .vs/
 *.user
 *.rea.backup*
+artifacts/
 

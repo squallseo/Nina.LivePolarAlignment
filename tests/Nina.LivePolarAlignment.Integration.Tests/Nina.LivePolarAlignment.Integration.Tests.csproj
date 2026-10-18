@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Override NinaInstallDirectory when NINA is installed elsewhere. No binaries are vendored. -->
+    <NinaInstallDirectory Condition="'$(NinaInstallDirectory)' == ''">$(ProgramFiles)\N.I.N.A. - Nighttime Imaging 'N' Astronomy</NinaInstallDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <ProjectReference Include="../../src/Nina.LivePolarAlignment/Nina.LivePolarAlignment.csproj" />
+    <None Include="$(NinaInstallDirectory)\External\x64\SOFA\SOFAlib.dll"
+          Condition="Exists('$(NinaInstallDirectory)\External\x64\SOFA\SOFAlib.dll')"
+          Link="External/x64/SOFA/SOFAlib.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(NinaInstallDirectory)\External\x64\NOVAS\NOVAS31lib.dll"
+          Condition="Exists('$(NinaInstallDirectory)\External\x64\NOVAS\NOVAS31lib.dll')"
+          Link="External/x64/NOVAS/NOVAS31lib.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(NinaInstallDirectory)\SQLite.Interop.dll"
+          Condition="Exists('$(NinaInstallDirectory)\SQLite.Interop.dll')"
+          Link="SQLite.Interop.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

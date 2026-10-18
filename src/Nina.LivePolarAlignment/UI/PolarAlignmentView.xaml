@@ -1,0 +1,85 @@
+<UserControl x:Class="Nina.LivePolarAlignment.UI.PolarAlignmentView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" MinWidth="300">
+ <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+  <StackPanel Margin="16">
+   <TextBlock Text="LIVE POLAR ALIGNMENT" FontSize="18" FontWeight="SemiBold"/>
+   <TextBlock Text="Camera → rotate RA → adjust bolts" FontSize="15" Margin="0,8,0,6"/>
+   <TextBlock Text="Experimental prototype · hardware accuracy is not yet verified." TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,12"/>
+   <TextBlock Text="Exposure (seconds)"/>
+   <TextBox Text="{Binding ExposureSeconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureLive}" Width="80" HorizontalAlignment="Left" Margin="0,5,0,8"/>
+   <WrapPanel>
+    <Button Content="Capture reference" Command="{Binding CaptureReferenceCommand}" Padding="10,7" Margin="0,0,8,8"/>
+    <Button Content="Start live" Command="{Binding StartLiveCommand}" Padding="10,7" Margin="0,0,8,8"/>
+    <Button Content="Stop" Command="{Binding StopLiveCommand}" Padding="10,7" Margin="0,0,8,8"/>
+    <Button Content="Reset calibration" Command="{Binding ResetLiveCommand}" Padding="10,7" Margin="0,0,0,8"/>
+   </WrapPanel>
+   <TextBlock Text="{Binding LiveStatus}" TextWrapping="Wrap" Margin="0,4,0,12"/>
+   <Border BorderBrush="#505C7185" BorderThickness="1" CornerRadius="6" Padding="12">
+    <StackPanel>
+     <TextBlock Text="MEASURED POLAR ERROR" FontSize="11" Opacity="0.7"/>
+     <TextBlock Text="{Binding LiveTotalError}" FontSize="40" FontWeight="Light" Margin="0,6,0,4"/>
+     <TextBlock Text="{Binding LiveAltitudeError}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+     <TextBlock Text="{Binding LiveAzimuthError}" Margin="0,0,0,8"/>
+     <TextBlock Text="{Binding FrameFreshness}" TextWrapping="Wrap" FontSize="11" Opacity="0.7" Margin="0,0,0,10"/>
+     <Viewbox Stretch="Uniform" MaxHeight="320">
+      <Grid Width="{Binding ImageWidth}" Height="{Binding ImageHeight}" Background="#101B29" ClipToBounds="True">
+       <Image Source="{Binding LivePreview}" Stretch="Fill"/>
+       <Canvas>
+        <Canvas.Style><Style TargetType="Canvas"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasVisibleGuidance}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Canvas.Style>
+        <Ellipse Canvas.Left="{Binding AxisLeft}" Canvas.Top="{Binding AxisTop}" Width="{Binding MarkerSize}" Height="{Binding MarkerSize}" Stroke="#F3B35C" StrokeThickness="5"/>
+        <Ellipse Canvas.Left="{Binding PoleLeft}" Canvas.Top="{Binding PoleTop}" Width="{Binding MarkerSize}" Height="{Binding MarkerSize}" Stroke="#7DD3C0" StrokeThickness="5"/>
+       </Canvas>
+      </Grid>
+     </Viewbox>
+     <TextBlock Text="{Binding GuidanceText}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+    </StackPanel>
+   </Border>
+   <TextBlock Text="No automatic mount motion. Use the same camera and N.I.N.A. site throughout calibration. Signed altitude/azimuth values are geometric offsets, not bolt-turn directions." TextWrapping="Wrap" Opacity="0.65" Margin="0,10,0,12"/>
+   <Expander IsExpanded="False">
+    <Expander.Header><TextBlock Text="Explore the workflow with synthetic demo data" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=UserControl}}" TextWrapping="Wrap"/></Expander.Header>
+    <StackPanel>
+   <Border Background="#332DA5C9" Padding="10" Margin="0,12,0,12" CornerRadius="4">
+    <TextBlock Text="WORKFLOW DEMO · Synthetic reference data. Camera capture and live star tracking are not connected. Do not use these values to align equipment." TextWrapping="Wrap"/>
+   </Border>
+   <TextBlock Text="{Binding Stage}" FontSize="20" FontWeight="SemiBold"/>
+   <TextBlock Text="{Binding Progress}" Margin="0,4,0,8" Opacity="0.7"/>
+   <TextBlock Text="{Binding NextAction}" TextWrapping="Wrap" MinHeight="45"/>
+   <WrapPanel Margin="0,12,0,16">
+    <Button Content="Start demo" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}" Padding="12,7" Margin="0,0,8,8"/>
+    <Button Content="{Binding CaptureLabel}" Command="{Binding CaptureCommand}" Padding="12,7" Margin="0,0,8,8"/>
+    <Button Content="Stop / reset" Command="{Binding StopCommand}" Padding="12,7" Margin="0,0,0,8"/>
+   </WrapPanel>
+   <Border BorderBrush="#505C7185" BorderThickness="1" CornerRadius="6" Padding="12">
+    <StackPanel>
+     <TextBlock Text="TOTAL POLAR ERROR · DEMO" FontSize="11" Opacity="0.7" HorizontalAlignment="Center"/>
+     <TextBlock Text="{Binding TotalError}" FontSize="40" FontWeight="Light" HorizontalAlignment="Center"/>
+     <Viewbox Stretch="Uniform" MaxHeight="250">
+      <Canvas Width="320" Height="220" Background="#101B29">
+       <Line X1="160" Y1="15" X2="160" Y2="205" Stroke="#384B60"/>
+       <Line X1="15" Y1="110" X2="305" Y2="110" Stroke="#384B60"/>
+       <Ellipse Width="96" Height="96" Canvas.Left="112" Canvas.Top="62" Stroke="#334E6178"/>
+       <Ellipse Width="24" Height="24" Canvas.Left="148" Canvas.Top="98" Stroke="#7DD3C0" StrokeThickness="2"/>
+       <TextBlock Text="TARGET" Foreground="#7DD3C0" Canvas.Left="136" Canvas.Top="128" FontSize="10"/>
+       <Ellipse Width="12" Height="12" Canvas.Left="{Binding MarkerLeft}" Canvas.Top="{Binding MarkerTop}" Fill="#F3B35C" IsEnabled="{Binding IsAdjusting}">
+        <Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Opacity" Value="0"/><Style.Triggers><DataTrigger Binding="{Binding IsAdjusting}" Value="True"><Setter Property="Opacity" Value="1"/></DataTrigger></Style.Triggers></Style></Ellipse.Style>
+       </Ellipse>
+      </Canvas>
+     </Viewbox>
+     <TextBlock Text="{Binding Quality}" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,8,0,8"/>
+     <TextBlock Text="{Binding AltitudeText}" Margin="0,4"/>
+     <TextBlock Text="{Binding AzimuthText}" Margin="0,4"/>
+    </StackPanel>
+   </Border>
+   <StackPanel IsEnabled="{Binding IsAdjusting}" Margin="0,16,0,0">
+    <TextBlock Text="Simulate altitude adjustment"/>
+    <Slider Minimum="-12" Maximum="12" Value="{Binding AltitudeError}" Margin="0,8,0,12" AutomationProperties.Name="Demo altitude error in arcminutes"/>
+    <TextBlock Text="Simulate azimuth adjustment"/>
+    <Slider Minimum="-12" Maximum="12" Value="{Binding AzimuthError}" Margin="0,8,0,12" AutomationProperties.Name="Demo azimuth error in arcminutes"/>
+   </StackPanel>
+   <TextBlock Text="In a real session, rotate RA only during calibration. During adjustment, use the mount's physical altitude and azimuth bolts. Screen directions depend on camera orientation; bolt directions require calibration." TextWrapping="Wrap" Opacity="0.65" Margin="0,8,0,0"/>
+    </StackPanel>
+   </Expander>
+  </StackPanel>
+ </ScrollViewer>
+</UserControl>

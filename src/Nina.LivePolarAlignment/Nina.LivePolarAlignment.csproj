@@ -10,5 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NINA.Plugin" Version="3.2.0.9001" />
+    <ProjectReference Include="../Nina.LivePolarAlignment.Core/Nina.LivePolarAlignment.Core.csproj" />
   </ItemGroup>
 </Project>
