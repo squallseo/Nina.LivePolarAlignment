@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Nina.LivePolarAlignment.UI;
 
 public sealed partial class PolarAlignmentDockableVM {
-    private bool autoRaRotation = true, reverseRaRotation, rotationInProgress, automaticRotationCompleted;
+    private bool autoRaRotation = true, reverseRaRotation = true, rotationInProgress, automaticRotationCompleted;
     private double rotationProgress;
     private int rotationAngleDegrees = 90;
     public int RotationAngleDegrees {

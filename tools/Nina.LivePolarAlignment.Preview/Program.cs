@@ -171,7 +171,7 @@ internal static class Program {
             var profiles = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)profiles).Active = profile;
             var capture = new SampleCapture();
             current = new PolarAlignmentDockableVM(profiles, capture);
-            if (!current.AutoRaRotation || !current.UseStreaming || current.RotationAngleDegrees != 90) throw new InvalidOperationException("Acquisition defaults must be on");
+            if (!current.AutoRaRotation || !current.UseStreaming || current.RotationAngleDegrees != 90 || !current.ReverseRaRotation || !current.VerificationReverse) throw new InvalidOperationException("Acquisition defaults must be on with westward RA rotation");
             current.AutoRaRotation = false; current.UseStreaming = false;
             capture.Step = () => current.WorkflowStep;
             View.DataContext = current;
@@ -306,9 +306,10 @@ internal static class Program {
         current!.AutoRaRotation = true;
         Save(Path.Combine(directory, "ui-auto-settings-1280.png"), 1280, 800);
         if (!settingsPanel.IsEnabled || Math.Abs(settingsPanel.ActualHeight - manualHeight) > .1) throw new InvalidOperationException("Automatic mode must preserve rotation settings layout");
+        current.ReverseRaRotation = false;
+        Save(Path.Combine(directory, "ui-east-settings-1280.png"), 1280, 800);
         current.ReverseRaRotation = true;
         Save(Path.Combine(directory, "ui-reversed-settings-1280.png"), 1280, 800);
-        current.ReverseRaRotation = false;
         current.DecreaseRotationAngleCommand.Execute(null);
         if (current.RotationAngleDegrees != 80) throw new InvalidOperationException("Decrement must change angle by ten degrees");
         current.IncreaseRotationAngleCommand.Execute(null);

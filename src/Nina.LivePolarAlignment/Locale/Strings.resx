@@ -407,4 +407,4 @@
   <data name="ManualReady" xml:space="preserve"><value>Polar alignment</value></data>
   <data name="ActionStart" xml:space="preserve"><value>Start</value></data>
   <data name="AdjustBrief" xml:space="preserve"><value>Use the altitude and azimuth bolts to bring the RA axis onto the celestial pole. Keep RA and camera fixed.</value></data>
-  <data name="RotationDirectionHint" xml:space="preserve"><value>Relative RA command direction. Actual mount motion follows N.I.N.A. manual-control reversal settings and mount orientation.</value></data></root>
+  <data name="RotationDirectionHint" xml:space="preserve"><value>ON: N.I.N.A. left / W button direction (default). OFF: right / E. Both follow the N.I.N.A. primary-axis reversal setting; the icon is not a sky-view rotation prediction.</value></data></root>

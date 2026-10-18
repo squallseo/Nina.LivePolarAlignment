@@ -12,7 +12,7 @@ public sealed record VerificationResult(DateTimeOffset CompletedAtUtc, PolarErro
 }
 
 public sealed partial class PolarAlignmentDockableVM {
-    private bool verificationInProgress, verificationReverse, autoVerificationStability = true;
+    private bool verificationInProgress, verificationReverse = true, autoVerificationStability = true;
     private VerificationResult? verificationResult;
     public ICommand VerifyAlignmentCommand { get; private set; } = null!;
     public bool CanConfigureVerification => !IndependentDriftEnabled && !liveBusy && !fieldSaving && session?.IsCalibrated == true;

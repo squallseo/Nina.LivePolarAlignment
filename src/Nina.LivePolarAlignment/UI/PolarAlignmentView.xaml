@@ -6,9 +6,16 @@
  MinWidth="320" Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource PrimaryBrush}" FontFamily="Segoe UI" FontSize="12">
  <UserControl.Resources>
       <DataTemplate x:Key="RotationDirectionIcon">
-        <Path Width="20" Height="20" Stretch="Uniform" Stroke="{DynamicResource PrimaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M 4,15 A 7,7 0 1 1 16,15 M 16,9 L 16,15 L 10,15" RenderTransformOrigin="0.5,0.5">
-          <Path.Style><Style TargetType="Path"><Style.Triggers><DataTrigger Binding="{Binding}" Value="True"><Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="-1"/></Setter.Value></Setter></DataTrigger></Style.Triggers></Style></Path.Style>
-        </Path>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <Viewbox Width="20" Height="20" Margin="0,0,4,0">
+            <Canvas Width="24" Height="24" RenderTransformOrigin="0.5,0.5">
+              <Canvas.Style><Style TargetType="Canvas"><Style.Triggers><DataTrigger Binding="{Binding}" Value="True"><Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="-1"/></Setter.Value></Setter></DataTrigger></Style.Triggers></Style></Canvas.Style>
+              <Path Data="M 12,20 A 8,8 0 1 1 20,12" Stroke="{DynamicResource PrimaryBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round"/>
+              <Path Data="M 16,10 L 20,16 L 24,10 Z" Fill="{DynamicResource PrimaryBrush}"/>
+            </Canvas>
+          </Viewbox>
+          <TextBlock VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource PrimaryBrush}"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="E →"/><Style.Triggers><DataTrigger Binding="{Binding}" Value="True"><Setter Property="Text" Value="← W"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+        </StackPanel>
       </DataTemplate>
 
       <Style x:Key="AlignmentButton" TargetType="Button">
