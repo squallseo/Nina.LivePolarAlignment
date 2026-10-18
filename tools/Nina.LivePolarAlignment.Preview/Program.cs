@@ -159,7 +159,7 @@ internal static class Program {
         SampleProfile.Language = "en-US"; NINA.Core.Locale.Loc.Instance.ReloadLocale(SampleProfile.Language); UiText.Refresh();
         current!.StopLiveCommand.Execute(null);
         await currentLoop!;
-        if (!current.IsMeasurementStale || current.HasCurrentFieldGuidance) throw new InvalidOperationException("Old guidance survived stop");
+        if (!current.IsMeasurementStale || current.HasCurrentFieldGuidance || current.HasAlignmentDetail) throw new InvalidOperationException("Old guidance survived stop");
         Save(Path.Combine(directory, "ui-paused-1280.png"), 1280, 800);
         current.UseStreaming = true;
         currentLoop = ((IAsyncRelayCommand)current.StartLiveCommand).ExecuteAsync(null);
@@ -181,6 +181,15 @@ internal static class Program {
         View.Measure(new Size(width, height)); View.Arrange(new Rect(0, 0, width, height)); View.UpdateLayout();
         var field = (FrameworkElement)View.FindName("SkyField");
         var controls = (FrameworkElement)View.FindName("ControlScroll");
+        var detailPanel = (FrameworkElement)View.FindName("AlignmentDetailPanel");
+        var detail = (PolarFieldView)View.FindName("AlignmentDetailView");
+        if (current!.HasAlignmentDetail) {
+            if (detailPanel.Visibility != Visibility.Visible || detail.ActualHeight < 150 || !detail.DetailMode
+                || !ReferenceEquals(detail.Preview, ((PolarFieldView)field).Preview)
+                || !ReferenceEquals(detail.Guidance, ((PolarFieldView)field).Guidance))
+                throw new InvalidOperationException("Alignment close-up must use the current full-image pixels and guidance");
+        } else if (detailPanel.Visibility != Visibility.Collapsed)
+            throw new InvalidOperationException("Close-up must disappear without a current measured image");
         if (width >= 900) {
             if (field.ActualWidth < width * .6 || field.ActualHeight < height * .65
                 || controls.TranslatePoint(new Point(), View).X < width * .6)

@@ -16,6 +16,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public string OperationError => operationError ?? string.Empty;
     public bool HasLiveMeasurement => latestError != null;
     public bool HasPreview => livePreview != null;
+    public bool HasAlignmentDetail => HasLiveMeasurement && HasCurrentFieldGuidance && HasPreview;
     public bool HasCurrentFieldGuidance => guidance != null && (calibrationSamples < 2 || !IsMeasurementStale);
     public Capture.PolarGuidance? FieldGuidance => guidance;
     public double PixelScaleArcseconds => pixelScale;
@@ -55,7 +56,7 @@ public sealed partial class PolarAlignmentDockableVM {
     private void NotifyWorkflow() {
         foreach (var name in new[] { nameof(WorkflowStep), nameof(IsRotationStep), nameof(IsAdjustmentStep),
             nameof(IsWorking), nameof(HasOperationError), nameof(OperationError), nameof(HasLiveMeasurement),
-            nameof(HasPreview), nameof(HasCurrentFieldGuidance), nameof(FieldGuidance), nameof(PixelScaleArcseconds),
+            nameof(HasPreview), nameof(HasAlignmentDetail), nameof(HasCurrentFieldGuidance), nameof(FieldGuidance), nameof(PixelScaleArcseconds),
             nameof(PrimaryActionLabel), nameof(PrimaryActionCommand), nameof(WorkflowTitle), nameof(WorkflowDescription),
             nameof(RotationReadout), nameof(MeasurementState), nameof(IsWithinTarget), nameof(AltitudeValue),
             nameof(AzimuthValue), nameof(AltitudeAction), nameof(AzimuthAction) }) RaisePropertyChanged(name);

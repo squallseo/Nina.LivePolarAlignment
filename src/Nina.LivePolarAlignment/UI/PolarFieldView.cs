@@ -27,6 +27,8 @@ public sealed class PolarFieldView : FrameworkElement {
     private static Brush Color(string hex) => (Brush)new BrushConverter().ConvertFromString(hex)!;
     public static readonly DependencyProperty FocusAlignmentProperty = DependencyProperty.Register(nameof(FocusAlignment), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public bool FocusAlignment { get => (bool)GetValue(FocusAlignmentProperty); set => SetValue(FocusAlignmentProperty, value); }
+    public static readonly DependencyProperty DetailModeProperty = DependencyProperty.Register(nameof(DetailMode), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
+    public bool DetailMode { get => (bool)GetValue(DetailModeProperty); set => SetValue(DetailModeProperty, value); }
     private Brush Mint => TryFindResource("ButtonBackgroundSelectedBrush") as Brush ?? Brushes.LightGray;
     private Brush Amber => TryFindResource("CrosshairBrush") as Brush ?? Brushes.Gray;
     private Brush Muted => TryFindResource("PrimaryBrush") as Brush ?? Brushes.LightGray;
@@ -47,10 +49,12 @@ public sealed class PolarFieldView : FrameworkElement {
         double height = Guidance?.Height ?? Preview?.PixelHeight ?? 600;
         double scale = Math.Min(ActualWidth / width, ActualHeight / height);
         double cx = width / 2, cy = height / 2;
-        if (FocusAlignment && IsCurrent && Guidance?.CelestialPole is { } target) {
+        if ((FocusAlignment || DetailMode) && IsCurrent && Guidance?.CelestialPole is { } target) {
             var axis = Guidance.MountAxis ?? target;
             cx = (target.X + axis.X) / 2; cy = (target.Y + axis.Y) / 2;
-            scale = Math.Max(scale, Math.Min(ActualWidth / Math.Max(width * .32, Math.Abs(target.X - axis.X) * 2.5), ActualHeight / Math.Max(height * .32, Math.Abs(target.Y - axis.Y) * 2.5)));
+            double minimumFraction = DetailMode ? .08 : .32;
+            double padding = DetailMode ? 1.6 : 2.5;
+            scale = Math.Max(scale, Math.Min(ActualWidth / Math.Max(width * minimumFraction, Math.Abs(target.X - axis.X) * padding), ActualHeight / Math.Max(height * minimumFraction, Math.Abs(target.Y - axis.Y) * padding)));
         }
         var imageRect = new Rect(ActualWidth / 2 - cx * scale, ActualHeight / 2 - cy * scale, width * scale, height * scale);
         if (Preview != null) dc.DrawImage(Preview, imageRect);
@@ -64,7 +68,7 @@ public sealed class PolarFieldView : FrameworkElement {
         if (IsCurrent && Guidance != null) {
             Point? pole = Guidance.CelestialPole is { } p ? Map(p) : null;
             Point? axis = Guidance.MountAxis is { } a ? Map(a) : null;
-            if (pole is { } center && double.IsFinite(PixelScale) && PixelScale > 0) {
+            if (!DetailMode && pole is { } center && double.IsFinite(PixelScale) && PixelScale > 0) {
                 // Angular-distance guide rings, not a claimed observed stellar trajectory.
                 int count = 0;
                 foreach (double degrees in new[] { 1.0 / 60, 5.0 / 60, .25, .5, 1, 2, 5 }) {
@@ -88,7 +92,7 @@ public sealed class PolarFieldView : FrameworkElement {
                     dc.DrawEllipse(null, pen, mount, 8, 8);
                     dc.DrawLine(pen, new(mount.X - 13, mount.Y), new(mount.X + 13, mount.Y));
                     dc.DrawLine(pen, new(mount.X, mount.Y - 13), new(mount.X, mount.Y + 13));
-                    Label(dc, "RA Axis", new Point(mount.X + 17, mount.Y - 7), Amber, 11);
+                    Label(dc, "RA Axis", DetailMode ? new Point(mount.X - 44, mount.Y - 28) : new Point(mount.X + 17, mount.Y - 7), Amber, DetailMode ? 10 : 11);
                 } else EdgeMarker(dc, mount, UiText.Get("Field1"), Amber, bounds);
             }
             if (pole is { } celestial) {
