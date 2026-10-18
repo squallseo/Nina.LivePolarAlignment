@@ -15,8 +15,8 @@ public sealed partial class PolarAlignmentDockableVM {
     private bool verificationInProgress, verificationPathClear, verificationReverse, autoVerificationStability = true;
     private VerificationResult? verificationResult;
     public ICommand VerifyAlignmentCommand { get; private set; } = null!;
-    public bool CanConfigureVerification => !liveBusy && !fieldSaving && session?.IsCalibrated == true;
-    public bool ShowVerification => IsAdjustmentStep || verificationInProgress;
+    public bool CanConfigureVerification => !IndependentDriftEnabled && !liveBusy && !fieldSaving && session?.IsCalibrated == true;
+    public bool ShowVerification => !IndependentDriftEnabled && (IsAdjustmentStep || verificationInProgress);
     public bool HasVerificationResult => verificationResult != null;
     public bool VerificationPathClear { get => verificationPathClear; set { if (CanConfigureVerification) { verificationPathClear = value; NotifyVerification(); } } }
     public bool VerificationReverse { get => verificationReverse; set { if (CanConfigureVerification) { verificationReverse = value; verificationPathClear = false; NotifyVerification(); } } }

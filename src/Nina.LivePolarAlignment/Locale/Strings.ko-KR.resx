@@ -52,7 +52,7 @@
     <value>이전 측정 · 일시정지</value>
   </data>
   <data name="Workflow14" xml:space="preserve">
-    <value>목표 범위 · 1′ 이내</value>
+    <value>설정한 목표 이내</value>
   </data>
   <data name="Workflow15" xml:space="preserve">
     <value>좋음 · 미세 조정</value>
@@ -317,5 +317,86 @@
   </data>
   <data name="VerificationComplete" xml:space="preserve">
     <value>재측정을 마쳤습니다. 추가 조정 전에 측정 차이와 반복성을 확인하세요.</value>
+  </data>
+  <data name="DriftTitle" xml:space="preserve">
+    <value>독립 드리프트 검증</value>
+  </data>
+  <data name="DriftEnable" xml:space="preserve">
+    <value>독립 드리프트 검사 사용</value>
+  </data>
+  <data name="DriftFirst" xml:space="preserve">
+    <value>자오선 부근 측정</value>
+  </data>
+  <data name="DriftSecond" xml:space="preserve">
+    <value>동쪽 / 서쪽 측정</value>
+  </data>
+  <data name="DriftMeasuring" xml:space="preserve">
+    <value>드리프트 측정 중…</value>
+  </data>
+  <data name="DriftFirstHint" xml:space="preserve">
+    <value>적위 0도에서 25도 이내, 자오선에서 15도 이내, 고도 25도 이상으로 직접 이동하세요. 항성시 추적은 켜고 가이딩·디더링·보정은 끕니다. 볼트와 카메라를 고정하세요. 선택한 시간 동안 20장 이상 해석합니다. 자동 이동은 하지 않습니다.</value>
+  </data>
+  <data name="DriftSecondHint" xml:space="preserve">
+    <value>볼트는 그대로 두고 적위 0도 부근, 시간각 45–75도의 동쪽 또는 서쪽 하늘로 직접 이동하세요. 고도는 25도 이상이어야 합니다. 추적을 켜고 가이딩을 끈 상태에서 다시 확인하고 30분 이내에 두 번째 측정을 마치세요.</value>
+  </data>
+  <data name="DriftConfirm" xml:space="preserve">
+    <value>가이딩·보정 끔, 마운트·볼트 고정 확인</value>
+  </data>
+  <data name="DriftReset" xml:space="preserve">
+    <value>두 드리프트 측정 초기화</value>
+  </data>
+  <data name="DriftProgress" xml:space="preserve">
+    <value>드리프트 기록: {0:0} / {1:0}초 (새 영상 20장 이상)</value>
+  </data>
+  <data name="DriftReady" xml:space="preserve">
+    <value>두 위치의 측정이 필요합니다. 독립 검증 결과는 아직 없습니다.</value>
+  </data>
+  <data name="DriftFirstDone" xml:space="preserve">
+    <value>첫 위치 저장: Dec 드리프트 {0:0.00}″/분. 두 번째 위치로 직접 이동하세요.</value>
+  </data>
+  <data name="DriftResult" xml:space="preserve">
+    <value>드리프트 추정 {0:0}″, 보수 범위 {1:0}–{2:0}″. 같은 solver와 대기 영향의 편향은 남을 수 있습니다.</value>
+  </data>
+  <data name="DriftInconclusive" xml:space="preserve">
+    <value>판정 불가: {0}</value>
+  </data>
+  <data name="DriftCancelled" xml:space="preserve">
+    <value>취소되었습니다. 두 위치를 다시 측정하세요.</value>
+  </data>
+  <data name="ValidationTarget" xml:space="preserve">
+    <value>목표 오차 (초각)</value>
+  </data>
+  <data name="AssessmentPending" xml:space="preserve">
+    <value>독립 검증 전입니다. 목표 {0:0}″. 반복성·재측정만으로 절대 정확도를 인증하지 않습니다.</value>
+  </data>
+  <data name="AssessmentInconclusive" xml:space="preserve">
+    <value>목표 {0:0}″에 대해 판정 불가입니다. 위치·추적·시상을 확인하고 안정된 조건에서 시간을 늘려 재검사하세요.</value>
+  </data>
+  <data name="AssessmentRealign" xml:space="preserve">
+    <value>잔여 오차가 목표 {0:0}″를 초과합니다. 설정 확인 후 극축을 다시 정렬하고 재검사하세요.</value>
+  </data>
+  <data name="AssessmentInconsistent" xml:space="preserve">
+    <value>검사 결과가 서로 다릅니다. 재정렬 전에 가이딩·추적·굴절·카메라 고정을 확인하세요. 목표 {0:0}″.</value>
+  </data>
+  <data name="AssessmentWithinAvailableChecks" xml:space="preserve">
+    <value>현재 검사에서 목표 {0:0}″ 초과가 검출되지 않았습니다. 절대 정확도 인증은 아닙니다.</value>
+  </data>
+  <data name="DriftPhaseComplete">
+    <value>드리프트 측정을 마쳤습니다. 독립 검증 패널의 결과를 확인하세요.</value>
+  </data>
+  <data name="DriftDuration">
+    <value>위치당 시간 (120–540초)</value>
+  </data>
+  <data name="DriftRecordingCount">
+    <value>로컬 기록 중: 드리프트 {0}장</value>
+  </data>
+  <data name="DriftImage">
+    <value>독립 드리프트 관측 영상</value>
+  </data>
+  <data name="DriftFinished">
+    <value>독립 검증 완료</value>
+  </data>
+  <data name="DriftCompletedHint">
+    <value>결과 확인 후 세션 폴더를 보관하세요. 다시 정렬하려면 드리프트 모드를 끄고 천구극 근처로 직접 돌아가 새 기준을 촬영하세요. 자동 이동이나 볼트 조정은 하지 않습니다.</value>
   </data>
 </root>

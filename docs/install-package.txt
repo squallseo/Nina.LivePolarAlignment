@@ -12,6 +12,9 @@ Requires Windows x64 and N.I.N.A. 3.2.0.9001 or newer. No SDK or build required.
 7. After adjustment, Stop and expand Verify alignment for optional fresh-pair
    remeasurement with a further RA rotation. Dec stays fixed. A 20-frame Stability
    check follows by default; it can be turned off. See verification.md.
+8. Optional Independent drift verification: manually select two equatorial fields,
+   keep sidereal tracking on and all guiding/corrections off. The plugin records
+   Dec drift and assesses residuals against your target. See independent-drift.md.
 
 Recording is off by default and stored per N.I.N.A. profile.
 Existing records are kept when off.

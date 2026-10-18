@@ -20,18 +20,18 @@ public sealed partial class PolarAlignmentDockableVM {
     public bool HasCurrentFieldGuidance => guidance != null && (calibrationSamples < 2 || !IsMeasurementStale);
     public Capture.PolarGuidance? FieldGuidance => guidance;
     public double PixelScaleArcseconds => pixelScale;
-    public string PrimaryActionLabel => IsRotating ? UiText.Get("AutoRaWorking") : liveBusy ? UiText.Get("Workflow0") : WorkflowStep switch {
+    public string PrimaryActionLabel => IndependentDriftEnabled ? (driftInProgress ? UiText.Get("DriftMeasuring") : DriftActionLabel) : IsRotating ? UiText.Get("AutoRaWorking") : liveBusy ? UiText.Get("Workflow0") : WorkflowStep switch {
         0 => UiText.Get(AutoRaRotation ? "AutoRaStart" : "Workflow1"),
         1 => UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoRaSecond" : "Workflow2"),
         _ => UiText.Get("Workflow3")
     };
-    public ICommand PrimaryActionCommand => IsAdjustmentStep ? StartLiveCommand : CaptureReferenceCommand;
-    public string WorkflowTitle => IsRotating ? UiText.Get("AutoRaWorking") : WorkflowStep switch {
+    public ICommand PrimaryActionCommand => IndependentDriftEnabled ? IndependentDriftCommand : IsAdjustmentStep ? StartLiveCommand : CaptureReferenceCommand;
+    public string WorkflowTitle => IndependentDriftEnabled ? UiText.Get("DriftTitle") : IsRotating ? UiText.Get("AutoRaWorking") : WorkflowStep switch {
         0 => UiText.Get("Workflow4"),
         1 => UiText.Get("Workflow5"),
         _ => liveBusy ? UiText.Get("Workflow6") : UiText.Get("Workflow7")
     };
-    public string WorkflowDescription => WorkflowStep switch {
+    public string WorkflowDescription => IndependentDriftEnabled ? DriftInstruction : WorkflowStep switch {
         0 => UiText.Get(AutoRaRotation ? "AutoRaHint" : "Workflow8"),
         1 => UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoRaHint" : "Workflow9"),
         _ => UiText.Get("Workflow10")
@@ -39,9 +39,9 @@ public sealed partial class PolarAlignmentDockableVM {
     public string RotationReadout => session?.RotationDegrees is { } rotation
         ? UiText.Format("RotationMeasured", rotation) : UiText.Get("Workflow11");
     public string MeasurementState => latestError == null ? UiText.Get("Workflow12") : IsMeasurementStale ? UiText.Get("Workflow13")
-        : latestError.Value.TotalArcminutes <= 1 ? UiText.Get("Workflow14")
-        : latestError.Value.TotalArcminutes <= 2 ? UiText.Get("Workflow15") : UiText.Get("Workflow16");
-    public bool IsWithinTarget => latestError is { TotalArcminutes: <= 1 } && !IsMeasurementStale;
+        : latestError.Value.TotalArcminutes <= validationTarget / 60 ? UiText.Get("Workflow14")
+        : latestError.Value.TotalArcminutes <= validationTarget / 30 ? UiText.Get("Workflow15") : UiText.Get("Workflow16");
+    public bool IsWithinTarget => latestError is { } targetError && targetError.TotalArcminutes <= validationTarget / 60 && !IsMeasurementStale;
     public string AltitudeValue => latestError is { } error ? $"{error.AltitudeArcminutes:+0.00;-0.00;0.00}′" : "—";
     public string AzimuthValue => latestError is { } error ? $"{error.AzimuthArcminutes:+0.00;-0.00;0.00}′" : "—";
     public string AltitudeAction => latestError == null ? UiText.Get("Workflow17") : IsMeasurementStale ? UiText.Get("Workflow18")

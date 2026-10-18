@@ -11,7 +11,7 @@ namespace Nina.LivePolarAlignment.Capture;
 
 public sealed record FieldReviewReport(bool Synthetic, int ReferenceFrames, int MeasurementFrames, int RejectedFrames,
     int MarkedSamples, int RawFitsFiles, bool IncompleteLastLine, double? MaximumReplayDifferenceArcseconds,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings, DriftResult? IndependentDrift = null, int DriftFrames = 0);
 
 public static class FieldSessionReview {
     /// <summary>Recomputes geometry from recorded WCS and DUT1; never connects equipment or solves FITS again.</summary>
@@ -66,7 +66,34 @@ public static class FieldSessionReview {
                 f.PixelScaleArcseconds, f.Dut1Seconds, frame.AltitudeArcseconds, frame.AzimuthArcseconds, frame.TotalArcseconds,
                 frame.CycleMilliseconds, frame.FrameAgeSeconds, replayedTotal, difference }.Select(Cell)));
         }
-        var report = new FieldReviewReport(synthetic, references, measurements, rejected, marks, fits, incomplete, largestDifference, warnings);
+        DriftResult? drift = null;
+        var driftEntries = entries.Where(e => e.Type == "drift_sample").ToArray();
+        if (driftEntries.Length > 0) {
+            try {
+                if (entries.Any(e => e.Type == "drift_inconclusive")) warnings.Add("Independent drift was cancelled or inconclusive; no result is reconstructed.");
+                else {
+                    var firstPoints = driftEntries.Where(e => e.Data.GetProperty("meridian").GetBoolean())
+                        .Select(e => e.Data.GetProperty("point").Deserialize<DriftSample>(FieldJournal.Json)!).ToArray();
+                    var secondPoints = driftEntries.Where(e => !e.Data.GetProperty("meridian").GetBoolean())
+                        .Select(e => e.Data.GetProperty("point").Deserialize<DriftSample>(FieldJournal.Json)!).ToArray();
+                    if (firstPoints.Length == 0 || secondPoints.Length == 0) warnings.Add("Independent drift incomplete: both fields are required.");
+                    else {
+                        drift = DriftValidation.Combine(DriftValidation.Fit(firstPoints, true), DriftValidation.Fit(secondPoints, false),
+                            metadata.GetProperty("latitudeDegrees").GetDouble());
+                        var saved = entries.LastOrDefault(e => e.Type == "drift_result");
+                        if (saved != null) {
+                            var recorded = saved.Data.GetProperty("result").Deserialize<DriftResult>(FieldJournal.Json)!;
+                            double difference = new[] { Math.Abs(recorded.TotalArcseconds - drift.TotalArcseconds),
+                                Math.Abs(recorded.AltitudeErrorArcseconds - drift.AltitudeErrorArcseconds),
+                                Math.Abs(recorded.AzimuthTangentErrorArcseconds - drift.AzimuthTangentErrorArcseconds),
+                                Math.Abs(recorded.ConfidenceRadiusArcseconds - drift.ConfidenceRadiusArcseconds) }.Max();
+                            largestDifference = Math.Max(largestDifference ?? 0, difference);
+                        }
+                    }
+                }
+            } catch (Exception error) { warnings.Add("Independent drift replay failed: " + error.Message); }
+        }
+        var report = new FieldReviewReport(synthetic, references, measurements, rejected, marks, fits, incomplete, largestDifference, warnings, drift, driftEntries.Length);
         Directory.CreateDirectory(outputDirectory);
         File.WriteAllText(Path.Combine(outputDirectory, "frames.csv"), csv.ToString(), new UTF8Encoding(true));
         File.WriteAllText(Path.Combine(outputDirectory, "review.json"), JsonSerializer.Serialize(report,

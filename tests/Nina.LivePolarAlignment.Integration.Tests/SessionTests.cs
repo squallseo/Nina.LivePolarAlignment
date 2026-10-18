@@ -84,6 +84,24 @@ public sealed class SessionTests {
         Assert.InRange(Math.Abs(before.TotalArcminutes - after.TotalArcminutes), 0, .03);
     }
 
+    [Theory]
+    [InlineData(37.5, 0)] [InlineData(37.5, -50)] [InlineData(-33.9, -50)]
+    public void DriftUsesObservedDeclinationAndHourAngleWithoutThePolarAxisEstimator(double latitude, double hour) {
+        var pole = new Vector3d(0, Math.Cos(latitude * Radians), Math.Sin(latitude * Radians));
+        var center = new Vector3d(-Math.Sin(hour * Radians), -Math.Cos(hour * Radians) * Math.Sin(latitude * Radians),
+            Math.Cos(hour * Radians) * Math.Cos(latitude * Radians));
+        var frame = Frame(new(center, pole.Cross(center), pole), latitude, false, Start);
+        var site = InterfaceStub.Create<NINA.Profile.Interfaces.IAstrometrySettings>((m, _) => m.Name switch {
+            "get_Latitude" => latitude, "get_Longitude" => Longitude, _ => throw new Exception(m.Name)
+        });
+        var profile = InterfaceStub.Create<NINA.Profile.Interfaces.IProfile>((m, _) => m.Name == "get_AstrometrySettings" ? site : throw new Exception(m.Name));
+        var profiles = InterfaceStub.Create<NINA.Profile.Interfaces.IProfileService>((m, _) => m.Name == "get_ActiveProfile" ? profile : throw new Exception(m.Name));
+        var capture = new NinaPolarAlignmentCaptureService(profiles, null!, null!, null!);
+        var point = capture.GetDriftSample(frame);
+        Assert.InRange(Math.Abs(point.DeclinationDegrees), 0, .0001);
+        Assert.InRange(Math.Abs(point.HourAngleDegrees - hour), 0, .0001);
+        Assert.InRange(Math.Abs(point.AltitudeDegrees - Math.Asin(center.Z) / Radians), 0, .0001);
+    }
     [Fact]
     public void CalibrationStateAndInvalidTransitionsAreExplicit() {
         var session = new PolarAlignmentSession(37.5, Longitude);

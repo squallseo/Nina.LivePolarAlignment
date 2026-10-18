@@ -12,6 +12,8 @@ namespace Nina.LivePolarAlignment.UI;
 /// <summary>Scale-preserving overlay of measured directions; never invents detected stars.</summary>
 public sealed class PolarFieldView : FrameworkElement {
     public static readonly DependencyProperty PreviewProperty = DependencyProperty.Register(nameof(Preview), typeof(BitmapSource), typeof(PolarFieldView), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty IsDriftViewProperty = DependencyProperty.Register(nameof(IsDriftView), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
+    public bool IsDriftView { get => (bool)GetValue(IsDriftViewProperty); set => SetValue(IsDriftViewProperty, value); }
     public static readonly DependencyProperty GuidanceProperty = DependencyProperty.Register(nameof(Guidance), typeof(PolarGuidance), typeof(PolarFieldView), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty IsCurrentProperty = DependencyProperty.Register(nameof(IsCurrent), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty PixelScaleProperty = DependencyProperty.Register(nameof(PixelScale), typeof(double), typeof(PolarFieldView), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -115,7 +117,8 @@ public sealed class PolarFieldView : FrameworkElement {
                 } else EdgeMarker(dc, celestial, UiText.Get("Field2"), Mint, bounds);
             }
         }
-        if (Preview != null && !IsCurrent) {
+        if (Preview != null && IsDriftView) Label(dc, UiText.Get("DriftImage"), new Point(12, 14), Muted, 11);
+        if (Preview != null && !IsCurrent && !IsDriftView) {
             dc.DrawRectangle(Color("#66080F1B"), null, bounds);
             Label(dc, UiText.Get("Field3"), new Point(12, 14), Muted, 11);
         }

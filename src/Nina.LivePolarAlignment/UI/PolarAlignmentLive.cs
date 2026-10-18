@@ -41,7 +41,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public ICommand StartLiveCommand { get; private set; } = null!;
     public ICommand StopLiveCommand { get; private set; } = null!;
     public ICommand ResetLiveCommand { get; private set; } = null!;
-    public string LiveStatus => IsRotating ? RotationStatus : liveStatus == "MeasurementComplete" ? UiText.Format(liveStatus, measuredAt?.ToLocalTime() ?? DateTimeOffset.Now) : UiText.Get(liveStatus);
+    public string LiveStatus => driftInProgress ? IndependentDriftStatus : IsRotating ? RotationStatus : liveStatus == "MeasurementComplete" ? UiText.Format(liveStatus, measuredAt?.ToLocalTime() ?? DateTimeOffset.Now) : UiText.Get(liveStatus);
     public string LiveError => liveError;
     public string LiveTotalError => latestError is { } error ? $"{error.TotalArcminutes:0.00}′" : "—";
     public string LiveAltitudeError => latestError is { } error
@@ -76,7 +76,7 @@ public sealed partial class PolarAlignmentDockableVM {
         StartLiveCommand = new AsyncRelayCommand(RunLiveAsync, () => !liveBusy && session?.IsCalibrated == true);
         StopLiveCommand = new RelayCommand(RequestStopLive, () => liveBusy);
         ResetLiveCommand = new RelayCommand(ResetLive, () => !liveBusy && !fieldSaving);
-        InitializeField(); InitializeVerification();
+        InitializeField(); InitializeVerification(); InitializeDrift();
         PropertyChanged += (_, change) => {
             if ((change.PropertyName == nameof(IsClosed) && IsClosed)
                 || (change.PropertyName == nameof(IsVisible) && !IsVisible)) RequestStopLive();
@@ -93,6 +93,7 @@ public sealed partial class PolarAlignmentDockableVM {
         freshnessTimer.Start();
     }
     private void ResetLive() {
+        ResetDriftEvidence();
         verificationResult = null; verificationPathClear = false;
         automaticRotationCompleted = false; rotationPathClear = false; rotationProgress = 0;
         EndFieldSession("reset"); fieldFailure = null; stabilityResult = null;
@@ -111,6 +112,7 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private async Task CaptureReferenceAsync() {
         await WithLiveOperation(async token => {
+            if (session == null && calibrationSamples == 0) { verificationResult = null; stabilityResult = null; }
             if (AutoRaRotation && !automaticRotationCompleted && (!RotationPathClear || !captureService.SupportsAutoRaRotation))
                 throw new InvalidOperationException(UiText.Get("AutoRaCheckPath"));
             if (calibrationSamples == 1 && AutoRaRotation) await RotateForReferenceAsync(token);
@@ -207,7 +209,7 @@ public sealed partial class PolarAlignmentDockableVM {
             throw new InvalidOperationException("Exposure must be greater than 0 and no more than 60 seconds.");
     }
     private void NotifyLive() {
-        NotifyWorkflow(); NotifyField(); NotifyRotation(); NotifyVerification();
+        NotifyWorkflow(); NotifyField(); NotifyRotation(); NotifyVerification(); NotifyDrift();
         RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(AcquisitionMode)); RaisePropertyChanged(nameof(StreamingAvailability));
         foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(LiveTotalError), nameof(LiveAltitudeError), nameof(LiveAzimuthError), nameof(FrameFreshness), nameof(IsMeasurementStale) }) RaisePropertyChanged(name);

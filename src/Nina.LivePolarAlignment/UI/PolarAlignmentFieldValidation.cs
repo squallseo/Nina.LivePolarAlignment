@@ -37,7 +37,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public string? FieldSessionDirectory => fieldDirectory;
     public bool HasFieldFailure => fieldFailure != null;
     public string FieldRecordingStatus => fieldFailure != null ? UiText.Format("FieldRecordingFailure", fieldFailure)
-        : fieldJournal != null ? UiText.Format("FieldRecordingCount", fieldJournal.FrameCount)
+        : fieldJournal != null ? independentDriftEnabled ? UiText.Format("DriftRecordingCount", driftRecordedFrames) : UiText.Format("FieldRecordingCount", fieldJournal.FrameCount)
         : UiText.Get(recordFieldSession ? "FieldRecordingReady" : "FieldRecordingOff");
     public bool HasStabilityResult => stabilityResult != null;
     public string StabilityStatus => stabilityResult is { } result
@@ -69,7 +69,7 @@ public sealed partial class PolarAlignmentDockableVM {
                 ? Path.Combine(Path.GetTempPath(), "NinaPolarFieldSynthetic")
                 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NINA", "LivePolarAlignment", "FieldSessions");
             fieldJournal = new FieldJournal(root, new {
-                synthetic = captureService.IsSynthetic, purpose = verificationInProgress ? "verification" : "alignment",
+                synthetic = captureService.IsSynthetic, purpose = driftInProgress ? "independent_drift" : verificationInProgress ? "verification" : "alignment",
                 pluginVersion = typeof(Plugin).Assembly.GetName().Version?.ToString(),
                 ninaCoreVersion = typeof(NINA.Core.Utility.CoreUtil).Assembly.GetName().Version?.ToString(),
                 profile = captureService.IsSynthetic ? "synthetic" : profile.Name,
@@ -79,7 +79,7 @@ public sealed partial class PolarAlignmentDockableVM {
                 solver = profile.PlateSolveSettings?.PlateSolverType.ToString(), solveGain = profile.PlateSolveSettings?.Gain,
                 refractionCorrection = false, distortionModel = "solver linear center / angle / pixel scale only",
                 streamingTimestamp = "receive time minus half requested exposure; hardware latency unknown",
-                targetArcseconds = 60, note = FieldNote
+                targetArcseconds = validationTarget, note = FieldNote
             });
             fieldDirectory = fieldJournal.DirectoryPath;
         } catch (Exception error) { fieldFailure = error.Message; }
@@ -178,7 +178,7 @@ public sealed partial class PolarAlignmentDockableVM {
         fieldJournal = null; lastFieldFrame = null;
     }
     private void NotifyField() {
-        NotifyVerification();
+        NotifyVerification(); NotifyDrift();
         foreach (var property in new[] { nameof(HasStabilityResult), nameof(CanConfigureField), nameof(FieldRecordingStatus), nameof(StabilityStatus), nameof(HasFieldFailure), nameof(FieldSessionDirectory) }) RaisePropertyChanged(property);
         (MarkFieldSampleCommand as IRelayCommand)?.NotifyCanExecuteChanged();
         (CheckStabilityCommand as IRelayCommand)?.NotifyCanExecuteChanged();

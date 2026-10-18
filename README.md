@@ -10,7 +10,7 @@ SharpCap의 직관적인 조정 흐름을 참고하여 자체 C# 코드로 구�
 
 ## 배포본 설치
 
-[0.1.0.9 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.9.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.9.zip.sha256)
+[0.1.0.10 ZIP 다운로드](https://github.com/squallseo/Nina.LivePolarAlignment/raw/refs/heads/feature/live-polar-alignment/downloads/Nina.LivePolarAlignment.0.1.0.10.zip) · [SHA256](downloads/Nina.LivePolarAlignment.0.1.0.10.zip.sha256)
 
 Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀고 N.I.N.A.를 종료한 뒤 `Install-Plugin.ps1`을 실행하거나, `plugin` 폴더 내용을 아래 로컬 설치 경로에 복사하세요. SDK나 소스 빌드는 필요하지 않습니다.
 
@@ -40,6 +40,8 @@ Windows x64와 N.I.N.A. 3.2.0.9001 이상이 필요합니다. ZIP을 모두 풀�
 현재는 천구극과 RA 회전 중심을 표시하며, 북극성 자체의 식별 표시나 기준 별→목표점 화살표는 아직 구현하지 않았습니다.
 
 ## 현장 검증
+
+`Independent drift verification`에서 천구 적도 근처의 두 위치를 직접 선택하고 추적 중 Dec 드리프트를 관측하는 별도 검사도 사용할 수 있습니다. 재측정·Stability·드리프트 결과를 종합해 재정렬 권고, 검사 불일치, 판정 불가 등을 표시합니다. 기본 목표는 60″이며 변경할 수 있습니다. [독립 검증과 판정 안내](docs/independent-drift.md)
 
 정렬 후 `Verify alignment`에서 새 기준 두 장과 **추가 RA 60° 회전**으로 선택적으로 재측정할 수 있습니다. Dec와 볼트는 고정합니다. 재측정 뒤 Stability 20프레임은 기본 자동이며 옵션으로 끌 수 있습니다. 일반 실시간 조정 중 Stability는 수동 시작입니다. 디버그 파일 기록 없이도 사용할 수 있습니다. [재측정 안내](docs/verification.md)
 

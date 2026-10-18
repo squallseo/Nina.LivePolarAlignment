@@ -19,7 +19,7 @@ public sealed partial class PolarAlignmentDockableVM {
         get => rotationPathClear;
         set { if (CanConfigureRotation) { rotationPathClear = value; RaisePropertyChanged(); } }
     }
-    public bool CanConfigureRotation => !liveBusy && calibrationSamples < 2 && !automaticRotationCompleted;
+    public bool CanConfigureRotation => !IndependentDriftEnabled && !liveBusy && calibrationSamples < 2 && !automaticRotationCompleted;
     public bool CanUseAutoRotation => CanConfigureRotation && captureService.SupportsAutoRaRotation;
     public bool IsRotating => rotationInProgress;
     public string RotationStatus => rotationInProgress ? UiText.Format("AutoRaProgress", rotationProgress)

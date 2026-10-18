@@ -1,1 +1,402 @@
-<?xml version="1.0" encoding="utf-8"?><root><resheader name="resmimetype"><value>text/microsoft-resx</value></resheader><resheader name="version"><value>2.0</value></resheader><data name="RotationMeasured" xml:space="preserve"><value>Measured RA rotation: {0:0.0}°</value></data><data name="Workflow0" xml:space="preserve"><value>Capturing / solving...</value></data><data name="Workflow1" xml:space="preserve"><value>Capture reference</value></data><data name="Workflow2" xml:space="preserve"><value>Capture rotated field</value></data><data name="Workflow3" xml:space="preserve"><value>Start live adjustment</value></data><data name="Workflow4" xml:space="preserve"><value>Capture a field near the celestial pole</value></data><data name="Workflow5" xml:space="preserve"><value>Rotate only the RA axis by 60–90°</value></data><data name="Workflow6" xml:space="preserve"><value>Adjust the bolts until the markers overlap</value></data><data name="Workflow7" xml:space="preserve"><value>Calibration complete. Start live measurement.</value></data><data name="Workflow8" xml:space="preserve"><value>Point near the celestial pole and capture the first reference. Plate solving uses the surrounding star pattern, rather than Polaris alone.</value></data><data name="Workflow9" xml:space="preserve"><value>Keep altitude, azimuth and DEC fixed. Rotate RA only, let the mount settle, then capture the second reference.</value></data><data name="Workflow10" xml:space="preserve"><value>Keep RA and the camera fixed. Adjust only the altitude and azimuth bolts in small steps, checking the next measurement.</value></data><data name="Workflow11" xml:space="preserve"><value>Recommended: 60–90°; minimum: 30°</value></data><data name="Workflow12" xml:space="preserve"><value>Awaiting measurement</value></data><data name="Workflow13" xml:space="preserve"><value>Previous measurement  -  paused</value></data><data name="Workflow14" xml:space="preserve"><value>On target - within 1′</value></data><data name="Workflow15" xml:space="preserve"><value>Good  -  fine adjustment</value></data><data name="Workflow16" xml:space="preserve"><value>Adjusting</value></data><data name="Workflow17" xml:space="preserve"><value>Available after calibration</value></data><data name="Workflow18" xml:space="preserve"><value>Resume measurement</value></data><data name="Workflow19" xml:space="preserve"><value>Keep current altitude</value></data><data name="Workflow20" xml:space="preserve"><value>Lower the telescope slightly</value></data><data name="Workflow21" xml:space="preserve"><value>Raise the telescope slightly</value></data><data name="Workflow22" xml:space="preserve"><value>Available after calibration</value></data><data name="Workflow23" xml:space="preserve"><value>Resume measurement</value></data><data name="Workflow24" xml:space="preserve"><value>Keep current direction</value></data><data name="Workflow25" xml:space="preserve"><value>Move the telescope slightly left</value></data><data name="Workflow26" xml:space="preserve"><value>Move the telescope slightly right</value></data><data name="ReferenceAge" xml:space="preserve"><value>Reference image  -  captured {0:0} s ago</value></data><data name="FrameAge" xml:space="preserve"><value>{0}Frame {1:0} s ago  -  update cycle {2:0.0} s</value></data><data name="StalePrefix" xml:space="preserve"><value>Previous measurement  -  </value></data><data name="WaitingFrame" xml:space="preserve"><value>Waiting for the first measurement</value></data><data name="MeasurementComplete" xml:space="preserve"><value>{0:HH:mm:ss} measured  -  adjust in small steps and check the next result.</value></data><data name="Live0" xml:space="preserve"><value>Check the camera connection, observing site and plate solver settings.</value></data><data name="Live1" xml:space="preserve"><value>References cleared. Capture the first reference again.</value></data><data name="Live2" xml:space="preserve"><value>Stopping capture - </value></data><data name="Live3" xml:space="preserve"><value>Capturing and solving the reference field - </value></data><data name="Live4" xml:space="preserve"><value>Calibration complete. Start live adjustment, then adjust the altitude and azimuth bolts.</value></data><data name="Live5" xml:space="preserve"><value>First reference solved. Rotate RA only, then capture the second reference.</value></data><data name="Live6" xml:space="preserve"><value>Capturing and solving the next frame - </value></data><data name="Live7" xml:space="preserve"><value>Measurement stopped. Resume or reset the references.</value></data><data name="Live8" xml:space="preserve"><value>Measurement failed. Check the error and try again.</value></data><data name="Field0" xml:space="preserve"><value>Star images will appear here</value></data><data name="Field1" xml:space="preserve"><value>RA Axis  -  outside frame</value></data><data name="Field2" xml:space="preserve"><value>Celestial Pole  -  outside frame</value></data><data name="Field3" xml:space="preserve"><value>Reference image  -  start measurement to update guidance</value></data><data name="View0" xml:space="preserve"><value>Resize the image and control panels</value></data><data name="View1" xml:space="preserve"><value>Reference</value></data><data name="View2" xml:space="preserve"><value>RA rotation</value></data><data name="View3" xml:space="preserve"><value>Adjust</value></data><data name="View4" xml:space="preserve"><value>Illustration only. Actual rotation is measured after capture.</value></data><data name="View5" xml:space="preserve"><value>Reset</value></data><data name="View6" xml:space="preserve"><value>Clear calibration and start again</value></data><data name="View7" xml:space="preserve"><value>Exposure time (seconds)</value></data><data name="View8" xml:space="preserve"><value>s</value></data><data name="View9" xml:space="preserve"><value>Check the following</value></data><data name="View10" xml:space="preserve"><value>Total polar error</value></data><data name="View11" xml:space="preserve"><value>Directions describe telescope movement while facing the celestial pole, rather than which way to turn a bolt.</value></data><data name="Focus" xml:space="preserve"><value>Focus</value></data><data name="FocusTip" xml:space="preserve"><value>Zoom to the alignment markers. Turn off to fit the full image.</value></data><data name="Details" xml:space="preserve"><value>Celestial Pole: target direction. RA Axis: measured rotation axis. Dashed rings show angular distance from the pole. Hardware accuracy has not yet been verified; atmospheric refraction is not applied.</value></data><data name="StreamingOption" xml:space="preserve"><value>Streaming (experimental)</value></data><data name="StreamingMode" xml:space="preserve"><value>Native video - latest frame + plate solve</value></data><data name="SingleMode" xml:space="preserve"><value>Single frames + plate solve</value></data><data name="StreamingHint" xml:space="preserve"><value>Adjustment only; references use still captures. Every displayed measurement is plate solved.</value></data><data name="StreamingUnsupported" xml:space="preserve"><value>Requires a connected native ZWO ASI or ToupTek camera. Other drivers use single frames.</value></data><data name="StreamingStarting" xml:space="preserve"><value>Starting native video and plate solving...</value></data><data name="StreamingEnded" xml:space="preserve"><value>Camera stream ended. Restart or select single frames.</value></data><data name="AlignmentCloseUp" xml:space="preserve"><value>Alignment close-up</value></data><data name="FieldValidation" xml:space="preserve"><value>Field validation</value></data><data name="FieldRecord" xml:space="preserve"><value>Record session</value></data><data name="FieldRecordHint" xml:space="preserve"><value>Records start with the first reference. Reset before changing this option. Images are saved for references and Mark only.</value></data><data name="FieldNotes" xml:space="preserve"><value>Field notes</value></data><data name="FieldNotesHint" xml:space="preserve"><value>Add a note before Mark or Stability, e.g. mount untouched, bolt adjustment, or independent comparison.</value></data><data name="FieldMark" xml:space="preserve"><value>Mark</value></data><data name="FieldMarkHint" xml:space="preserve"><value>Save the latest measured frame, RAW FITS when available, processed preview and note. Does not take a new exposure.</value></data><data name="FieldStability" xml:space="preserve"><value>Stability</value></data><data name="FieldFolder" xml:space="preserve"><value>Folder</value></data><data name="FieldRecordingReady" xml:space="preserve"><value>Field log starts with the first reference.</value></data><data name="FieldRecordingOff" xml:space="preserve"><value>Field recording off</value></data><data name="FieldRecordingCount" xml:space="preserve"><value>Recording locally: {0} solved frames</value></data><data name="FieldRecordingFailure" xml:space="preserve"><value>Field recording problem: {0}</value></data><data name="FieldCollecting" xml:space="preserve"><value>Hold the mount still: {0}/{1} frames.</value></data><data name="FieldScatter" xml:space="preserve"><value>Repeatability ({0} frames): Alt sigma {1:0.0} arcsec / Az sigma {2:0.0} arcsec. Not absolute accuracy.</value></data><data name="FieldStabilityHint" xml:space="preserve"><value>Stability collects 20 new frames. Keep bolts, RA, DEC and camera fixed.</value></data><data name="DebugTitle" xml:space="preserve"><value>Debug / field validation</value></data><data name="DebugEnable" xml:space="preserve"><value>Enable debug recording</value></data><data name="DebugHelp" xml:space="preserve"><value>Off by default. Applies to the next calibration (Reset first if needed). Records solved-frame data and saves RAW FITS for references and Mark samples in Local AppData/NINA/LivePolarAlignment/FieldSessions. Use Field validation in the imaging panel for Mark, Stability and Folder.</value></data><data name="AutoRaOption" xml:space="preserve"><value>Auto RA rotation (experimental)</value></data><data name="AutoRaReverse" xml:space="preserve"><value>Reverse RA direction</value></data><data name="AutoRaClear" xml:space="preserve"><value>I checked the 60-degree path is clear</value></data><data name="AutoRaProgress" xml:space="preserve"><value>Rotating RA: {0:0.0} / 60 degrees - Stop cancels</value></data><data name="AutoRaHint" xml:space="preserve"><value>Captures both references with a 60-degree RA move between them. Keep Dec and bolts fixed. Direction follows NINA manual controls. Check cable, pier and mount limits first. No automatic return.</value></data><data name="AutoRaUnsupported" xml:space="preserve"><value>Requires an idle, unparked equatorial mount with RA MoveAxis and tracking control. Manual rotation remains available.</value></data><data name="AutoRaCheckPath" xml:space="preserve"><value>Connect a supported mount and confirm the 60-degree path is clear before starting automatic calibration.</value></data><data name="AutoRaStart" xml:space="preserve"><value>Calibrate automatically</value></data><data name="AutoRaSecond" xml:space="preserve"><value>Rotate RA and capture</value></data><data name="AutoRaWorking" xml:space="preserve"><value>Rotating RA...</value></data><data name="VerificationTitle" xml:space="preserve"><value>Verify alignment</value></data><data name="VerificationHint" xml:space="preserve"><value>Keep Dec and adjustment bolts fixed. Takes a fresh reference, rotates RA a further 60 degrees, then measures again. Check the new path first. Uses the same solver; not an independent accuracy test.</value></data><data name="VerificationStability" xml:space="preserve"><value>Then collect 20 stationary frames</value></data><data name="VerificationStart" xml:space="preserve"><value>Verify with auto RA rotation</value></data><data name="VerificationResult" xml:space="preserve"><value>Previous: {0:0.00} arcmin / remeasured: {1:0.00} arcmin. Difference Alt {2:+0.0;-0.0;0.0} arcsec / Az {3:+0.0;-0.0;0.0} arcsec. Keep the mount fixed.</value></data><data name="VerificationComplete" xml:space="preserve"><value>Remeasurement complete. Review the differences and repeatability before adjusting further.</value></data></root>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <data name="RotationMeasured" xml:space="preserve">
+    <value>Measured RA rotation: {0:0.0}°</value>
+  </data>
+  <data name="Workflow0" xml:space="preserve">
+    <value>Capturing / solving...</value>
+  </data>
+  <data name="Workflow1" xml:space="preserve">
+    <value>Capture reference</value>
+  </data>
+  <data name="Workflow2" xml:space="preserve">
+    <value>Capture rotated field</value>
+  </data>
+  <data name="Workflow3" xml:space="preserve">
+    <value>Start live adjustment</value>
+  </data>
+  <data name="Workflow4" xml:space="preserve">
+    <value>Capture a field near the celestial pole</value>
+  </data>
+  <data name="Workflow5" xml:space="preserve">
+    <value>Rotate only the RA axis by 60–90°</value>
+  </data>
+  <data name="Workflow6" xml:space="preserve">
+    <value>Adjust the bolts until the markers overlap</value>
+  </data>
+  <data name="Workflow7" xml:space="preserve">
+    <value>Calibration complete. Start live measurement.</value>
+  </data>
+  <data name="Workflow8" xml:space="preserve">
+    <value>Point near the celestial pole and capture the first reference. Plate solving uses the surrounding star pattern, rather than Polaris alone.</value>
+  </data>
+  <data name="Workflow9" xml:space="preserve">
+    <value>Keep altitude, azimuth and DEC fixed. Rotate RA only, let the mount settle, then capture the second reference.</value>
+  </data>
+  <data name="Workflow10" xml:space="preserve">
+    <value>Keep RA and the camera fixed. Adjust only the altitude and azimuth bolts in small steps, checking the next measurement.</value>
+  </data>
+  <data name="Workflow11" xml:space="preserve">
+    <value>Recommended: 60–90°; minimum: 30°</value>
+  </data>
+  <data name="Workflow12" xml:space="preserve">
+    <value>Awaiting measurement</value>
+  </data>
+  <data name="Workflow13" xml:space="preserve">
+    <value>Previous measurement  -  paused</value>
+  </data>
+  <data name="Workflow14" xml:space="preserve">
+    <value>Within selected target</value>
+  </data>
+  <data name="Workflow15" xml:space="preserve">
+    <value>Good  -  fine adjustment</value>
+  </data>
+  <data name="Workflow16" xml:space="preserve">
+    <value>Adjusting</value>
+  </data>
+  <data name="Workflow17" xml:space="preserve">
+    <value>Available after calibration</value>
+  </data>
+  <data name="Workflow18" xml:space="preserve">
+    <value>Resume measurement</value>
+  </data>
+  <data name="Workflow19" xml:space="preserve">
+    <value>Keep current altitude</value>
+  </data>
+  <data name="Workflow20" xml:space="preserve">
+    <value>Lower the telescope slightly</value>
+  </data>
+  <data name="Workflow21" xml:space="preserve">
+    <value>Raise the telescope slightly</value>
+  </data>
+  <data name="Workflow22" xml:space="preserve">
+    <value>Available after calibration</value>
+  </data>
+  <data name="Workflow23" xml:space="preserve">
+    <value>Resume measurement</value>
+  </data>
+  <data name="Workflow24" xml:space="preserve">
+    <value>Keep current direction</value>
+  </data>
+  <data name="Workflow25" xml:space="preserve">
+    <value>Move the telescope slightly left</value>
+  </data>
+  <data name="Workflow26" xml:space="preserve">
+    <value>Move the telescope slightly right</value>
+  </data>
+  <data name="ReferenceAge" xml:space="preserve">
+    <value>Reference image  -  captured {0:0} s ago</value>
+  </data>
+  <data name="FrameAge" xml:space="preserve">
+    <value>{0}Frame {1:0} s ago  -  update cycle {2:0.0} s</value>
+  </data>
+  <data name="StalePrefix" xml:space="preserve">
+    <value>Previous measurement  -  </value>
+  </data>
+  <data name="WaitingFrame" xml:space="preserve">
+    <value>Waiting for the first measurement</value>
+  </data>
+  <data name="MeasurementComplete" xml:space="preserve">
+    <value>{0:HH:mm:ss} measured  -  adjust in small steps and check the next result.</value>
+  </data>
+  <data name="Live0" xml:space="preserve">
+    <value>Check the camera connection, observing site and plate solver settings.</value>
+  </data>
+  <data name="Live1" xml:space="preserve">
+    <value>References cleared. Capture the first reference again.</value>
+  </data>
+  <data name="Live2" xml:space="preserve">
+    <value>Stopping capture - </value>
+  </data>
+  <data name="Live3" xml:space="preserve">
+    <value>Capturing and solving the reference field - </value>
+  </data>
+  <data name="Live4" xml:space="preserve">
+    <value>Calibration complete. Start live adjustment, then adjust the altitude and azimuth bolts.</value>
+  </data>
+  <data name="Live5" xml:space="preserve">
+    <value>First reference solved. Rotate RA only, then capture the second reference.</value>
+  </data>
+  <data name="Live6" xml:space="preserve">
+    <value>Capturing and solving the next frame - </value>
+  </data>
+  <data name="Live7" xml:space="preserve">
+    <value>Measurement stopped. Resume or reset the references.</value>
+  </data>
+  <data name="Live8" xml:space="preserve">
+    <value>Measurement failed. Check the error and try again.</value>
+  </data>
+  <data name="Field0" xml:space="preserve">
+    <value>Star images will appear here</value>
+  </data>
+  <data name="Field1" xml:space="preserve">
+    <value>RA Axis  -  outside frame</value>
+  </data>
+  <data name="Field2" xml:space="preserve">
+    <value>Celestial Pole  -  outside frame</value>
+  </data>
+  <data name="Field3" xml:space="preserve">
+    <value>Reference image  -  start measurement to update guidance</value>
+  </data>
+  <data name="View0" xml:space="preserve">
+    <value>Resize the image and control panels</value>
+  </data>
+  <data name="View1" xml:space="preserve">
+    <value>Reference</value>
+  </data>
+  <data name="View2" xml:space="preserve">
+    <value>RA rotation</value>
+  </data>
+  <data name="View3" xml:space="preserve">
+    <value>Adjust</value>
+  </data>
+  <data name="View4" xml:space="preserve">
+    <value>Illustration only. Actual rotation is measured after capture.</value>
+  </data>
+  <data name="View5" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="View6" xml:space="preserve">
+    <value>Clear calibration and start again</value>
+  </data>
+  <data name="View7" xml:space="preserve">
+    <value>Exposure time (seconds)</value>
+  </data>
+  <data name="View8" xml:space="preserve">
+    <value>s</value>
+  </data>
+  <data name="View9" xml:space="preserve">
+    <value>Check the following</value>
+  </data>
+  <data name="View10" xml:space="preserve">
+    <value>Total polar error</value>
+  </data>
+  <data name="View11" xml:space="preserve">
+    <value>Directions describe telescope movement while facing the celestial pole, rather than which way to turn a bolt.</value>
+  </data>
+  <data name="Focus" xml:space="preserve">
+    <value>Focus</value>
+  </data>
+  <data name="FocusTip" xml:space="preserve">
+    <value>Zoom to the alignment markers. Turn off to fit the full image.</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Celestial Pole: target direction. RA Axis: measured rotation axis. Dashed rings show angular distance from the pole. Hardware accuracy has not yet been verified; atmospheric refraction is not applied.</value>
+  </data>
+  <data name="StreamingOption" xml:space="preserve">
+    <value>Streaming (experimental)</value>
+  </data>
+  <data name="StreamingMode" xml:space="preserve">
+    <value>Native video - latest frame + plate solve</value>
+  </data>
+  <data name="SingleMode" xml:space="preserve">
+    <value>Single frames + plate solve</value>
+  </data>
+  <data name="StreamingHint" xml:space="preserve">
+    <value>Adjustment only; references use still captures. Every displayed measurement is plate solved.</value>
+  </data>
+  <data name="StreamingUnsupported" xml:space="preserve">
+    <value>Requires a connected native ZWO ASI or ToupTek camera. Other drivers use single frames.</value>
+  </data>
+  <data name="StreamingStarting" xml:space="preserve">
+    <value>Starting native video and plate solving...</value>
+  </data>
+  <data name="StreamingEnded" xml:space="preserve">
+    <value>Camera stream ended. Restart or select single frames.</value>
+  </data>
+  <data name="AlignmentCloseUp" xml:space="preserve">
+    <value>Alignment close-up</value>
+  </data>
+  <data name="FieldValidation" xml:space="preserve">
+    <value>Field validation</value>
+  </data>
+  <data name="FieldRecord" xml:space="preserve">
+    <value>Record session</value>
+  </data>
+  <data name="FieldRecordHint" xml:space="preserve">
+    <value>Records start with the first reference. Reset before changing this option. Images are saved for references and Mark only.</value>
+  </data>
+  <data name="FieldNotes" xml:space="preserve">
+    <value>Field notes</value>
+  </data>
+  <data name="FieldNotesHint" xml:space="preserve">
+    <value>Add a note before Mark or Stability, e.g. mount untouched, bolt adjustment, or independent comparison.</value>
+  </data>
+  <data name="FieldMark" xml:space="preserve">
+    <value>Mark</value>
+  </data>
+  <data name="FieldMarkHint" xml:space="preserve">
+    <value>Save the latest measured frame, RAW FITS when available, processed preview and note. Does not take a new exposure.</value>
+  </data>
+  <data name="FieldStability" xml:space="preserve">
+    <value>Stability</value>
+  </data>
+  <data name="FieldFolder" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="FieldRecordingReady" xml:space="preserve">
+    <value>Field log starts with the first reference.</value>
+  </data>
+  <data name="FieldRecordingOff" xml:space="preserve">
+    <value>Field recording off</value>
+  </data>
+  <data name="FieldRecordingCount" xml:space="preserve">
+    <value>Recording locally: {0} solved frames</value>
+  </data>
+  <data name="FieldRecordingFailure" xml:space="preserve">
+    <value>Field recording problem: {0}</value>
+  </data>
+  <data name="FieldCollecting" xml:space="preserve">
+    <value>Hold the mount still: {0}/{1} frames.</value>
+  </data>
+  <data name="FieldScatter" xml:space="preserve">
+    <value>Repeatability ({0} frames): Alt sigma {1:0.0} arcsec / Az sigma {2:0.0} arcsec. Not absolute accuracy.</value>
+  </data>
+  <data name="FieldStabilityHint" xml:space="preserve">
+    <value>Stability collects 20 new frames. Keep bolts, RA, DEC and camera fixed.</value>
+  </data>
+  <data name="DebugTitle" xml:space="preserve">
+    <value>Debug / field validation</value>
+  </data>
+  <data name="DebugEnable" xml:space="preserve">
+    <value>Enable debug recording</value>
+  </data>
+  <data name="DebugHelp" xml:space="preserve">
+    <value>Off by default. Applies to the next calibration (Reset first if needed). Records solved-frame data and saves RAW FITS for references and Mark samples in Local AppData/NINA/LivePolarAlignment/FieldSessions. Use Field validation in the imaging panel for Mark, Stability and Folder.</value>
+  </data>
+  <data name="AutoRaOption" xml:space="preserve">
+    <value>Auto RA rotation (experimental)</value>
+  </data>
+  <data name="AutoRaReverse" xml:space="preserve">
+    <value>Reverse RA direction</value>
+  </data>
+  <data name="AutoRaClear" xml:space="preserve">
+    <value>I checked the 60-degree path is clear</value>
+  </data>
+  <data name="AutoRaProgress" xml:space="preserve">
+    <value>Rotating RA: {0:0.0} / 60 degrees - Stop cancels</value>
+  </data>
+  <data name="AutoRaHint" xml:space="preserve">
+    <value>Captures both references with a 60-degree RA move between them. Keep Dec and bolts fixed. Direction follows NINA manual controls. Check cable, pier and mount limits first. No automatic return.</value>
+  </data>
+  <data name="AutoRaUnsupported" xml:space="preserve">
+    <value>Requires an idle, unparked equatorial mount with RA MoveAxis and tracking control. Manual rotation remains available.</value>
+  </data>
+  <data name="AutoRaCheckPath" xml:space="preserve">
+    <value>Connect a supported mount and confirm the 60-degree path is clear before starting automatic calibration.</value>
+  </data>
+  <data name="AutoRaStart" xml:space="preserve">
+    <value>Calibrate automatically</value>
+  </data>
+  <data name="AutoRaSecond" xml:space="preserve">
+    <value>Rotate RA and capture</value>
+  </data>
+  <data name="AutoRaWorking" xml:space="preserve">
+    <value>Rotating RA...</value>
+  </data>
+  <data name="VerificationTitle" xml:space="preserve">
+    <value>Verify alignment</value>
+  </data>
+  <data name="VerificationHint" xml:space="preserve">
+    <value>Keep Dec and adjustment bolts fixed. Takes a fresh reference, rotates RA a further 60 degrees, then measures again. Check the new path first. Uses the same solver; not an independent accuracy test.</value>
+  </data>
+  <data name="VerificationStability" xml:space="preserve">
+    <value>Then collect 20 stationary frames</value>
+  </data>
+  <data name="VerificationStart" xml:space="preserve">
+    <value>Verify with auto RA rotation</value>
+  </data>
+  <data name="VerificationResult" xml:space="preserve">
+    <value>Previous: {0:0.00} arcmin / remeasured: {1:0.00} arcmin. Difference Alt {2:+0.0;-0.0;0.0} arcsec / Az {3:+0.0;-0.0;0.0} arcsec. Keep the mount fixed.</value>
+  </data>
+  <data name="VerificationComplete" xml:space="preserve">
+    <value>Remeasurement complete. Review the differences and repeatability before adjusting further.</value>
+  </data>
+  <data name="DriftTitle" xml:space="preserve">
+    <value>Independent drift verification</value>
+  </data>
+  <data name="DriftEnable" xml:space="preserve">
+    <value>Enable independent drift check</value>
+  </data>
+  <data name="DriftFirst" xml:space="preserve">
+    <value>Record meridian field</value>
+  </data>
+  <data name="DriftSecond" xml:space="preserve">
+    <value>Record east / west field</value>
+  </data>
+  <data name="DriftMeasuring" xml:space="preserve">
+    <value>Measuring drift...</value>
+  </data>
+  <data name="DriftFirstHint" xml:space="preserve">
+    <value>Manually point within 25 deg of Dec 0 and within 15 deg of the meridian, above 25 deg altitude. Sidereal tracking ON; guiding, dithering and corrections OFF. Hold bolts and camera fixed. Records the selected duration (20+ solves). No automatic slew.</value>
+  </data>
+  <data name="DriftSecondHint" xml:space="preserve">
+    <value>Without adjusting bolts, manually point near Dec 0 with hour angle 45-75 deg east or west, altitude above 25 deg. Keep sidereal tracking on and all guiding off. Confirm again and record the second field within 30 minutes.</value>
+  </data>
+  <data name="DriftConfirm" xml:space="preserve">
+    <value>Guiding / corrections off; mount and bolts fixed</value>
+  </data>
+  <data name="DriftReset" xml:space="preserve">
+    <value>Clear both drift fields</value>
+  </data>
+  <data name="DriftProgress" xml:space="preserve">
+    <value>Recording drift: {0:0} / {1:0} s (20+ fresh frames)</value>
+  </data>
+  <data name="DriftReady" xml:space="preserve">
+    <value>Two fields required. No independent result yet.</value>
+  </data>
+  <data name="DriftFirstDone" xml:space="preserve">
+    <value>First field stored: Dec drift {0:0.00} arcsec/min. Move manually to the second field.</value>
+  </data>
+  <data name="DriftResult" xml:space="preserve">
+    <value>Drift estimate {0:0} arcsec; guarded interval {1:0}-{2:0} arcsec. Shared solver and atmospheric systematics remain.</value>
+  </data>
+  <data name="DriftInconclusive" xml:space="preserve">
+    <value>Inconclusive: {0}</value>
+  </data>
+  <data name="DriftCancelled" xml:space="preserve">
+    <value>Recording cancelled; repeat both fields.</value>
+  </data>
+  <data name="ValidationTarget" xml:space="preserve">
+    <value>Target (arcsec)</value>
+  </data>
+  <data name="AssessmentPending" xml:space="preserve">
+    <value>Independent verification pending. Target {0:0} arcsec. Available repeatability or remeasurement is not an accuracy certification.</value>
+  </data>
+  <data name="AssessmentInconclusive" xml:space="preserve">
+    <value>Inconclusive against {0:0} arcsec. Check pointing / tracking / seeing and repeat longer in steady conditions.</value>
+  </data>
+  <data name="AssessmentRealign" xml:space="preserve">
+    <value>Residual exceeds the {0:0} arcsec target. Recheck settings and realign, then repeat verification.</value>
+  </data>
+  <data name="AssessmentInconsistent" xml:space="preserve">
+    <value>Checks disagree. Check guiding, tracking, refraction and camera rigidity before realigning. Target {0:0} arcsec.</value>
+  </data>
+  <data name="AssessmentWithinAvailableChecks" xml:space="preserve">
+    <value>No excess detected against {0:0} arcsec in available checks. This is not an absolute-accuracy certification.</value>
+  </data>
+  <data name="DriftPhaseComplete">
+    <value>Drift field complete. Review the independent verification panel.</value>
+  </data>
+  <data name="DriftDuration">
+    <value>Seconds per field (120-540)</value>
+  </data>
+  <data name="DriftRecordingCount">
+    <value>Recording locally: {0} drift frames</value>
+  </data>
+  <data name="DriftImage">
+    <value>Independent drift observation</value>
+  </data>
+  <data name="DriftFinished">
+    <value>Independent check complete</value>
+  </data>
+  <data name="DriftCompletedHint">
+    <value>Review the result and save the session folder. To realign, turn drift mode off, return manually near the celestial pole and capture new polar references. Nothing is slewed or adjusted automatically.</value>
+  </data>
+</root>

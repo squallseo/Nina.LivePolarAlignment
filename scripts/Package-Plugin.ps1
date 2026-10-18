@@ -16,10 +16,11 @@ Copy-Item (Join-Path $PSScriptRoot 'Install-Plugin.ps1') $stage
 Copy-Item (Join-Path $root 'docs\field-validation.md') $stage
 Copy-Item (Join-Path $root 'docs\auto-ra-rotation.md') $stage
 Copy-Item (Join-Path $root 'docs\verification.md') $stage
+Copy-Item (Join-Path $root 'docs\independent-drift.md') $stage
 Copy-Item (Join-Path $root 'docs\install-package.txt') (Join-Path $stage 'INSTALL.txt')
 Copy-Item (Join-Path $root 'docs\images\plugin-icon.png') $stage
 New-Item -ItemType Directory -Force (Join-Path $stage 'images') | Out-Null
-foreach ($image in @('field-validation-synthetic-preview.png', 'auto-ra-synthetic-preview.png', 'verification-synthetic-preview.png')) {
+foreach ($image in @('field-validation-synthetic-preview.png', 'auto-ra-synthetic-preview.png', 'verification-synthetic-preview.png', 'independent-drift-synthetic-preview.png')) {
     Copy-Item (Join-Path $root "docs\images\$image") (Join-Path $stage 'images')
 }
 $output = Join-Path $root 'downloads'

@@ -34,6 +34,14 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public static bool RotationStopped;
     private double orientation;
     private bool rotatedSinceReference;
+    public static bool DriftTestMode, DriftSecondField, DriftFault;
+    private bool driftWasSecond;
+    private int driftIndex;
+    private readonly DateTimeOffset driftStart = DateTimeOffset.UtcNow;
+    public object? DriftMountIdentity => this;
+    public void ValidateDriftTracking() { if (!DriftTestMode) throw new InvalidOperationException("Synthetic drift mode is off"); }
+    public Nina.LivePolarAlignment.Core.DriftSample GetDriftSample(SolvedPolarFrame frame) =>
+        new(frame.CapturedAtUtc, frame.DeclinationDegrees, frame.RightAscensionDegrees - 180, 40, frame.PixelScaleArcseconds);
     public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token) {
         Rotations++; RotationStopped = false;
         try {
@@ -56,6 +64,15 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     }
     public BitmapSource Image { get; } = MakeStars();
     public async Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token, IProgress<ApplicationStatus>? progress = null) {
+        if (DriftTestMode) {
+            await Task.Delay(10, token);
+            if (driftWasSecond != DriftSecondField) { driftIndex = 0; driftWasSecond = DriftSecondField; }
+            double seconds = driftIndex++ * 10, h0 = (DriftSecondField ? -50 : 0) * Math.PI / 180;
+            double h = h0 + Nina.LivePolarAlignment.Core.DriftValidation.SiderealRadiansPerSecond * seconds;
+            double declination = (300 * (Math.Cos(h0) - Math.Cos(h)) + 400 * (Math.Sin(h) - Math.Sin(h0))) / 3600;
+            var time = driftStart.AddSeconds((DriftSecondField ? 600 : 0) + (DriftFault ? 0 : seconds));
+            return new(180 + h * 180 / Math.PI, declination, 0, 2, 800, 600, false, time, Image);
+        }
         await Task.Delay(650, token);
         int step = Step();
         if (step == 0) rotatedSinceReference = false;
@@ -309,7 +326,29 @@ internal static class Program {
             || verificationReview.MaximumReplayDifferenceArcseconds > 1e-6)
             throw new InvalidOperationException("Verification must keep an independent replayable journal: " + current.OperationError);
         current.Dispose();
-        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA path guard, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay passed. Synthetic inputs only.");
+        SampleCapture.DriftTestMode = true; SampleCapture.DriftSecondField = false;
+        await SelectScene(0); current!.IndependentDriftEnabled = true;
+        if (current.IndependentDriftCommand.CanExecute(null)) throw new InvalidOperationException("Unguided/stationary confirmation required");
+        current.DriftConfirmed = true;
+        int movesBeforeDrift = SampleCapture.Rotations;
+        await ((IAsyncRelayCommand)current.IndependentDriftCommand).ExecuteAsync(null);
+        if (current.HasOperationError || current.HasIndependentResult) throw new InvalidOperationException("First drift field alone cannot pass: " + current.OperationError);
+        SampleCapture.DriftSecondField = true; current.DriftConfirmed = true;
+        await ((IAsyncRelayCommand)current.IndependentDriftCommand).ExecuteAsync(null);
+        if (current.HasOperationError || !current.HasIndependentResult || !current.HasValidationWarning || SampleCapture.Rotations != movesBeforeDrift)
+            throw new InvalidOperationException("Large independent drift must recommend realignment without moving hardware: " + current.OperationError);
+        ((Expander)View.FindName("IndependentDriftTools")).IsExpanded = true;
+        Save(Path.Combine(directory, "ui-independent-drift-1280.png"), 1280, 1100);
+        var driftReview = FieldSessionReview.Review(current.FieldSessionDirectory!, Path.Combine(directory, "independent-drift-review"));
+        if (driftReview.IndependentDrift == null || driftReview.IndependentDrift.TotalArcseconds < 490
+            || driftReview.Warnings.Any(w => w.Contains("replay failed"))) throw new InvalidOperationException("Independent drift journal did not replay");
+        current.ResetIndependentDriftCommand.Execute(null); SampleCapture.DriftSecondField = false; SampleCapture.DriftFault = true;
+        current.DriftConfirmed = true;
+        await ((IAsyncRelayCommand)current.IndependentDriftCommand).ExecuteAsync(null);
+        if (!current.HasOperationError || current.HasIndependentResult || !current.HasValidationWarning)
+            throw new InvalidOperationException("Duplicate drift exposures must be inconclusive");
+        SampleCapture.DriftFault = false; SampleCapture.DriftTestMode = false; current.Dispose();
+        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA path guard, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay; independent drift with no mount motion, realignment warning, duplicate rejection and offline drift replay passed. Synthetic inputs only.");
     }
 
     private static void Save(string path, int width, int height) {
