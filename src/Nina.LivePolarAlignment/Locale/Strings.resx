@@ -400,4 +400,11 @@
     <value>Review the result and save the session folder. To realign, turn drift mode off, return manually near the celestial pole and capture new polar references. Nothing is slewed or adjusted automatically.</value>
   </data>
   <data name="AutoRaAngle" xml:space="preserve"><value>RA rotation angle (°)</value></data>
+  <data name="ManualRotateBrief" xml:space="preserve"><value>Rotate RA only by 60–90°, then capture the second reference. Keep Dec and bolts fixed.</value></data>
+  <data name="AutoBrief" xml:space="preserve"><value>Start captures references and rotates RA automatically. Confirm the rotation path first.</value></data>
+  <data name="ManualBrief" xml:space="preserve"><value>Point near the celestial pole, then press Start. Rotate RA manually when prompted.</value></data>
+  <data name="AutoReady" xml:space="preserve"><value>Automatic polar alignment</value></data>
+  <data name="ManualReady" xml:space="preserve"><value>Polar alignment</value></data>
+  <data name="ActionStart" xml:space="preserve"><value>Start</value></data>
+  <data name="AdjustBrief" xml:space="preserve"><value>Use the altitude and azimuth bolts to bring the RA axis onto the celestial pole. Keep RA and camera fixed.</value></data>
 </root>

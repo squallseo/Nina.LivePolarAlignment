@@ -21,20 +21,21 @@ public sealed partial class PolarAlignmentDockableVM {
     public Capture.PolarGuidance? FieldGuidance => guidance;
     public double PixelScaleArcseconds => pixelScale;
     public string PrimaryActionLabel => IndependentDriftEnabled ? (driftInProgress ? UiText.Get("DriftMeasuring") : DriftActionLabel) : IsRotating ? UiText.Get("AutoRaWorking") : liveBusy ? UiText.Get("Workflow0") : WorkflowStep switch {
-        0 => UiText.Get(AutoRaRotation ? "AutoRaStart" : "Workflow1"),
+        0 => UiText.Get("ActionStart"),
         1 => UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoRaSecond" : "Workflow2"),
         _ => UiText.Get("Workflow3")
     };
     public ICommand PrimaryActionCommand => IndependentDriftEnabled ? IndependentDriftCommand : IsAdjustmentStep ? StartLiveCommand : CaptureReferenceCommand;
     public string WorkflowTitle => IndependentDriftEnabled ? UiText.Get("DriftTitle") : IsRotating ? UiText.Get("AutoRaWorking") : WorkflowStep switch {
-        0 => UiText.Get("Workflow4"),
+        0 => UiText.Get(AutoRaRotation ? "AutoReady" : "ManualReady"),
         1 => UiText.Get("Workflow5"),
         _ => liveBusy ? UiText.Get("Workflow6") : UiText.Get("Workflow7")
     };
+    public string WorkflowHelp => UiText.Get(AutoRaRotation ? "AutoRaHint" : "Workflow8");
     public string WorkflowDescription => IndependentDriftEnabled ? DriftInstruction : WorkflowStep switch {
-        0 => UiText.Get(AutoRaRotation ? "AutoRaHint" : "Workflow8"),
-        1 => UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoRaHint" : "Workflow9"),
-        _ => UiText.Get("Workflow10")
+        0 => UiText.Get(AutoRaRotation ? "AutoBrief" : "ManualBrief"),
+        1 => IsRotating ? RotationStatus : UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoBrief" : "ManualRotateBrief"),
+        _ => UiText.Get("AdjustBrief")
     };
     public string RotationReadout => session?.RotationDegrees is { } rotation
         ? UiText.Format("RotationMeasured", rotation) : UiText.Get("Workflow11");
@@ -57,7 +58,7 @@ public sealed partial class PolarAlignmentDockableVM {
         foreach (var name in new[] { nameof(WorkflowStep), nameof(IsRotationStep), nameof(IsAdjustmentStep),
             nameof(IsWorking), nameof(HasOperationError), nameof(OperationError), nameof(HasLiveMeasurement),
             nameof(HasPreview), nameof(HasAlignmentDetail), nameof(HasCurrentFieldGuidance), nameof(FieldGuidance), nameof(PixelScaleArcseconds),
-            nameof(PrimaryActionLabel), nameof(PrimaryActionCommand), nameof(WorkflowTitle), nameof(WorkflowDescription),
+            nameof(PrimaryActionLabel), nameof(PrimaryActionCommand), nameof(WorkflowTitle), nameof(WorkflowDescription), nameof(WorkflowHelp),
             nameof(RotationReadout), nameof(MeasurementState), nameof(IsWithinTarget), nameof(AltitudeValue),
             nameof(AzimuthValue), nameof(AltitudeAction), nameof(AzimuthAction) }) RaisePropertyChanged(name);
     }

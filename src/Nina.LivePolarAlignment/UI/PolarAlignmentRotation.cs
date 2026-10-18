@@ -45,7 +45,7 @@ public sealed partial class PolarAlignmentDockableVM {
         try {
             await captureService.RotateRaAsync(ReverseRaRotation, new Progress<double>(angle => {
                 if (!rotationInProgress) return;
-                rotationProgress = angle; RaisePropertyChanged(nameof(RotationStatus)); RaisePropertyChanged(nameof(LiveStatus));
+                rotationProgress = angle; RaisePropertyChanged(nameof(RotationStatus)); RaisePropertyChanged(nameof(LiveStatus)); RaisePropertyChanged(nameof(WorkflowDescription));
             }), token, RotationAngleDegrees);
             token.ThrowIfCancellationRequested();
             ValidateSite(); automaticRotationCompleted = true;
