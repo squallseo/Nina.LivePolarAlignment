@@ -31,6 +31,7 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public bool IsSynthetic => true;
     public bool SupportsAutoRaRotation => true;
     public static int Rotations;
+    public static double LastRotationAngle;
     public static bool RotationStopped;
     private double orientation;
     private bool rotatedSinceReference;
@@ -42,11 +43,11 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public void ValidateDriftTracking() { if (!DriftTestMode) throw new InvalidOperationException("Synthetic drift mode is off"); }
     public Nina.LivePolarAlignment.Core.DriftSample GetDriftSample(SolvedPolarFrame frame) =>
         new(frame.CapturedAtUtc, frame.DeclinationDegrees, frame.RightAscensionDegrees - 180, 40, frame.PixelScaleArcseconds);
-    public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token) {
-        Rotations++; RotationStopped = false;
+    public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 60) {
+        Rotations++; LastRotationAngle = targetDegrees; RotationStopped = false;
         try {
-            for (int i = 1; i <= 60; i++) { await Task.Delay(20, token); progress?.Report(i); }
-            orientation += reverse ? -72 : 72; rotatedSinceReference = true;
+            for (int i = 1; i <= targetDegrees; i++) { await Task.Delay(20, token); progress?.Report(i); }
+            orientation += reverse ? -targetDegrees : targetDegrees; rotatedSinceReference = true;
         }
         finally { RotationStopped = true; }
     }
@@ -115,7 +116,7 @@ internal static class Program {
         var tp = DispatchProxy.Create<IProfile, SampleProfile>(); ((SampleProfile)(object)tp).Theme = theme;
         var ts = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)ts).Active = tp;
         application.Resources["ProfileService"] = ts;
-        foreach (var r in new[] { "StaticResources/SVGDictionary.xaml", "StaticResources/Brushes.xaml", "Styles/Button.xaml", "Styles/TextBlock.xaml", "Styles/TextBox.xaml", "Styles/CheckBox.xaml", "Styles/Expander.xaml" })
+        foreach (var r in new[] { "StaticResources/SVGDictionary.xaml", "StaticResources/Brushes.xaml", "Styles/Button.xaml", "Styles/TextBlock.xaml", "Styles/TextBox.xaml", "Styles/CheckBox.xaml", "Styles/ComboBox.xaml", "Styles/Expander.xaml" })
             application.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/NINA.WPF.Base;component/Resources/" + r) });
         View = new PolarAlignmentView();
         var layout = new DockPanel();
@@ -275,6 +276,8 @@ internal static class Program {
         SampleCapture.Rotations = 0;
         await SelectScene(0);
         current!.AutoRaRotation = true;
+        current.RotationPathClear = true; current.RotationAngleDegrees = 90;
+        if (current.RotationPathClear) throw new InvalidOperationException("Changing angle must clear path confirmation");
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         if (!current.HasOperationError || current.WorkflowStep != 0 || SampleCapture.Rotations != 0)
             throw new InvalidOperationException("Automatic RA must require a checked clear path before any capture/move");
@@ -284,7 +287,7 @@ internal static class Program {
         await Task.Delay(300);
         Save(Path.Combine(directory, "ui-auto-ra-1280.png"), 1280, 1000);
         await automatic;
-        if (current.WorkflowStep != 2 || current.HasOperationError || SampleCapture.Rotations != 1 || !SampleCapture.RotationStopped)
+        if (current.WorkflowStep != 2 || current.HasOperationError || SampleCapture.Rotations != 1 || SampleCapture.LastRotationAngle != 90 || !SampleCapture.RotationStopped)
             throw new InvalidOperationException("Automatic RA must capture exactly two references around one stopped rotation");
         current.ResetLiveCommand.Execute(null); current.RotationPathClear = true;
         var interrupted = ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);

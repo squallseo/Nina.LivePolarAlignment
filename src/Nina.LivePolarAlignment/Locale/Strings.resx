@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -277,19 +277,19 @@
     <value>Reverse RA direction</value>
   </data>
   <data name="AutoRaClear" xml:space="preserve">
-    <value>I checked the 60-degree path is clear</value>
+    <value>I checked the {0}-degree path is clear</value>
   </data>
   <data name="AutoRaProgress" xml:space="preserve">
-    <value>Rotating RA: {0:0.0} / 60 degrees - Stop cancels</value>
+    <value>Rotating RA: {0:0.0} / {1} degrees - Stop cancels</value>
   </data>
   <data name="AutoRaHint" xml:space="preserve">
-    <value>Captures both references with a 60-degree RA move between them. Keep Dec and bolts fixed. Direction follows NINA manual controls. Check cable, pier and mount limits first. No automatic return.</value>
+    <value>Captures both references with the selected RA move between them. Keep Dec and bolts fixed. Direction follows NINA manual controls. Check cable, pier and mount limits first. No automatic return.</value>
   </data>
   <data name="AutoRaUnsupported" xml:space="preserve">
     <value>Requires an idle, unparked equatorial mount with RA MoveAxis and tracking control. Manual rotation remains available.</value>
   </data>
   <data name="AutoRaCheckPath" xml:space="preserve">
-    <value>Connect a supported mount and confirm the 60-degree path is clear before starting automatic calibration.</value>
+    <value>Connect a supported mount and confirm the selected rotation path is clear before starting automatic calibration.</value>
   </data>
   <data name="AutoRaStart" xml:space="preserve">
     <value>Calibrate automatically</value>
@@ -304,7 +304,7 @@
     <value>Verify alignment</value>
   </data>
   <data name="VerificationHint" xml:space="preserve">
-    <value>Keep Dec and adjustment bolts fixed. Takes a fresh reference, rotates RA a further 60 degrees, then measures again. Check the new path first. Uses the same solver; not an independent accuracy test.</value>
+    <value>Keep Dec and adjustment bolts fixed. Takes a fresh reference, rotates RA by the selected angle, then measures again. Check the new path first. Uses the same solver; not an independent accuracy test.</value>
   </data>
   <data name="VerificationStability" xml:space="preserve">
     <value>Then collect 20 stationary frames</value>
@@ -399,4 +399,5 @@
   <data name="DriftCompletedHint">
     <value>Review the result and save the session folder. To realign, turn drift mode off, return manually near the celestial pole and capture new polar references. Nothing is slewed or adjusted automatically.</value>
   </data>
+  <data name="AutoRaAngle" xml:space="preserve"><value>RA rotation angle (°)</value></data>
 </root>

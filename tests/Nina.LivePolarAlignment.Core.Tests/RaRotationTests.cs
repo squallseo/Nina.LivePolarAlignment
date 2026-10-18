@@ -30,10 +30,19 @@ public sealed class RaRotationTests {
     private static RaRotation Controller() => new((_, token) => { token.ThrowIfCancellationRequested(); return Task.CompletedTask; });
 
     [Theory]
-    [InlineData(false)] [InlineData(true)]
-    public async Task RotatesAcrossRaWrapAndStopsBeforeRestoringTracking(bool reverse) {
+    [InlineData(45)] [InlineData(double.NaN)]
+    public async Task InvalidAngleDoesNotChangeMount(double angle) {
         var mount = new Mount();
-        await Controller().RunAsync(mount, reverse, null, default);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Controller().RunAsync(mount, false, null, default, angle));
+        Assert.Empty(mount.Commands); Assert.True(mount.State.Tracking);
+    }
+
+    [Theory]
+    [InlineData(false, 60)] [InlineData(true, 60)] [InlineData(false, 90)] [InlineData(true, 90)]
+    public async Task RotatesAcrossRaWrapAndStopsBeforeRestoringTracking(bool reverse, double targetDegrees) {
+        var mount = new Mount();
+        await Controller().RunAsync(mount, reverse, null, default, targetDegrees);
+        Assert.InRange(Math.Abs(RaRotation.WrapDegrees((mount.State.RaHours - 23) * 15)), targetDegrees - .01, targetDegrees + .26);
         Assert.Equal(reverse ? -1 : 1, mount.Commands[0]); Assert.Equal(0, mount.Commands[^1]);
         Assert.Equal(0, mount.Rate); Assert.True(mount.State.Tracking);
         Assert.Equal(80, mount.State.DecDegrees);

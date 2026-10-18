@@ -24,11 +24,11 @@ public sealed partial class NinaPolarAlignmentCaptureService {
             catch { return false; }
         }
     }
-    public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token) {
+    public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 60) {
         if (!await captureGate.WaitAsync(0, token)) throw new InvalidOperationException("Another alignment operation is running.");
         try {
             var mount = new RotationMount(telescope);
-            await Task.Run(() => new RaRotation().RunAsync(mount, reverse, progress, token), CancellationToken.None);
+            await Task.Run(() => new RaRotation().RunAsync(mount, reverse, progress, token, targetDegrees), CancellationToken.None);
         } finally { captureGate.Release(); }
     }
     private sealed class RotationMount : IRaRotationMount {

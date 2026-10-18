@@ -7,6 +7,17 @@ namespace Nina.LivePolarAlignment.UI;
 public sealed partial class PolarAlignmentDockableVM {
     private bool autoRaRotation, reverseRaRotation, rotationPathClear, rotationInProgress, automaticRotationCompleted;
     private double rotationProgress;
+    private int rotationAngleDegrees = 60;
+    public int[] RotationAngleChoices { get; } = { 60, 90 };
+    public int RotationAngleDegrees {
+        get => rotationAngleDegrees;
+        set {
+            if (!(CanConfigureRotation || CanConfigureVerification) || value is not (60 or 90)) return;
+            rotationAngleDegrees = value; rotationPathClear = false; verificationPathClear = false;
+            NotifyRotation(); NotifyVerification(); NotifyWorkflow();
+        }
+    }
+    public string RotationPathLabel => UiText.Format("AutoRaClear", RotationAngleDegrees);
     public bool AutoRaRotation {
         get => autoRaRotation;
         set { if (!CanConfigureRotation) return; autoRaRotation = value; rotationPathClear = false; NotifyRotation(); NotifyWorkflow(); }
@@ -22,7 +33,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public bool CanConfigureRotation => !IndependentDriftEnabled && !liveBusy && calibrationSamples < 2 && !automaticRotationCompleted;
     public bool CanUseAutoRotation => CanConfigureRotation && captureService.SupportsAutoRaRotation;
     public bool IsRotating => rotationInProgress;
-    public string RotationStatus => rotationInProgress ? UiText.Format("AutoRaProgress", rotationProgress)
+    public string RotationStatus => rotationInProgress ? UiText.Format("AutoRaProgress", rotationProgress, RotationAngleDegrees)
         : UiText.Get(captureService.SupportsAutoRaRotation ? "AutoRaHint" : "AutoRaUnsupported");
 
     private async Task RotateForReferenceAsync(CancellationToken token) {
@@ -30,12 +41,12 @@ public sealed partial class PolarAlignmentDockableVM {
         if (!RotationPathClear || !captureService.SupportsAutoRaRotation)
             throw new InvalidOperationException(UiText.Get("AutoRaCheckPath"));
         rotationInProgress = true; rotationProgress = 0; NotifyLive();
-        RecordFieldEvent("ra_rotation_start", new { targetDegrees = 60, reverse = ReverseRaRotation });
+        RecordFieldEvent("ra_rotation_start", new { targetDegrees = RotationAngleDegrees, reverse = ReverseRaRotation });
         try {
             await captureService.RotateRaAsync(ReverseRaRotation, new Progress<double>(angle => {
                 if (!rotationInProgress) return;
                 rotationProgress = angle; RaisePropertyChanged(nameof(RotationStatus)); RaisePropertyChanged(nameof(LiveStatus));
-            }), token);
+            }), token, RotationAngleDegrees);
             token.ThrowIfCancellationRequested();
             ValidateSite(); automaticRotationCompleted = true;
             RecordFieldEvent("ra_rotation_complete", new { reportedDegrees = rotationProgress });
@@ -49,7 +60,7 @@ public sealed partial class PolarAlignmentDockableVM {
         }
     }
     private void NotifyRotation() {
-        foreach (var name in new[] { nameof(AutoRaRotation), nameof(ReverseRaRotation), nameof(RotationPathClear),
+        foreach (var name in new[] { nameof(RotationAngleDegrees), nameof(RotationPathLabel), nameof(AutoRaRotation), nameof(ReverseRaRotation), nameof(RotationPathClear),
             nameof(CanConfigureRotation), nameof(CanUseAutoRotation), nameof(IsRotating), nameof(RotationStatus) }) RaisePropertyChanged(name);
     }
 }

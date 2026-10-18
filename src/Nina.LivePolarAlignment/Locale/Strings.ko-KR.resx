@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -277,19 +277,19 @@
     <value>RA 회전 방향 반전</value>
   </data>
   <data name="AutoRaClear" xml:space="preserve">
-    <value>60도 회전 경로의 간섭을 확인했습니다</value>
+    <value>{0}도 회전 경로의 간섭을 확인했습니다</value>
   </data>
   <data name="AutoRaProgress" xml:space="preserve">
-    <value>RA 회전: {0:0.0} / 60도 · Stop으로 취소</value>
+    <value>RA 회전: {0:0.0} / {1}도 · Stop으로 취소</value>
   </data>
   <data name="AutoRaHint" xml:space="preserve">
-    <value>기준 촬영 사이에 RA를 60도 회전합니다. Dec와 조정 볼트는 고정하세요. 방향은 N.I.N.A. 수동 이동 설정을 따릅니다. 케이블·경통·마운트 한계를 확인하세요. 자동 복귀는 하지 않습니다.</value>
+    <value>기준 촬영 사이에 RA를 선택한 각도만큼 회전합니다. Dec와 조정 볼트는 고정하세요. 방향은 N.I.N.A. 수동 이동 설정을 따릅니다. 케이블·경통·마운트 한계를 확인하세요. 자동 복귀는 하지 않습니다.</value>
   </data>
   <data name="AutoRaUnsupported" xml:space="preserve">
     <value>연결·주차 해제된 적도의와 RA축 이동·추적 제어 지원이 필요합니다. 수동 회전은 계속 사용할 수 있습니다.</value>
   </data>
   <data name="AutoRaCheckPath" xml:space="preserve">
-    <value>지원되는 마운트를 연결하고 60도 회전 경로의 간섭 여부를 확인한 뒤 시작하세요.</value>
+    <value>지원되는 마운트를 연결하고 선택한 회전 경로의 간섭 여부를 확인한 뒤 시작하세요.</value>
   </data>
   <data name="AutoRaStart" xml:space="preserve">
     <value>자동 기준 촬영</value>
@@ -304,7 +304,7 @@
     <value>정렬 재측정</value>
   </data>
   <data name="VerificationHint" xml:space="preserve">
-    <value>Dec와 고도·방위각 볼트를 고정하세요. 현재 위치에서 새 기준을 찍고 RA를 추가로 60도 회전해 다시 계산합니다. 새로운 회전 경로를 확인하세요. 같은 solver를 쓰므로 독립적인 정확도 검사는 아닙니다.</value>
+    <value>Dec와 고도·방위각 볼트를 고정하세요. 현재 위치에서 새 기준을 찍고 RA를 선택한 각도만큼 추가로 회전해 다시 계산합니다. 새로운 회전 경로를 확인하세요. 같은 solver를 쓰므로 독립적인 정확도 검사는 아닙니다.</value>
   </data>
   <data name="VerificationStability" xml:space="preserve">
     <value>이어서 고정 상태 20프레임 측정</value>
@@ -399,4 +399,5 @@
   <data name="DriftCompletedHint">
     <value>결과 확인 후 세션 폴더를 보관하세요. 다시 정렬하려면 드리프트 모드를 끄고 천구극 근처로 직접 돌아가 새 기준을 촬영하세요. 자동 이동이나 볼트 조정은 하지 않습니다.</value>
   </data>
+  <data name="AutoRaAngle" xml:space="preserve"><value>RA 회전 각도 (°)</value></data>
 </root>

@@ -145,8 +145,9 @@
    <StackPanel Margin="0,0,0,8" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}">
     <DockPanel ToolTip="{Binding RotationStatus}" ToolTipService.ShowOnDisabled="True"><TextBlock Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" HorizontalAlignment="Right" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanUseAutoRotation}"/></DockPanel>
     <StackPanel Visibility="{Binding AutoRaRotation, Converter={StaticResource VisibleIf}}">
+     <DockPanel Margin="0,5,0,0"><ComboBox DockPanel.Dock="Right" Width="72" ItemsSource="{Binding RotationAngleChoices}" SelectedItem="{Binding RotationAngleDegrees}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
      <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding ReverseRaRotation}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
-     <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding RotationPathClear}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{local:UiLoc AutoRaClear}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
+     <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding RotationPathClear}" IsEnabled="{Binding CanConfigureRotation}"/><TextBlock Text="{Binding RotationPathLabel}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
      <TextBlock Text="{Binding RotationStatus}" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
     </StackPanel>
    </StackPanel>
@@ -187,8 +188,9 @@
    <Expander x:Name="VerificationTools" Header="{local:UiLoc VerificationTitle}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0" Visibility="{Binding ShowVerification, Converter={StaticResource VisibleIf}}">
     <StackPanel Margin="2,6,2,0">
      <TextBlock Text="{Binding VerificationSummary}" Style="{StaticResource Caption}"/>
+     <DockPanel Margin="0,5,0,0"><ComboBox DockPanel.Dock="Right" Width="72" ItemsSource="{Binding RotationAngleChoices}" SelectedItem="{Binding RotationAngleDegrees}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
      <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationReverse}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}"/></DockPanel>
-     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationPathClear}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc AutoRaClear}" Style="{StaticResource Caption}"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationPathClear}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{Binding RotationPathLabel}" Style="{StaticResource Caption}"/></DockPanel>
      <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoVerificationStability}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc VerificationStability}" Style="{StaticResource Caption}"/></DockPanel>
      <Button Content="{local:UiLoc VerificationStart}" Command="{Binding VerifyAlignmentCommand}" Style="{StaticResource AlignmentButton}" Margin="0,7,0,0" ToolTip="{local:UiLoc VerificationHint}"/>
      <TextBlock Text="{Binding StabilityStatus}" Style="{StaticResource Caption}" Margin="0,5,0,0"/>

@@ -33,7 +33,8 @@ public sealed class RaRotation {
         if (rates.Length == 0) throw new InvalidOperationException("No supported RA speed between 0.1 and 1 degree/s. Use manual rotation.");
         return rates.Max();
     }
-    public async Task RunAsync(IRaRotationMount mount, bool reverse, IProgress<double>? progress, CancellationToken token) {
+    public async Task RunAsync(IRaRotationMount mount, bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 60) {
+        if (targetDegrees is not (60 or 90)) throw new ArgumentOutOfRangeException(nameof(targetDegrees));
         token.ThrowIfCancellationRequested();
         var initial = mount.Read(); var rate = SelectRate(initial);
         bool owned = false, stopped = false;
@@ -47,7 +48,7 @@ public sealed class RaRotation {
             var timer = Stopwatch.StartNew();
             double previous = initial.RaHours, total = 0, lastMotion = 0;
             int polls = 0, stagnant = 0; double? direction = null;
-            while (total < 60) {
+            while (total < targetDegrees) {
                 await delay(TimeSpan.FromMilliseconds(250), token); token.ThrowIfCancellationRequested();
                 var current = mount.Read(); polls++;
                 if (!current.Connected || current.Parked || !current.Equatorial || current.Tracking
@@ -65,7 +66,7 @@ public sealed class RaRotation {
                 progress?.Report(total);
                 if (stagnant >= 24 || timer.Elapsed.TotalSeconds - lastMotion > 6)
                     throw new TimeoutException("No fresh RA movement feedback for 6 seconds. Reset calibration.");
-                if (polls * .25 > 60 / rate + 30 || timer.Elapsed.TotalSeconds > 60 / rate + 30)
+                if (polls * .25 > targetDegrees / rate + 30 || timer.Elapsed.TotalSeconds > targetDegrees / rate + 30)
                     throw new TimeoutException("RA rotation timed out. Reset calibration.");
             }
         } finally {
