@@ -25,6 +25,14 @@ public class SampleProfile : DispatchProxy {
     };
 }
 
+public class SampleStatus : DispatchProxy {
+    public static readonly List<ApplicationStatus> Updates = new();
+    protected override object? Invoke(MethodInfo? method, object?[]? args) {
+        if (method?.Name == "StatusUpdate") Updates.Add((ApplicationStatus)args![0]!);
+        return null;
+    }
+}
+
 internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public static bool CameraOffline, MountOffline;
     public bool CameraConnected => !CameraOffline;
@@ -190,7 +198,7 @@ internal static class Program {
             ((SampleProfile)(object)profile).Settings = DispatchProxy.Create<IApplicationSettings, SampleProfile>();
             var profiles = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)profiles).Active = profile;
             var capture = new SampleCapture();
-            current = new PolarAlignmentDockableVM(profiles, capture);
+            current = new PolarAlignmentDockableVM(profiles, capture, DispatchProxy.Create<NINA.WPF.Base.Interfaces.Mediator.IApplicationStatusMediator, SampleStatus>());
             if (!current.AutoRaRotation || !current.UseStreaming || current.RotationAngleDegrees != 90 || !current.ReverseRaRotation || !current.VerificationReverse) throw new InvalidOperationException("Acquisition defaults must be on with westward RA rotation");
             current.AutoRaRotation = false; current.UseStreaming = false;
             capture.Step = () => current.WorkflowStep;
@@ -444,6 +452,7 @@ internal static class Program {
         if (SampleCapture.CaptureCalls != capturesBeforeUnpark || !current.IsWorking
             || current.ActionButtonLabel.Length > 12 || !current.LiveStatus.Contains("unparking"))
             throw new InvalidOperationException("Unpark must be shown in status before any reference capture");
+        if (SampleStatus.Updates.LastOrDefault()?.Status != current.LiveStatus) throw new InvalidOperationException("Unpark progress must reach the NINA application status mediator");
         Save(Path.Combine(directory, "ui-unparking.png"), 1280, 1000);
         for (int i = 0; i < 300 && !current.HasLiveMeasurement && !parkedStart.IsCompleted; i++) await Task.Delay(25);
         if (!current.HasLiveMeasurement || SampleCapture.Parked) throw new InvalidOperationException("Parked Start must continue to alignment after Unpark");
@@ -517,20 +526,24 @@ internal static class Program {
         var cancelSequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
         while (!current.IsRotating && !cancelSequence.IsCompleted) await Task.Delay(10);
         AssertActionButton(true);
+        if (SampleStatus.Updates.LastOrDefault()?.Source != "Live Polar Alignment" || SampleStatus.Updates.Last().Status != current.LiveStatus)
+            throw new InvalidOperationException("RA progress must reach NINA's status bar with a stable source");
         Save(Path.Combine(directory, "ui-primary-cancel.png"), 1280, 1000);
         ((Button)View.FindName("PrimaryActionButton")).Command.Execute(null);
         await cancelSequence; AssertActionButton(false);
+        if (SampleStatus.Updates.Last().Status != string.Empty) throw new InvalidOperationException("The host status entry must clear after cancellation");
         if (current.HasLiveMeasurement || current.IsWorking) throw new InvalidOperationException("Stop must not restart workflow");
         foreach (var schema in Theme.ColorSchemas.Items) {
             Theme.ColorSchema = schema;
             await Task.Delay(50);
             Save(Path.Combine(directory, $"ui-theme-{schema.Name}.png"), 1280, 1000);
             AssertActionButton(false);
-            foreach (var name in new[] { "WorkflowTitleLabel", "WorkflowDescriptionLabel" })
+            foreach (var name in new[] { "AutoRaOptionLabel", "ExposureLabel" })
                 if (((SolidColorBrush)((TextBlock)View.FindName(name)).Foreground).Color != schema.PrimaryColor)
                     throw new InvalidOperationException($"{name} must follow the NINA text color in {schema.Name}");
         }
         current.Dispose();
+        if (SampleStatus.Updates.Last().Status != string.Empty) throw new InvalidOperationException("The host status entry must clear on disposal");
         File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Unified play/stop/cancel button, visible surfaces and theme foreground; equipment gating and labels; one-Start workflow and manual wait; Stop cancellation; all built-in themes; quality thresholds; options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA controls, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay; independent drift with no mount motion, realignment warning, duplicate rejection and offline drift replay passed. Synthetic inputs only.");
     }
 
@@ -553,6 +566,15 @@ internal static class Program {
     private static void Save(string path, int width, int height) {
         View.Width = width; View.Height = height;
         View.Measure(new Size(width, height)); View.Arrange(new Rect(0, 0, width, height)); View.UpdateLayout();
+        void RejectPanelProgress(DependencyObject node) {
+            if (node is TextBlock text) {
+                var path = System.Windows.Data.BindingOperations.GetBindingExpression(text, TextBlock.TextProperty)?.ParentBinding.Path?.Path;
+                if (path is "LiveStatus" or "WorkflowTitle" or "WorkflowDescription")
+                    throw new InvalidOperationException("Operation progress must not be repeated in the plugin control panel");
+            }
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) RejectPanelProgress(VisualTreeHelper.GetChild(node, i));
+        }
+        RejectPanelProgress(View);
         var field = (FrameworkElement)View.FindName("SkyField");
         var placeholder = (FrameworkElement)View.FindName("EmptyImagePlaceholder");
         if ((placeholder.Visibility == Visibility.Visible) == current!.HasPreview)

@@ -117,14 +117,9 @@
   <ScrollViewer x:Name="ControlScroll" Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
    <StackPanel Margin="0,0,2,0">
 
-   <StackPanel Margin="2,0,2,8">
-    <TextBlock x:Name="WorkflowTitleLabel" Text="{Binding WorkflowTitle}" FontWeight="SemiBold"/>
-    <TextBlock x:Name="WorkflowDescriptionLabel" Text="{Binding WorkflowDescription}" Style="{StaticResource Caption}" Margin="0,4,0,0" ToolTip="{Binding WorkflowHelp}"/>
-   </StackPanel>
-
    <StackPanel Margin="0,0,0,8" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}">
     <Grid ToolTip="{Binding RotationStatus}" ToolTipService.ShowOnDisabled="True"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <TextBlock Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/>
+     <TextBlock x:Name="AutoRaOptionLabel" Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/>
      <StackPanel x:Name="MountConnectionHint" Grid.Column="1" Orientation="Horizontal" Margin="6,0" VerticalAlignment="Center" Visibility="{Binding MountDisconnected, Converter={StaticResource VisibleIf}}">
       <TextBlock Text="{Binding NotConnectedText}" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
       <CheckBox Width="14" Height="14" BorderBrush="Transparent" IsChecked="False" IsEnabled="False" IsHitTestVisible="False" Style="{StaticResource CheckmarkCheckbox}"/>
@@ -144,7 +139,7 @@
    </StackPanel>
    <Grid Margin="0,0,0,13">
     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-    <TextBlock Text="{ns:Loc LblExposureTime}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+    <TextBlock x:Name="ExposureLabel" Text="{ns:Loc LblExposureTime}" VerticalAlignment="Center" Margin="0,0,8,0"/>
     <TextBox Grid.Column="1" Width="60" Text="{Binding ExposureSeconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureLive}" AutomationProperties.Name="{local:UiLoc View7}"/>
     <TextBlock Grid.Column="2" Text="{local:UiLoc View8}" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryBrush}" Margin="7,0,0,0"/>
    </Grid>
@@ -198,7 +193,6 @@
      <TextBlock Text="{Binding FrameFreshness}" Style="{StaticResource Caption}" Margin="0,11,0,0"/>
     </StackPanel>
    </Border>
-   <TextBlock Text="{Binding LiveStatus}" Style="{StaticResource Caption}" Margin="2,6,2,6"/>
 
    <Expander x:Name="VerificationTools" Header="{local:UiLoc VerificationTitle}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0" Visibility="{Binding ShowVerification, Converter={StaticResource VisibleIf}}">
     <StackPanel Margin="2,6,2,0">

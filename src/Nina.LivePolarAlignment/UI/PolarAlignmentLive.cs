@@ -13,6 +13,8 @@ using NINA.Profile.Interfaces;
 namespace Nina.LivePolarAlignment.UI;
 
 public sealed partial class PolarAlignmentDockableVM {
+    private readonly NINA.WPF.Base.Interfaces.Mediator.IApplicationStatusMediator? applicationStatusMediator;
+    private string lastHostStatus = string.Empty;
     private IProfileService profiles = null!;
     private IPolarAlignmentCaptureService captureService = null!;
     private PolarAlignmentSession? session;
@@ -234,7 +236,14 @@ public sealed partial class PolarAlignmentDockableVM {
         if (!double.IsFinite(ExposureSeconds) || ExposureSeconds <= 0 || ExposureSeconds > 60)
             throw new InvalidOperationException("Exposure must be greater than 0 and no more than 60 seconds.");
     }
+    private void ReportHostStatus() {
+        var message = !fieldDisposed && (liveBusy || WaitingForManualRotation) ? LiveStatus : string.Empty;
+        if (message == lastHostStatus) return;
+        lastHostStatus = message;
+        applicationStatusMediator?.StatusUpdate(new NINA.Core.Model.ApplicationStatus { Source = "Live Polar Alignment", Status = message });
+    }
     private void NotifyLive() {
+        ReportHostStatus();
         NotifyWorkflow(); NotifyField(); NotifyRotation(); NotifyVerification(); NotifyDrift();
         RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(AcquisitionMode)); RaisePropertyChanged(nameof(StreamingAvailability));
         foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
@@ -245,5 +254,5 @@ public sealed partial class PolarAlignmentDockableVM {
         (ResetLiveCommand as IRelayCommand)?.NotifyCanExecuteChanged();
     }
     private void LocaleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => NotifyLive();
-    public void Dispose() { captureService.PreviewAvailable -= CapturePreviewAvailable; fieldDisposed = true; RequestStopLive(); freshnessTimer.Stop(); UiText.Instance.PropertyChanged -= LocaleChanged; if (!liveBusy && !fieldSaving) EndFieldSession("disposed"); }
+    public void Dispose() { captureService.PreviewAvailable -= CapturePreviewAvailable; fieldDisposed = true; ReportHostStatus(); RequestStopLive(); freshnessTimer.Stop(); UiText.Instance.PropertyChanged -= LocaleChanged; if (!liveBusy && !fieldSaving) EndFieldSession("disposed"); }
 }

@@ -4,6 +4,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using NINA.Equipment.Interfaces.ViewModel;
 using NINA.Profile.Interfaces;
+using NINA.WPF.Base.Interfaces.Mediator;
 using NINA.WPF.Base.ViewModel;
 
 namespace Nina.LivePolarAlignment.UI;
@@ -16,8 +17,9 @@ public sealed partial class PolarAlignmentDockableVM : DockableVM, IDisposable {
     private double altitude = 6, azimuth = -8;
 
     [ImportingConstructor]
-    public PolarAlignmentDockableVM(IProfileService profiles, Capture.IPolarAlignmentCaptureService captureService) : base(profiles) {
+    public PolarAlignmentDockableVM(IProfileService profiles, Capture.IPolarAlignmentCaptureService captureService, IApplicationStatusMediator? applicationStatusMediator = null) : base(profiles) {
         Title = "Live Polar Alignment";
+        this.applicationStatusMediator = applicationStatusMediator;
         var iconResources = new PolarAlignmentTemplates();
         ImageGeometry = (System.Windows.Media.GeometryGroup)iconResources["Nina.LivePolarAlignment.PolarAxisIcon"];
         ImageGeometry.Freeze();

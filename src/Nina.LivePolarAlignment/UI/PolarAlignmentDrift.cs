@@ -144,6 +144,7 @@ public sealed partial class PolarAlignmentDockableVM {
         catch (Exception error) { fieldFailure = error.Message; NotifyField(); }
     }
     private void NotifyDrift() {
+        ReportHostStatus();
         foreach (var name in new[] { nameof(IsPolarView), nameof(ShowAlignmentAssessment), nameof(CanConfigureDrift), nameof(IndependentDriftEnabled), nameof(DriftConfirmed), nameof(ValidationTargetArcseconds),
             nameof(HasIndependentResult), nameof(DriftActionLabel), nameof(DriftInstruction), nameof(DriftDurationSeconds), nameof(IndependentDriftStatus), nameof(AlignmentAssessmentText), nameof(HasValidationWarning) }) RaisePropertyChanged(name);
         (IndependentDriftCommand as IRelayCommand)?.NotifyCanExecuteChanged();
