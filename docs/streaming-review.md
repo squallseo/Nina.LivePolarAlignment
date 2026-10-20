@@ -6,7 +6,15 @@ The first implementation accepts NINA's native ZWO ASI (`ZWOptical_`) and ToupTe
 not enabled by this option. This is a code-path support boundary, not a list of
 hardware-tested models.
 
-## Why it can help
+## Current adjustment behavior
+
+As of 0.1.0.38, Streaming refers to acquisition, not continuous unsolved video display or per-frame star tracking. The initial two reference images use still capture. During adjustment, the last successfully solved image and its matching overlays remain displayed until another complete solution replaces them. The directory camera simulator uses repeated still captures, not this native video path.
+
+Successful coordinates are reused as the next solve's search hint. With full-resolution QHY600 catalog images and a deliberately wrong mount hint, production replay measured about 9.9 seconds for the initial blind fallback and 2.1–2.4 seconds for following frames. This excludes real camera exposure/download latency. It is a processing benchmark, not a video frame-rate claim.
+
+The intended next step is a separate live-preview and registered-star tracking path after reference calibration, with absolute solving for recovery and verification. It is not implemented in this checkpoint. The existing rigid-registration core alone does not provide current-frame astrometric guidance; integration must account for image geometry, exposure times, sky motion, tracking failures, and confidence before showing adjustment targets.
+
+## Why streaming acquisition can help
 
 Still mode serializes exposure, transfer, image preparation, solving, and a 250 ms
 pause. Streaming receives/converts RAW frames on one producer while the consumer
@@ -57,7 +65,7 @@ The option defaults on, remains selectable before camera connection, and cannot 
   for its next frame, draining a cancellation-insensitive download, failure,
   timeout and user cancellation.
 - The WPF synthetic harness exercises both modes, repeated stream measurements,
-  Stop, stale guidance removal, error handling and language fallback.
+  Stop, preservation of the last solved display across age-only freshness changes, error handling and language fallback. Freshness is still evaluated separately from display availability.
 - Existing native SOFA/NOVAS integration tests remain in place. No physical camera
   performance, native SDK stop timing, video exposure timestamp, or polar accuracy
   is certified by the synthetic tests.
