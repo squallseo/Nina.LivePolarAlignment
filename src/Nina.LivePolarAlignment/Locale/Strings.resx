@@ -413,7 +413,7 @@
   <data name="QualityClose" xml:space="preserve"><value>△ Fine adjustment needed (target {0:0}″)</value></data>
   <data name="QualityAdjust" xml:space="preserve"><value>● Continue adjusting (target {0:0}″)</value></data>
   <data name="QualityUnavailable" xml:space="preserve"><value>Awaiting a fresh measurement</value></data>
-  <data name="ImpactTitle" xml:space="preserve"><value>Polar-error contribution to image drift</value></data>
+  <data name="ImpactTitle" xml:space="preserve"><value>Estimated image drift</value></data>
   <data name="ImpactRate" xml:space="preserve"><value>≤ {0:0.000}″/min without guiding</value></data>
   <data name="ImpactMotion" xml:space="preserve"><value>≤ {0:0.00}″ over this exposure</value></data>
   <data name="ImpactMotionPixels" xml:space="preserve"><value>≤ {0:0.00}″ ({1:0.00} px) over this exposure</value></data>

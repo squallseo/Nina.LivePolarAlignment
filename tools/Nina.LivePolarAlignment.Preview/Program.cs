@@ -538,6 +538,13 @@ internal static class Program {
             await Task.Delay(50);
             Save(Path.Combine(directory, $"ui-theme-{schema.Name}.png"), 1280, 1000);
             AssertActionButton(false);
+            var inputLabel = (TextBlock)View.FindName("ExposureLabel");
+            var explanation = (TextBlock)View.FindName("ImpactExplanation");
+            var resultHeading = (TextBlock)View.FindName("PolarErrorHeading");
+            if (!(explanation.FontSize < inputLabel.FontSize && inputLabel.FontSize < resultHeading.FontSize)
+                || !(explanation.FontWeight.ToOpenTypeWeight() < inputLabel.FontWeight.ToOpenTypeWeight()
+                    && inputLabel.FontWeight.ToOpenTypeWeight() < resultHeading.FontWeight.ToOpenTypeWeight()))
+                throw new InvalidOperationException("Headings, input labels and supporting explanations must have distinct typography");
             foreach (var name in new[] { "AutoRaOptionLabel", "ExposureLabel" })
                 if (((SolidColorBrush)((TextBlock)View.FindName(name)).Foreground).Color != schema.PrimaryColor)
                     throw new InvalidOperationException($"{name} must follow the NINA text color in {schema.Name}");

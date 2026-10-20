@@ -413,7 +413,7 @@
   <data name="QualityClose" xml:space="preserve"><value>△ 미세 조정 필요 (목표 {0:0}″)</value></data>
   <data name="QualityAdjust" xml:space="preserve"><value>● 추가 조정 필요 (목표 {0:0}″)</value></data>
   <data name="QualityUnavailable" xml:space="preserve"><value>새 측정 대기 중</value></data>
-  <data name="ImpactTitle" xml:space="preserve"><value>극축 오차로 인한 영상 드리프트</value></data>
+  <data name="ImpactTitle" xml:space="preserve"><value>예상 이미지 이동</value></data>
   <data name="ImpactRate" xml:space="preserve"><value>무가이드 최대 {0:0.000}″/분</value></data>
   <data name="ImpactMotion" xml:space="preserve"><value>이 노출 동안 최대 {0:0.00}″</value></data>
   <data name="ImpactMotionPixels" xml:space="preserve"><value>이 노출 동안 최대 {0:0.00}″ ({1:0.00} px)</value></data>

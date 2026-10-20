@@ -96,7 +96,36 @@
         <Setter Property="Padding" Value="6,3" />
       </Style>
 
-<Style TargetType="TextBlock" BasedOn="{StaticResource StandardTextBlock}"><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/><Setter Property="TextWrapping" Value="Wrap"/></Style><BooleanToVisibilityConverter x:Key="VisibleIf"/><Style x:Key="Caption" TargetType="TextBlock" BasedOn="{StaticResource StandardTextBlock}"><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/><Setter Property="TextWrapping" Value="Wrap"/></Style><Style x:Key="StepCard" TargetType="Border"><Setter Property="Padding" Value="4"/></Style></UserControl.Resources>
+      <local:SupportingTextColorConverter x:Key="SupportingTextColor"/>
+      <SolidColorBrush x:Key="SupportingTextBrush"><SolidColorBrush.Color><MultiBinding Converter="{StaticResource SupportingTextColor}"><Binding Path="Color" Source="{StaticResource PrimaryBrush}"/><Binding Path="Color" Source="{StaticResource BackgroundBrush}"/></MultiBinding></SolidColorBrush.Color></SolidColorBrush>
+      <Style TargetType="TextBlock" BasedOn="{StaticResource StandardTextBlock}">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+      </Style>
+      <Style x:Key="InputLabel" TargetType="TextBlock" BasedOn="{StaticResource StandardTextBlock}">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+      </Style>
+      <Style x:Key="SectionHeading" TargetType="TextBlock" BasedOn="{StaticResource InputLabel}">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+      </Style>
+      <Style x:Key="Caption" TargetType="TextBlock" BasedOn="{StaticResource StandardTextBlock}">
+        <Setter Property="Foreground" Value="{DynamicResource SupportingTextBrush}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+      </Style>
+      <Style x:Key="ResultLabel" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+      </Style>
+      <DataTemplate x:Key="SectionHeaderTemplate"><TextBlock Text="{Binding}" Style="{StaticResource SectionHeading}"/></DataTemplate>
+      <BooleanToVisibilityConverter x:Key="VisibleIf"/>
+ </UserControl.Resources>
  <Grid x:Name="WorkspaceGrid" Margin="4">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition x:Name="ImageRow" Height="*"/><RowDefinition x:Name="NarrowControlsRow" Height="0"/></Grid.RowDefinitions>
   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="DividerColumn" Width="6"/><ColumnDefinition x:Name="ControlsColumn" Width="290" MinWidth="270" MaxWidth="480"/></Grid.ColumnDefinitions>
@@ -119,7 +148,7 @@
 
    <StackPanel Margin="0,0,0,8" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}">
     <Grid ToolTip="{Binding RotationStatus}" ToolTipService.ShowOnDisabled="True"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <TextBlock x:Name="AutoRaOptionLabel" Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/>
+     <TextBlock x:Name="AutoRaOptionLabel" Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center" Style="{StaticResource InputLabel}"/>
      <StackPanel x:Name="MountConnectionHint" Grid.Column="1" Orientation="Horizontal" Margin="6,0" VerticalAlignment="Center" Visibility="{Binding MountDisconnected, Converter={StaticResource VisibleIf}}">
       <TextBlock Text="{Binding NotConnectedText}" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
       <CheckBox Width="14" Height="14" BorderBrush="Transparent" IsChecked="False" IsEnabled="False" IsHitTestVisible="False" Style="{StaticResource CheckmarkCheckbox}"/>
@@ -127,19 +156,18 @@
      <ToggleButton x:Name="AutoRaToggle" Grid.Column="2" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanUseAutoRotation}"/>
     </Grid>
     <StackPanel x:Name="RotationSettingsPanel" Visibility="{Binding AutoRaRotation, Converter={StaticResource VisibleIf}}" IsEnabled="{Binding CanConfigureAutoRotation}">
-     <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger></Style.Triggers></Style></StackPanel.Style>
-     <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureRotation}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureRotation}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" VerticalAlignment="Center" Style="{StaticResource InputLabel}"/></DockPanel>
 
-     <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding ReverseRaRotation}" IsEnabled="{Binding CanConfigureRotation}"/><ContentControl DockPanel.Dock="Right" Margin="6,0,6,0" VerticalAlignment="Center" Content="{Binding ReverseRaRotation}" ContentTemplate="{StaticResource RotationDirectionIcon}" ToolTip="{local:UiLoc RotationDirectionHint}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
+     <DockPanel Margin="0,4,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding ReverseRaRotation}" IsEnabled="{Binding CanConfigureRotation}"/><ContentControl DockPanel.Dock="Right" Margin="6,0,6,0" VerticalAlignment="Center" Content="{Binding ReverseRaRotation}" ContentTemplate="{StaticResource RotationDirectionIcon}" ToolTip="{local:UiLoc RotationDirectionHint}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" VerticalAlignment="Center" Style="{StaticResource InputLabel}"/></DockPanel>
 
     </StackPanel>
    </StackPanel>
    <StackPanel Margin="0,0,0,8" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}" ToolTip="{Binding StreamingAvailability}" ToolTipService.ShowOnDisabled="True">
-    <DockPanel><TextBlock Text="{local:UiLoc StreamingOption}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" DockPanel.Dock="Right" HorizontalAlignment="Right" IsChecked="{Binding UseStreaming}" IsEnabled="{Binding CanUseStreaming}" ToolTip="{Binding StreamingAvailability}"/></DockPanel>
+    <DockPanel><TextBlock Text="{local:UiLoc StreamingOption}" VerticalAlignment="Center" Style="{StaticResource InputLabel}"/><ToggleButton Style="{StaticResource AlignmentSwitch}" DockPanel.Dock="Right" HorizontalAlignment="Right" IsChecked="{Binding UseStreaming}" IsEnabled="{Binding CanUseStreaming}" ToolTip="{Binding StreamingAvailability}"/></DockPanel>
    </StackPanel>
    <Grid Margin="0,0,0,13">
     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-    <TextBlock x:Name="ExposureLabel" Text="{ns:Loc LblExposureTime}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+    <TextBlock x:Name="ExposureLabel" Text="{ns:Loc LblExposureTime}" VerticalAlignment="Center" Margin="0,0,8,0" Style="{StaticResource InputLabel}"/>
     <TextBox Grid.Column="1" Width="60" Text="{Binding ExposureSeconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureLive}" AutomationProperties.Name="{local:UiLoc View7}"/>
     <TextBlock Grid.Column="2" Text="{local:UiLoc View8}" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryBrush}" Margin="7,0,0,0"/>
    </Grid>
@@ -150,7 +178,7 @@
      <Button x:Name="PrimaryActionButton" Style="{StaticResource PrimaryAlignmentButton}" Command="{Binding ActionButtonCommand}" ToolTip="{Binding ActionButtonHint}" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="{Binding ActionButtonLabel}">
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
        <Path x:Name="PrimaryActionIcon" Width="16" Height="16" Margin="0,0,8,0" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"><Path.Style><Style TargetType="Path"><Setter Property="Data" Value="{DynamicResource PlaySVG}"/><Style.Triggers><DataTrigger Binding="{Binding IsWorking}" Value="True"><Setter Property="Data" Value="{DynamicResource StopSVG}"/></DataTrigger></Style.Triggers></Style></Path.Style></Path>
-       <TextBlock x:Name="PrimaryActionText" Text="{Binding ActionButtonLabel}" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+       <TextBlock x:Name="PrimaryActionText" FontWeight="{Binding FontWeight, RelativeSource={RelativeSource AncestorType=Button}}" Text="{Binding ActionButtonLabel}" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
       </StackPanel>
      </Button>
      <StackPanel x:Name="CameraConnectionHint" Grid.Column="1" Orientation="Horizontal" Margin="5,0,0,0" VerticalAlignment="Center" ToolTip="{Binding CameraConnectionHint}" Visibility="{Binding CameraDisconnected, Converter={StaticResource VisibleIf}}">
@@ -166,26 +194,26 @@
 
    <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="1" Padding="5" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}">
     <StackPanel>
-     <DockPanel Margin="0,0,0,6"><TextBox DockPanel.Dock="Right" Width="48" Text="{Binding ValidationTargetArcseconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureAlignmentTarget}" AutomationProperties.Name="{local:UiLoc PolarTarget}"/><TextBlock Text="{local:UiLoc PolarTarget}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,6,0"/></DockPanel>
-     <TextBlock Text="{local:UiLoc View10}" Style="{StaticResource Caption}"/>
+     <DockPanel Margin="0,0,0,6"><TextBox DockPanel.Dock="Right" Width="48" Text="{Binding ValidationTargetArcseconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureAlignmentTarget}" AutomationProperties.Name="{local:UiLoc PolarTarget}"/><TextBlock Text="{local:UiLoc PolarTarget}" VerticalAlignment="Center" Margin="0,0,6,0" Style="{StaticResource InputLabel}"/></DockPanel>
+     <TextBlock x:Name="PolarErrorHeading" Text="{local:UiLoc View10}" Style="{StaticResource SectionHeading}"/>
      <TextBlock Text="{Binding LiveTotalError}" Style="{StaticResource AlignmentQualityText}" FontSize="26" FontWeight="SemiBold" Margin="0,0,0,5"/>
      <TextBlock x:Name="AlignmentQualityIndicator" Text="{Binding AlignmentQualityText}" Style="{StaticResource AlignmentQualityText}" FontWeight="SemiBold" Margin="0,0,0,8"/>
      <Grid>
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="0,0,5,0"><StackPanel><TextBlock Text="{ns:Loc LblAltitude}" Style="{StaticResource Caption}"/><TextBlock Text="{Binding AltitudeValue}" FontSize="18" Margin="0,5,0,4"/><TextBlock Text="{Binding AltitudeAction}" Style="{StaticResource Caption}" ToolTip="{local:UiLoc View11}"/></StackPanel></Border>
-      <Border Grid.Column="1" Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="5,0,0,0"><StackPanel><TextBlock Text="{ns:Loc LblAzimuth}" Style="{StaticResource Caption}"/><TextBlock Text="{Binding AzimuthValue}" FontSize="18" Margin="0,5,0,4"/><TextBlock Text="{Binding AzimuthAction}" Style="{StaticResource Caption}" ToolTip="{local:UiLoc View11}"/></StackPanel></Border>
+      <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="0,0,5,0"><StackPanel><TextBlock Text="{ns:Loc LblAltitude}" Style="{StaticResource ResultLabel}"/><TextBlock Text="{Binding AltitudeValue}" FontSize="18" Margin="0,5,0,4"/><TextBlock Text="{Binding AltitudeAction}" Style="{StaticResource Caption}" ToolTip="{local:UiLoc View11}"/></StackPanel></Border>
+      <Border Grid.Column="1" Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="5,0,0,0"><StackPanel><TextBlock Text="{ns:Loc LblAzimuth}" Style="{StaticResource ResultLabel}"/><TextBlock Text="{Binding AzimuthValue}" FontSize="18" Margin="0,5,0,4"/><TextBlock Text="{Binding AzimuthAction}" Style="{StaticResource Caption}" ToolTip="{local:UiLoc View11}"/></StackPanel></Border>
      </Grid>
      <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,7,0,0">
       <StackPanel ToolTip="{local:UiLoc ImpactHint}">
-       <TextBlock Text="{local:UiLoc ImpactTitle}" Style="{StaticResource Caption}"/>
+       <TextBlock x:Name="ImpactSectionTitle" Text="{local:UiLoc ImpactTitle}" Style="{StaticResource SectionHeading}"/>
        <TextBlock Text="{Binding EstimatedUnguidedDrift}" FontWeight="SemiBold" Margin="0,3,0,3"/>
-       <DockPanel><TextBox DockPanel.Dock="Right" Width="48" Text="{Binding ScienceExposureSeconds, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="{local:UiLoc ScienceExposure}"/><TextBlock Text="{local:UiLoc ScienceExposure}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,6,0"/></DockPanel>
+       <DockPanel><TextBox DockPanel.Dock="Right" Width="48" Text="{Binding ScienceExposureSeconds, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="{local:UiLoc ScienceExposure}"/><TextBlock Text="{local:UiLoc ScienceExposure}" VerticalAlignment="Center" Margin="0,0,6,0" Style="{StaticResource InputLabel}"/></DockPanel>
        <TextBlock Text="{Binding EstimatedExposureMotion}" FontWeight="SemiBold" Margin="0,4,0,3"/>
-       <TextBlock Text="{local:UiLoc ImpactCaveat}" Style="{StaticResource Caption}"/>
+       <TextBlock x:Name="ImpactExplanation" Text="{local:UiLoc ImpactCaveat}" Style="{StaticResource Caption}"/>
       </StackPanel>
      </Border>
      <StackPanel x:Name="AlignmentDetailPanel" Visibility="{Binding HasAlignmentDetail, Converter={StaticResource VisibleIf}}" Margin="0,8,0,0">
-      <TextBlock Text="{local:UiLoc AlignmentCloseUp}" Style="{StaticResource Caption}" Margin="0,0,0,4"/>
+      <TextBlock Text="{local:UiLoc AlignmentCloseUp}" Margin="0,0,0,4" Style="{StaticResource SectionHeading}"/>
       <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="5" ClipToBounds="True">
        <local:PolarFieldView x:Name="AlignmentDetailView" Height="186" DetailMode="True" ReferenceScale="{Binding ImageScale, ElementName=SkyField}" Preview="{Binding LivePreview}" Guidance="{Binding FieldGuidance}" IsCurrent="{Binding HasCurrentFieldGuidance}" PixelScale="{Binding PixelScaleArcseconds}"/>
       </Border>
@@ -194,23 +222,23 @@
     </StackPanel>
    </Border>
 
-   <Expander x:Name="VerificationTools" Header="{local:UiLoc VerificationTitle}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0" Visibility="{Binding ShowVerification, Converter={StaticResource VisibleIf}}">
+   <Expander HeaderTemplate="{StaticResource SectionHeaderTemplate}" x:Name="VerificationTools" Header="{local:UiLoc VerificationTitle}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0" Visibility="{Binding ShowVerification, Converter={StaticResource VisibleIf}}">
     <StackPanel Margin="2,6,2,0">
      <TextBlock Text="{Binding VerificationSummary}" Style="{StaticResource Caption}"/>
-     <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureVerification}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
-     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationReverse}" IsEnabled="{Binding CanConfigureVerification}"/><ContentControl DockPanel.Dock="Right" Margin="6,0,6,0" VerticalAlignment="Center" Content="{Binding VerificationReverse}" ContentTemplate="{StaticResource RotationDirectionIcon}" ToolTip="{local:UiLoc RotationDirectionHint}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource Caption}"/></DockPanel>
-     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoVerificationStability}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc VerificationStability}" Style="{StaticResource Caption}"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureVerification}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" VerticalAlignment="Center" Style="{StaticResource InputLabel}"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding VerificationReverse}" IsEnabled="{Binding CanConfigureVerification}"/><ContentControl DockPanel.Dock="Right" Margin="6,0,6,0" VerticalAlignment="Center" Content="{Binding VerificationReverse}" ContentTemplate="{StaticResource RotationDirectionIcon}" ToolTip="{local:UiLoc RotationDirectionHint}"/><TextBlock Text="{local:UiLoc AutoRaReverse}" Style="{StaticResource InputLabel}"/></DockPanel>
+     <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoVerificationStability}" IsEnabled="{Binding CanConfigureVerification}"/><TextBlock Text="{local:UiLoc VerificationStability}" Style="{StaticResource InputLabel}"/></DockPanel>
      <Button Content="{local:UiLoc VerificationStart}" Command="{Binding VerifyAlignmentCommand}" Style="{StaticResource AlignmentButton}" Margin="0,7,0,0" ToolTip="{local:UiLoc VerificationHint}"/>
      <TextBlock Text="{Binding StabilityStatus}" Style="{StaticResource Caption}" Margin="0,5,0,0"/>
     </StackPanel>
    </Expander>
-   <Expander x:Name="IndependentDriftTools" Header="{local:UiLoc DriftTitle}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0">
+   <Expander HeaderTemplate="{StaticResource SectionHeaderTemplate}" x:Name="IndependentDriftTools" Header="{local:UiLoc DriftTitle}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0">
     <StackPanel Margin="2,6,2,0">
-     <DockPanel><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding IndependentDriftEnabled}" IsEnabled="{Binding CanConfigureDrift}"/><TextBlock Text="{local:UiLoc DriftEnable}" Style="{StaticResource Caption}"/></DockPanel>
+     <DockPanel><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding IndependentDriftEnabled}" IsEnabled="{Binding CanConfigureDrift}"/><TextBlock Text="{local:UiLoc DriftEnable}" Style="{StaticResource InputLabel}"/></DockPanel>
      <StackPanel Visibility="{Binding IndependentDriftEnabled, Converter={StaticResource VisibleIf}}">
-      <DockPanel Margin="0,5,0,0"><TextBlock Text="{local:UiLoc DriftDuration}" Style="{StaticResource Caption}"/><TextBox Width="50" Text="{Binding DriftDurationSeconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureDrift}" Margin="5,0,0,0"/></DockPanel>
+      <DockPanel Margin="0,5,0,0"><TextBlock Text="{local:UiLoc DriftDuration}" Style="{StaticResource InputLabel}"/><TextBox Width="50" Text="{Binding DriftDurationSeconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureDrift}" Margin="5,0,0,0"/></DockPanel>
 
-      <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding DriftConfirmed}" IsEnabled="{Binding CanConfigureDrift}"/><TextBlock Text="{local:UiLoc DriftConfirm}" Style="{StaticResource Caption}"/></DockPanel>
+      <DockPanel Margin="0,5,0,0"><ToggleButton DockPanel.Dock="Right" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding DriftConfirmed}" IsEnabled="{Binding CanConfigureDrift}"/><TextBlock Text="{local:UiLoc DriftConfirm}" Style="{StaticResource InputLabel}"/></DockPanel>
       <Button Content="{Binding DriftActionLabel}" Command="{Binding IndependentDriftCommand}" Style="{StaticResource AlignmentButton}" Margin="0,6,0,0"/>
       <Button Content="{local:UiLoc DriftReset}" Command="{Binding ResetIndependentDriftCommand}" Style="{StaticResource AlignmentButton}" Margin="0,4,0,0"/>
       <TextBlock Text="{Binding IndependentDriftStatus}" Style="{StaticResource Caption}" Margin="0,6,0,0"/>
@@ -219,13 +247,13 @@
    </Expander>
    <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="5" Margin="0,7,0,0" Visibility="{Binding ShowAlignmentAssessment, Converter={StaticResource VisibleIf}}">
     <StackPanel>
-     <DockPanel><TextBlock Text="{local:UiLoc ValidationTarget}" Style="{StaticResource Caption}"/><TextBox Width="45" Text="{Binding ValidationTargetArcseconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureDrift}" Margin="5,0,0,0"/></DockPanel>
-     <TextBlock Text="{Binding AlignmentAssessmentText}" TextWrapping="Wrap" Margin="0,5,0,0"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource SecondaryBrush}"/><Style.Triggers><DataTrigger Binding="{Binding HasValidationWarning}" Value="True"><Setter Property="Foreground" Value="{DynamicResource NotificationWarningTextBrush}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+     <DockPanel><TextBlock Text="{local:UiLoc ValidationTarget}" Style="{StaticResource InputLabel}"/><TextBox Width="45" Text="{Binding ValidationTargetArcseconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureDrift}" Margin="5,0,0,0"/></DockPanel>
+     <TextBlock Text="{Binding AlignmentAssessmentText}" TextWrapping="Wrap" Margin="0,5,0,0"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource Caption}"><Setter Property="Foreground" Value="{DynamicResource SupportingTextBrush}"/><Style.Triggers><DataTrigger Binding="{Binding HasValidationWarning}" Value="True"><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/><Setter Property="FontWeight" Value="SemiBold"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
     </StackPanel>
    </Border>
-   <Expander x:Name="FieldValidationTools" Header="{local:UiLoc FieldValidation}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0">
+   <Expander HeaderTemplate="{StaticResource SectionHeaderTemplate}" x:Name="FieldValidationTools" Header="{local:UiLoc FieldValidation}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0">
     <StackPanel Margin="2,6,2,0">
-     <DockPanel><TextBlock Text="{local:UiLoc FieldRecord}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" HorizontalAlignment="Right" IsChecked="{Binding RecordFieldSession}" IsEnabled="{Binding CanConfigureField}" ToolTip="{local:UiLoc FieldRecordHint}"/></DockPanel>
+     <DockPanel><TextBlock Text="{local:UiLoc FieldRecord}" VerticalAlignment="Center" Style="{StaticResource InputLabel}"/><ToggleButton Style="{StaticResource AlignmentSwitch}" HorizontalAlignment="Right" IsChecked="{Binding RecordFieldSession}" IsEnabled="{Binding CanConfigureField}" ToolTip="{local:UiLoc FieldRecordHint}"/></DockPanel>
      <TextBox Text="{Binding FieldNote, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{local:UiLoc FieldNotes}" ToolTip="{local:UiLoc FieldNotesHint}" Margin="0,6,0,4"/>
      <WrapPanel><Button Content="{local:UiLoc FieldMark}" Command="{Binding MarkFieldSampleCommand}" Style="{StaticResource AlignmentButton}" Margin="0,0,4,0" ToolTip="{local:UiLoc FieldMarkHint}"/><Button Content="{local:UiLoc FieldStability}" Command="{Binding CheckStabilityCommand}" Style="{StaticResource AlignmentButton}" Margin="0,0,4,0"/><Button Content="{local:UiLoc FieldFolder}" Command="{Binding OpenFieldFolderCommand}" Style="{StaticResource AlignmentButton}"/></WrapPanel>
      <TextBlock Text="{Binding StabilityStatus}" Style="{StaticResource Caption}" Margin="0,5,0,0"/>
