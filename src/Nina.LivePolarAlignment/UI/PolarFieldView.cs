@@ -27,8 +27,6 @@ public sealed class PolarFieldView : FrameworkElement {
     }
     private void LanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvalidateVisual();
     private static Brush Color(string hex) => (Brush)new BrushConverter().ConvertFromString(hex)!;
-    public static readonly DependencyProperty IsSolvingProperty = DependencyProperty.Register(nameof(IsSolving), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
-    public bool IsSolving { get => (bool)GetValue(IsSolvingProperty); set => SetValue(IsSolvingProperty, value); }
     public static readonly DependencyProperty FocusAlignmentProperty = DependencyProperty.Register(nameof(FocusAlignment), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public bool FocusAlignment { get => (bool)GetValue(FocusAlignmentProperty); set => SetValue(FocusAlignmentProperty, value); }
     public static readonly DependencyProperty DetailModeProperty = DependencyProperty.Register(nameof(DetailMode), typeof(bool), typeof(PolarFieldView), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -122,7 +120,6 @@ public sealed class PolarFieldView : FrameworkElement {
         if (Preview != null && IsDriftView) Label(dc, UiText.Get("DriftImage"), new Point(12, 14), Muted, 11);
         if (Preview != null && !IsCurrent && !IsDriftView) {
             dc.DrawRectangle(Color("#66080F1B"), null, bounds);
-            Label(dc, UiText.Get(IsSolving ? "SolvingFrame" : "Field3"), new Point(12, 14), Muted, 11);
         }
         dc.Pop();
     }

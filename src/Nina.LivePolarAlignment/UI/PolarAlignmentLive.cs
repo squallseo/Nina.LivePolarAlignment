@@ -57,7 +57,6 @@ public sealed partial class PolarAlignmentDockableVM {
         : UiText.Format("FrameAge", IsMeasurementStale ? UiText.Get("StalePrefix") : "", Math.Max(0, (DateTimeOffset.UtcNow - time).TotalSeconds), lastCycleMilliseconds / 1000)
         : UiText.Get("WaitingFrame");
     public BitmapSource? LivePreview => livePreview;
-    public bool IsSolvingFrame => liveBusy && liveStatus == "SolvingFrame";
     public double ImageWidth => guidance?.Width ?? livePreview?.PixelWidth ?? 800;
     public double ImageHeight => guidance?.Height ?? livePreview?.PixelHeight ?? 600;
     public double MarkerSize => ImageWidth / 35;
@@ -271,7 +270,7 @@ public sealed partial class PolarAlignmentDockableVM {
         ReportHostStatus();
         NotifyWorkflow(); NotifyField(); NotifyRotation(); NotifyVerification(); NotifyDrift();
         RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(AcquisitionMode)); RaisePropertyChanged(nameof(StreamingAvailability));
-        foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(IsSolvingFrame), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
+        foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(LiveTotalError), nameof(LiveAltitudeError), nameof(LiveAzimuthError), nameof(FrameFreshness), nameof(IsMeasurementStale) }) RaisePropertyChanged(name);
         (CaptureReferenceCommand as IRelayCommand)?.NotifyCanExecuteChanged();
         (StartLiveCommand as IRelayCommand)?.NotifyCanExecuteChanged();
