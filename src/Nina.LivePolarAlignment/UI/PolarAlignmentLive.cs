@@ -123,9 +123,10 @@ public sealed partial class PolarAlignmentDockableVM {
     private async Task CaptureReferenceAsync() {
         await WithLiveOperation(async token => {
             if (session == null && calibrationSamples == 0) { verificationResult = null; stabilityResult = null; }
-            if (AutoRaRotation && !captureService.SupportsAutoRaRotation) {
-                autoRaRotation = false;
-                RecordFieldEvent("ra_rotation_fallback", new { reason = "unsupported", mode = "manual" }); NotifyLive();
+            if (AutoRaRotation) {
+                liveStatus = "AutoRaPreparing"; NotifyLive();
+                await captureService.PrepareAutoRaAsync(token);
+                token.ThrowIfCancellationRequested();
             }
             if (calibrationSamples == 1 && AutoRaRotation) await RotateForReferenceAsync(token);
             await CaptureReferenceFrameAsync(token);
@@ -144,7 +145,7 @@ public sealed partial class PolarAlignmentDockableVM {
             session = new PolarAlignmentSession(calibrationLatitude, calibrationLongitude);
         }
         ValidateSite();
-        liveStatus = "Live3"; NotifyLive();
+        liveStatus = calibrationSamples == 0 ? "ReferenceFirstCapture" : "ReferenceSecondCapture"; NotifyLive();
         var frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
         token.ThrowIfCancellationRequested();
         ValidateSite();

@@ -22,7 +22,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public RelayCommand IncreaseRotationAngleCommand => increaseRotationAngleCommand ??= new(() => RotationAngleDegrees += 10);
     public bool AutoRaRotation {
         get => autoRaRotation;
-        set { if (!CanConfigureRotation || (value && !captureService.SupportsAutoRaRotation)) return; autoRaRotation = value; NotifyRotation(); NotifyWorkflow(); }
+        set { if (!CanConfigureRotation || (value && !captureService.CanPrepareAutoRaRotation)) return; autoRaRotation = value; NotifyRotation(); NotifyWorkflow(); }
     }
     public bool ReverseRaRotation {
         get => reverseRaRotation;
@@ -30,10 +30,10 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     public bool CanConfigureRotation => !IndependentDriftEnabled && !liveBusy && calibrationSamples < 2 && !automaticRotationCompleted;
     public bool CanConfigureAutoRotation => AutoRaRotation && CanConfigureRotation;
-    public bool CanUseAutoRotation => CanConfigureRotation && captureService.SupportsAutoRaRotation;
+    public bool CanUseAutoRotation => CanConfigureRotation && captureService.CanPrepareAutoRaRotation;
     public bool IsRotating => rotationInProgress;
     public string RotationStatus => rotationInProgress ? UiText.Format("AutoRaProgress", rotationProgress, RotationAngleDegrees)
-        : UiText.Get(captureService.AutoRaAvailability == global::Nina.LivePolarAlignment.Capture.AutoRaAvailability.Ready ? "AutoRaHint" : "AutoRa" + captureService.AutoRaAvailability);
+        : captureService.AutoRaAvailability == global::Nina.LivePolarAlignment.Capture.AutoRaAvailability.Parked && captureService.CanPrepareAutoRaRotation ? UiText.Get("AutoRaUnparkHint") : UiText.Get(captureService.AutoRaAvailability == global::Nina.LivePolarAlignment.Capture.AutoRaAvailability.Ready ? "AutoRaHint" : "AutoRa" + captureService.AutoRaAvailability);
 
     private async Task RotateForReferenceAsync(CancellationToken token) {
         if (automaticRotationCompleted) return;
@@ -60,7 +60,7 @@ public sealed partial class PolarAlignmentDockableVM {
         }
     }
     private void NotifyRotation() {
-        if (!liveBusy && !captureService.SupportsAutoRaRotation) autoRaRotation = false;
+        if (!liveBusy && !captureService.CanPrepareAutoRaRotation) autoRaRotation = false;
         foreach (var name in new[] { nameof(RotationAngleDegrees), nameof(AutoRaRotation), nameof(ReverseRaRotation),
             nameof(CanConfigureAutoRotation), nameof(CanConfigureRotation), nameof(CanUseAutoRotation), nameof(IsRotating), nameof(RotationStatus) }) RaisePropertyChanged(name);
     }

@@ -9,6 +9,42 @@ namespace Nina.LivePolarAlignment.Integration.Tests;
 [Collection("Isolated NINA environment")]
 public sealed class RotationCaptureTests {
     [Theory]
+    [InlineData(0)] [InlineData(1)] [InlineData(2)] [InlineData(3)] [InlineData(4)]
+    public async Task PreparationVerifiesUnparkBeforeAllowingCapture(int failure) {
+        using var cancellation = new CancellationTokenSource();
+        bool parked = true;
+        int unparkCalls = 0;
+        var device = InterfaceStub.Create<ITelescope>((method, _) => method.Name switch {
+            "get_Connected" or "get_CanMovePrimaryAxis" or "get_CanSetTrackingEnabled" => true,
+            "get_CanUnpark" => failure != 3,
+            "get_AtPark" => parked,
+            "get_Slewing" or "get_TrackingEnabled" => false,
+            "get_AlignmentMode" => AlignmentMode.GermanPolar,
+            "get_RightAscension" => 1d,
+            "get_Declination" => 80d,
+            "get_SideOfPier" => PierSide.pierEast,
+            "GetAxisRates" => new List<(double, double)> { (0, 8) },
+            _ => throw new InvalidOperationException("Unexpected preparation device call: " + method.Name)
+        });
+        var mediator = InterfaceStub.Create<ITelescopeMediator>((method, _) => {
+            if (method.Name == "GetDevice") return device;
+            if (method.Name == "UnparkTelescope") {
+                unparkCalls++;
+                if (failure == 2) { cancellation.Cancel(); return Task.FromCanceled<bool>(cancellation.Token); }
+                if (failure == 1) return Task.FromResult(false);
+                if (failure == 4) { cancellation.Cancel(); return Task.FromResult(false); }
+                parked = false; return Task.FromResult(true);
+            }
+            throw new InvalidOperationException("Preparation must not move or slew: " + method.Name);
+        });
+        var service = new NinaPolarAlignmentCaptureService(null!, null!, null!, mediator);
+        if (failure == 0) { await service.PrepareAutoRaAsync(cancellation.Token); Assert.False(parked); }
+        else if (failure is 2 or 4) await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.PrepareAutoRaAsync(cancellation.Token));
+        else await Assert.ThrowsAsync<InvalidOperationException>(() => service.PrepareAutoRaAsync(cancellation.Token));
+        Assert.Equal(failure == 3 ? 0 : 1, unparkCalls);
+    }
+
+    [Theory]
     [InlineData(AutoRaAvailability.Ready)]
     [InlineData(AutoRaAvailability.Disconnected)]
     [InlineData(AutoRaAvailability.Parked)]

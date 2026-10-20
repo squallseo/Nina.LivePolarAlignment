@@ -20,6 +20,8 @@ public interface IPolarAlignmentCaptureService {
     bool SupportsStreaming => false;
     bool IsSynthetic => false;
     bool SupportsAutoRaRotation => false;
+    bool CanPrepareAutoRaRotation => SupportsAutoRaRotation;
+    Task PrepareAutoRaAsync(CancellationToken token) { token.ThrowIfCancellationRequested(); return Task.CompletedTask; }
     object? DriftMountIdentity => null;
     void ValidateDriftTracking() => throw new NotSupportedException("Drift verification is unavailable.");
     Core.DriftSample GetDriftSample(SolvedPolarFrame frame) => throw new NotSupportedException("Drift verification is unavailable.");

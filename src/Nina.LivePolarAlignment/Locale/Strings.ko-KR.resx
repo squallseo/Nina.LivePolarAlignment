@@ -437,4 +437,10 @@
   <data name="AutoRaRateUnsupported" xml:space="preserve"><value>0.1~1도/초 범위의 RA 회전 속도를 지원하지 않습니다. 수동 회전을 사용하세요.</value></data>
   <data name="AutoRaInvalidCoordinates" xml:space="preserve"><value>적도의 좌표가 유효하지 않습니다. 연결과 설정을 확인하세요.</value></data>
   <data name="AutoRaDriverError" xml:space="preserve"><value>적도의 지원 기능을 읽을 수 없습니다. 드라이버와 연결을 확인하세요.</value></data>
+  <data name="ActionContinue" xml:space="preserve"><value>계속</value></data>
+  <data name="ActionResume" xml:space="preserve"><value>재개</value></data>
+  <data name="AutoRaPreparing" xml:space="preserve"><value>자동 정렬 준비 — 적도의 Unpark 및 상태 확인 중…</value></data>
+  <data name="AutoRaUnparkHint" xml:space="preserve"><value>Start를 누르면 적도의를 Unpark하고 상태를 확인한 후 기준 촬영과 RA 회전을 진행합니다.</value></data>
+  <data name="ReferenceFirstCapture" xml:space="preserve"><value>첫 번째 기준 이미지 촬영 중…</value></data>
+  <data name="ReferenceSecondCapture" xml:space="preserve"><value>회전 후 두 번째 기준 이미지 촬영 중…</value></data>
 </root>

@@ -31,6 +31,44 @@ public sealed partial class NinaPolarAlignmentCaptureService {
             } catch { return AutoRaAvailability.DriverError; }
         }
     }
+    public bool CanPrepareAutoRaRotation {
+        get {
+            if (SupportsAutoRaRotation) return true;
+            if (AutoRaAvailability != AutoRaAvailability.Parked) return false;
+            try {
+                var device = telescope.GetDevice() as ITelescope;
+                if (device?.CanUnpark != true) return false;
+                var state = new RotationMount(telescope).Read();
+                RaRotation.SelectRate(state with { Parked = false });
+                return true;
+            } catch { return false; }
+        }
+    }
+    public async Task PrepareAutoRaAsync(CancellationToken token) {
+        token.ThrowIfCancellationRequested();
+        if (!await captureGate.WaitAsync(0, token)) throw new InvalidOperationException("Another alignment operation is running.");
+        try {
+            var device = telescope.GetDevice() as ITelescope ?? throw new InvalidOperationException("Connect a mount before automatic alignment.");
+            var mount = new RotationMount(telescope);
+            var before = mount.Read();
+            RaRotation.SelectRate(before with { Parked = false });
+            if (before.Parked) {
+                if (!device.CanUnpark) throw new InvalidOperationException("The mount does not support Unpark. Unpark it manually before starting.");
+                token.ThrowIfCancellationRequested();
+                var unparked = await telescope.UnparkTelescope(SilentProgress.Instance, token);
+                token.ThrowIfCancellationRequested();
+                if (!unparked) throw new InvalidOperationException("Could not unpark the mount. Alignment did not start.");
+            }
+            var deadline = DateTime.UtcNow.AddSeconds(15);
+            while (mount.Read().Parked) {
+                token.ThrowIfCancellationRequested();
+                if (DateTime.UtcNow >= deadline) throw new InvalidOperationException("The mount is still parked. Alignment did not start.");
+                await Task.Delay(100, token);
+            }
+            token.ThrowIfCancellationRequested();
+            RaRotation.SelectRate(mount.Read());
+        } finally { captureGate.Release(); }
+    }
     public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
         if (!await captureGate.WaitAsync(0, token)) throw new InvalidOperationException("Another alignment operation is running.");
         try {

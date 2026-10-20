@@ -39,7 +39,8 @@ public sealed partial class PolarAlignmentDockableVM {
         _ => UiText.Get("Workflow3")
     };
     public bool IsStopping => liveBusy && liveCancellation?.IsCancellationRequested == true;
-    public string ActionButtonLabel => !liveBusy ? PrimaryActionLabel : IsStopping ? UiText.Get("ActionStopping")
+    public string ActionButtonLabel => !liveBusy ? UiText.Get(IndependentDriftEnabled ? (firstDrift == null ? "ActionStart" : "ActionContinue")
+        : WorkflowStep == 0 ? "ActionStart" : WorkflowStep == 1 ? "ActionContinue" : "ActionResume") : IsStopping ? UiText.Get("ActionStopping")
         : UiText.Get(IsRotating || WorkflowStep < 2 || driftInProgress ? "ActionCancel" : "ActionStop");
     public string ActionButtonHint => liveBusy ? UiText.Get("ActionStopHint") : PrimaryActionHint;
     public ICommand ActionButtonCommand => liveBusy ? StopLiveCommand : PrimaryActionCommand;
@@ -55,7 +56,7 @@ public sealed partial class PolarAlignmentDockableVM {
         1 => UiText.Get("Workflow5"),
         _ => liveBusy ? UiText.Get("Workflow6") : UiText.Get("Workflow7")
     };
-    public string WorkflowHelp => WaitingForManualRotation ? ManualRotationInstruction : UiText.Get(AutoRaRotation ? "AutoRaHint" : "Workflow8");
+    public string WorkflowHelp => WaitingForManualRotation ? ManualRotationInstruction : AutoRaRotation ? RotationStatus : UiText.Get("Workflow8");
     public string WorkflowDescription => IndependentDriftEnabled ? DriftInstruction : WorkflowStep switch {
         0 => UiText.Get(AutoRaRotation ? "AutoBrief" : "ManualBrief"),
         1 => IsRotating ? RotationStatus : UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoBrief" : "ManualRotateBrief"),

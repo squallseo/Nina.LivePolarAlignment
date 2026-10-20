@@ -437,4 +437,10 @@
   <data name="AutoRaRateUnsupported" xml:space="preserve"><value>No supported RA speed from 0.1 to 1 degree per second. Use manual rotation.</value></data>
   <data name="AutoRaInvalidCoordinates" xml:space="preserve"><value>The mount returned invalid coordinates. Check its connection and configuration.</value></data>
   <data name="AutoRaDriverError" xml:space="preserve"><value>Could not read mount capabilities. Check the driver and connection.</value></data>
+  <data name="ActionContinue" xml:space="preserve"><value>Continue</value></data>
+  <data name="ActionResume" xml:space="preserve"><value>Resume</value></data>
+  <data name="AutoRaPreparing" xml:space="preserve"><value>Preparing automatic alignment — unparking and checking the mount…</value></data>
+  <data name="AutoRaUnparkHint" xml:space="preserve"><value>Start will unpark the mount, verify readiness, then capture the references and rotate RA.</value></data>
+  <data name="ReferenceFirstCapture" xml:space="preserve"><value>Capturing the first reference…</value></data>
+  <data name="ReferenceSecondCapture" xml:space="preserve"><value>Capturing the rotated reference…</value></data>
 </root>

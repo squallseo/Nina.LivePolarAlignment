@@ -32,12 +32,21 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public Func<int> Step { get; set; } = () => 0;
     public event Action<BitmapSource>? PreviewAvailable;
     public static AutoRaAvailability? AutoUnavailable;
-    public AutoRaAvailability AutoRaAvailability => AutoUnavailable ?? (SupportsAutoRaRotation ? AutoRaAvailability.Ready : AutoRaAvailability.DriverError);
+    public static bool Parked, FailUnpark;
+    public static int UnparkCalls, CaptureCalls;
+    public bool CanPrepareAutoRaRotation => SupportsAutoRaRotation || (Parked && MountConnected && !UnsupportedAuto);
+    public async Task PrepareAutoRaAsync(CancellationToken token) {
+        if (!Parked) return;
+        UnparkCalls++; await Task.Delay(200, token);
+        if (FailUnpark) throw new InvalidOperationException("Synthetic unpark failure");
+        Parked = false;
+    }
+    public AutoRaAvailability AutoRaAvailability => AutoUnavailable ?? (Parked ? AutoRaAvailability.Parked : SupportsAutoRaRotation ? AutoRaAvailability.Ready : AutoRaAvailability.DriverError);
     public static bool UnsupportedStream, StreamCleanupFailure;
     public bool SupportsStreaming => !UnsupportedStream;
     public bool IsSynthetic => true;
     public static bool UnsupportedAuto, FailRotation;
-    public bool SupportsAutoRaRotation => MountConnected && !UnsupportedAuto && AutoUnavailable == null;
+    public bool SupportsAutoRaRotation => MountConnected && !UnsupportedAuto && AutoUnavailable == null && !Parked;
     public static int Rotations;
     public static double LastRotationAngle;
     public static bool RotationStopped;
@@ -75,6 +84,7 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     }
     public BitmapSource Image { get; } = MakeStars();
     public async Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token, IProgress<ApplicationStatus>? progress = null) {
+        CaptureCalls++;
         if (DriftTestMode) {
             await Task.Delay(10, token);
             if (driftWasSecond != DriftSecondField) { driftIndex = 0; driftWasSecond = DriftSecondField; }
@@ -427,6 +437,22 @@ internal static class Program {
         if (current.AlignmentQualityLevel != "Unavailable" || current.EstimatedExposureMotion != "—")
             throw new InvalidOperationException("Paused data must not retain a success status or drift estimate");
         current.Dispose();
+        await SelectScene(0); SampleCapture.Parked = true; current!.AutoRaRotation = true;
+        int capturesBeforeUnpark = SampleCapture.CaptureCalls;
+        var parkedStart = ((IAsyncRelayCommand)current.ActionButtonCommand).ExecuteAsync(null);
+        await Task.Delay(30);
+        if (SampleCapture.CaptureCalls != capturesBeforeUnpark || !current.IsWorking
+            || current.ActionButtonLabel.Length > 12 || !current.LiveStatus.Contains("unparking"))
+            throw new InvalidOperationException("Unpark must be shown in status before any reference capture");
+        Save(Path.Combine(directory, "ui-unparking.png"), 1280, 1000);
+        for (int i = 0; i < 300 && !current.HasLiveMeasurement && !parkedStart.IsCompleted; i++) await Task.Delay(25);
+        if (!current.HasLiveMeasurement || SampleCapture.Parked) throw new InvalidOperationException("Parked Start must continue to alignment after Unpark");
+        current.StopLiveCommand.Execute(null); await parkedStart;
+        await SelectScene(0); SampleCapture.Parked = true; SampleCapture.FailUnpark = true; current!.AutoRaRotation = true;
+        capturesBeforeUnpark = SampleCapture.CaptureCalls;
+        await ((IAsyncRelayCommand)current.ActionButtonCommand).ExecuteAsync(null);
+        if (!current.HasOperationError || SampleCapture.CaptureCalls != capturesBeforeUnpark) throw new InvalidOperationException("Failed Unpark must not start capture");
+        SampleCapture.Parked = false; SampleCapture.FailUnpark = false;
         await SelectScene(0);
         var earlyPreviewCapture = ((IAsyncRelayCommand)current!.PrimaryActionCommand).ExecuteAsync(null);
         for (int i = 0; i < 50 && !current.HasPreview && !earlyPreviewCapture.IsCompleted; i++) await Task.Delay(10);
