@@ -1,4 +1,4 @@
-using NINA.Core.Enum;
+﻿using NINA.Core.Enum;
 using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
 using Nina.LivePolarAlignment.Capture;
@@ -16,6 +16,7 @@ public sealed class RotationCaptureTests {
         int unparkCalls = 0;
         var device = InterfaceStub.Create<ITelescope>((method, _) => method.Name switch {
             "get_Connected" or "get_CanMovePrimaryAxis" or "get_CanSetTrackingEnabled" => true,
+            "get_Id" => "ScopeSim.Telescope",
             "get_CanUnpark" => failure != 3,
             "get_AtPark" => parked,
             "get_Slewing" or "get_TrackingEnabled" => false,
@@ -73,13 +74,15 @@ public sealed class RotationCaptureTests {
     }
 
     [Theory]
-    [InlineData(false)] [InlineData(true)]
-    public async Task AdapterUsesOnlyPrimaryAxisAndCleansUpCancelledMotion(bool reverse) {
+    [InlineData(false, "Real.Mount", 1)] [InlineData(true, "Real.Mount", 1)]
+    [InlineData(false, "ScopeSim.Telescope", 4)] [InlineData(true, "ASCOM.OmniSim.Telescope", 4)]
+    public async Task AdapterUsesOnlyPrimaryAxisAndCleansUpCancelledMotion(bool reverse, string driverId, double expectedRate) {
         using var cancellation = new CancellationTokenSource();
         bool tracking = true;
         var commands = new List<(TelescopeAxes Axis, double Rate)>();
         var device = InterfaceStub.Create<ITelescope>((method, args) => {
             switch (method.Name) {
+                case "get_Id": return driverId;
                 case "get_Connected": case "get_CanMovePrimaryAxis": case "get_CanSetTrackingEnabled": return true;
                 case "get_AtPark": case "get_Slewing": return false;
                 case "get_AlignmentMode": return AlignmentMode.GermanPolar;
@@ -88,7 +91,7 @@ public sealed class RotationCaptureTests {
                 case "get_RightAscension": return 23d;
                 case "get_Declination": return 80d;
                 case "get_SideOfPier": return PierSide.pierEast;
-                case "GetAxisRates": return new List<(double, double)> { (.1, 2) };
+                case "GetAxisRates": return new List<(double, double)> { (.1, 8) };
                 default: throw new InvalidOperationException("Unexpected device call: " + method.Name);
             }
         });
@@ -104,7 +107,7 @@ public sealed class RotationCaptureTests {
         });
         var capture = new NinaPolarAlignmentCaptureService(null!, null!, null!, mediator);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => capture.RotateRaAsync(reverse, null, cancellation.Token));
-        Assert.Equal(new[] { (TelescopeAxes.Primary, reverse ? -1d : 1d), (TelescopeAxes.Primary, 0d) }, commands);
+        Assert.Equal(new[] { (TelescopeAxes.Primary, reverse ? -expectedRate : expectedRate), (TelescopeAxes.Primary, 0d) }, commands);
         Assert.True(tracking);
         // Reservation is released even when cancelled; a pre-cancelled retry reaches cancellation, not busy.
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => capture.RotateRaAsync(reverse, null, cancellation.Token));

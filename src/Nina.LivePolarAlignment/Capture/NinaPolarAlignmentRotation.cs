@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +25,7 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                     || !double.IsFinite(info.Declination) || Math.Abs(info.Declination) > 90) return AutoRaAvailability.InvalidCoordinates;
                 try {
                     RaRotation.SelectRate(new(true, false, false, true, true, true, info.TrackingEnabled,
-                        info.RightAscension, info.Declination, (int)info.SideOfPier, info.PrimaryAxisRates.ToArray()));
+                        info.RightAscension, info.Declination, (int)info.SideOfPier, info.PrimaryAxisRates.ToArray()), RaRotation.MaximumRateForDriver((telescope.GetDevice() as ITelescope)?.Id));
                 } catch (InvalidOperationException) { return AutoRaAvailability.RateUnsupported; }
                 return AutoRaAvailability.Ready;
             } catch { return AutoRaAvailability.DriverError; }
@@ -39,7 +39,7 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                 var device = telescope.GetDevice() as ITelescope;
                 if (device?.CanUnpark != true) return false;
                 var state = new RotationMount(telescope).Read();
-                RaRotation.SelectRate(state with { Parked = false });
+                RaRotation.SelectRate(state with { Parked = false }, RaRotation.MaximumRateForDriver(device.Id));
                 return true;
             } catch { return false; }
         }
@@ -51,7 +51,7 @@ public sealed partial class NinaPolarAlignmentCaptureService {
             var device = telescope.GetDevice() as ITelescope ?? throw new InvalidOperationException("Connect a mount before automatic alignment.");
             var mount = new RotationMount(telescope);
             var before = mount.Read();
-            RaRotation.SelectRate(before with { Parked = false });
+            RaRotation.SelectRate(before with { Parked = false }, mount.MaximumRate);
             if (before.Parked) {
                 if (!device.CanUnpark) throw new InvalidOperationException("The mount does not support Unpark. Unpark it manually before starting.");
                 token.ThrowIfCancellationRequested();
@@ -66,20 +66,21 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                 await Task.Delay(100, token);
             }
             token.ThrowIfCancellationRequested();
-            RaRotation.SelectRate(mount.Read());
+            RaRotation.SelectRate(mount.Read(), mount.MaximumRate);
         } finally { captureGate.Release(); }
     }
     public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
         if (!await captureGate.WaitAsync(0, token)) throw new InvalidOperationException("Another alignment operation is running.");
         try {
             var mount = new RotationMount(telescope);
-            await Task.Run(() => new RaRotation().RunAsync(mount, reverse, progress, token, targetDegrees), CancellationToken.None);
+            await Task.Run(() => new RaRotation().RunAsync(mount, reverse, progress, token, targetDegrees, mount.MaximumRate), CancellationToken.None);
         } finally { captureGate.Release(); }
     }
     private sealed class RotationMount : IRaRotationMount {
         private readonly ITelescopeMediator mediator;
         private readonly ITelescope device;
         private readonly (double, double)[] rates;
+        public double MaximumRate => RaRotation.MaximumRateForDriver(device.Id);
         public RotationMount(ITelescopeMediator mediator) {
             this.mediator = mediator;
             device = mediator.GetDevice() as ITelescope ?? throw new InvalidOperationException("No telescope device connected.");

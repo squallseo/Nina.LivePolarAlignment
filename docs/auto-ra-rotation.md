@@ -12,7 +12,7 @@
 
 ## Movement and stopping
 
-Only RA is moved. The plugin does not move Dec, issue GoTo or sync, or return to the starting position. It temporarily disables tracking and selects a supported speed no higher than 1°/s. RA coordinates are unwrapped across the 24-hour boundary to accumulate rotation. Axis estimation uses the rotation measured from the two images.
+Only RA is moved. The plugin does not move Dec, issue GoTo or sync, or return to the starting position. It temporarily disables tracking and selects a supported speed no higher than 1°/s. Known simulator driver IDs (`ScopeSim.Telescope`, `ASCOM.Simulator.Telescope`, and `ASCOM.OmniSim.Telescope`, case-insensitive exact matches) may use a supported speed up to 4 degrees/s: about 23 seconds for 90 degrees, plus stop verification and settling. All other drivers retain the 1 degree/s cap. Simulator rotation retains feedback, cancellation, and verified stopping. RA coordinates are unwrapped across the 24-hour boundary to accumulate rotation. Axis estimation uses the rotation measured from the two images.
 
 The primary button shows a play icon before starting. During reference capture or RA rotation it becomes a stop icon with Cancel; during live measurement it shows Stop. The same button requests cancellation, shows Stopping while cleanup runs, and returns to its next start/resume action only after cleanup. Reset is a separate compact icon button. Closing or hiding the panel also requests cancellation. The plugin sends zero speed, checks stop feedback, and restores the original tracking state. It waits two seconds before the second capture. If stopping fails, it attempts an abort, reports the error, and does not re-enable tracking without confirmation from the driver.
 

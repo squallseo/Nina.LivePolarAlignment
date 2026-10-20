@@ -1,4 +1,4 @@
-using Nina.LivePolarAlignment.Core;
+﻿using Nina.LivePolarAlignment.Core;
 using Xunit;
 
 namespace Nina.LivePolarAlignment.Core.Tests;
@@ -28,6 +28,37 @@ public sealed class RaRotationTests {
         public void Abort() { AbortCalled = true; Rate = 0; }
     }
     private static RaRotation Controller() => new((_, token) => { token.ThrowIfCancellationRequested(); return Task.CompletedTask; });
+
+    [Theory]
+    [InlineData("ScopeSim.Telescope", 4)]
+    [InlineData("ascom.omnisim.telescope", 4)]
+    [InlineData("ASCOM.Simulator.Telescope", 4)]
+    [InlineData("MySimulator.Telescope", 1)]
+    [InlineData("ScopeSim.Telescope.Real", 1)]
+    [InlineData(null, 1)]
+    public void OnlyKnownSimulatorIdsReceiveFastRate(string? id, double expected) =>
+        Assert.Equal(expected, RaRotation.MaximumRateForDriver(id));
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task FastSimulatorRotationStopsAndRestoresTracking(bool reverse) {
+        var mount = new Mount();
+        mount.State = mount.State with { Rates = new[] { (0d, 8d) } };
+        Assert.Equal(1, RaRotation.SelectRate(mount.State));
+        await Controller().RunAsync(mount, reverse, null, default, 90, 4);
+        Assert.Equal(reverse ? -4 : 4, mount.Commands[0]);
+        Assert.InRange(Math.Abs(RaRotation.WrapDegrees((mount.State.RaHours - 23) * 15)), 89.99, 91.01);
+        Assert.Equal(0, mount.Rate); Assert.True(mount.State.Tracking);
+    }
+
+    [Fact]
+    public async Task FastSimulatorCancellationStillStops() {
+        using var cancel = new CancellationTokenSource();
+        var mount = new Mount { Cancel = cancel };
+        mount.State = mount.State with { Rates = new[] { (0d, 8d) } };
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Controller().RunAsync(mount, false, null, cancel.Token, 90, 4));
+        Assert.Equal(4, mount.Commands[0]); Assert.Equal(0, mount.Rate); Assert.True(mount.State.Tracking);
+    }
 
     [Theory]
     [InlineData(45)] [InlineData(65)] [InlineData(100)] [InlineData(double.NaN)]

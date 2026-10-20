@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -22,21 +22,27 @@ public interface IRaRotationMount {
 public sealed class RaRotation {
     private readonly Func<TimeSpan, CancellationToken, Task> delay;
     public RaRotation(Func<TimeSpan, CancellationToken, Task>? delay = null) => this.delay = delay ?? Task.Delay;
-    public static double SelectRate(RaMountState state) {
+    public static double MaximumRateForDriver(string? driverId) => driverId is not null &&
+        (driverId.Equals("ScopeSim.Telescope", StringComparison.OrdinalIgnoreCase)
+        || driverId.Equals("ASCOM.Simulator.Telescope", StringComparison.OrdinalIgnoreCase)
+        || driverId.Equals("ASCOM.OmniSim.Telescope", StringComparison.OrdinalIgnoreCase)) ? 4 : 1;
+    public static double SelectRate(RaMountState state, double maximumRate = 1) {
+        if (!double.IsFinite(maximumRate) || maximumRate is < .1 or > 4)
+            throw new ArgumentOutOfRangeException(nameof(maximumRate));
         if (!state.Connected || state.Parked || state.Slewing || !state.Equatorial || !state.CanMove
             || !state.CanSetTracking || !double.IsFinite(state.RaHours) || state.RaHours is < 0 or >= 24
             || !double.IsFinite(state.DecDegrees) || Math.Abs(state.DecDegrees) > 90)
             throw new InvalidOperationException("Connect an idle, unparked equatorial mount with primary-axis motion and tracking control. Otherwise use manual rotation.");
         var rates = state.Rates.Where(r => double.IsFinite(r.Minimum) && double.IsFinite(r.Maximum)
-            && r.Minimum >= 0 && r.Maximum >= Math.Max(.1, r.Minimum) && r.Minimum <= 1)
-            .Select(r => Math.Min(1, r.Maximum)).ToArray();
-        if (rates.Length == 0) throw new InvalidOperationException("No supported RA speed between 0.1 and 1 degree/s. Use manual rotation.");
+            && r.Minimum >= 0 && r.Maximum >= Math.Max(.1, r.Minimum) && r.Minimum <= maximumRate)
+            .Select(r => Math.Min(maximumRate, r.Maximum)).ToArray();
+        if (rates.Length == 0) throw new InvalidOperationException($"No supported RA speed between 0.1 and {maximumRate} degree/s. Use manual rotation.");
         return rates.Max();
     }
-    public async Task RunAsync(IRaRotationMount mount, bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
+    public async Task RunAsync(IRaRotationMount mount, bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90, double maximumRate = 1) {
         if (!double.IsFinite(targetDegrees) || targetDegrees < 60 || targetDegrees > 90 || targetDegrees % 10 != 0) throw new ArgumentOutOfRangeException(nameof(targetDegrees));
         token.ThrowIfCancellationRequested();
-        var initial = mount.Read(); var rate = SelectRate(initial);
+        var initial = mount.Read(); var rate = SelectRate(initial, maximumRate);
         bool owned = false, stopped = false;
         try {
             // Mark ownership before a driver call: a driver can move and then throw.
