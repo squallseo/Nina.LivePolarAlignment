@@ -450,7 +450,11 @@ internal static class Program {
         for (int i = 0; i < 300 && !current.HasLiveMeasurement && !autoSequence.IsCompleted; i++) await Task.Delay(25);
         if (!current.HasLiveMeasurement || current.WorkflowStep != 2 || !current.IsWorking)
             throw new InvalidOperationException("One Start must run references, RA rotation and live measurement");
-        current.StopLiveCommand.Execute(null); await autoSequence;
+        AssertActionButton(true);
+        Save(Path.Combine(directory, "ui-primary-stop.png"), 1280, 1000);
+        ((Button)View.FindName("PrimaryActionButton")).Command.Execute(null);
+        Save(Path.Combine(directory, "ui-primary-stopping.png"), 1280, 1000);
+        await autoSequence; AssertActionButton(false);
         var resumeSequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
         for (int i = 0; i < 100 && !current.IsWorking && !resumeSequence.IsCompleted; i++) await Task.Delay(25);
         await Task.Delay(150);
@@ -466,18 +470,38 @@ internal static class Program {
         await SelectScene(0); current!.AutoRaRotation = true;
         var cancelSequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
         while (!current.IsRotating && !cancelSequence.IsCompleted) await Task.Delay(10);
-        current.StopLiveCommand.Execute(null); await cancelSequence;
+        AssertActionButton(true);
+        Save(Path.Combine(directory, "ui-primary-cancel.png"), 1280, 1000);
+        ((Button)View.FindName("PrimaryActionButton")).Command.Execute(null);
+        await cancelSequence; AssertActionButton(false);
         if (current.HasLiveMeasurement || current.IsWorking) throw new InvalidOperationException("Stop must not restart workflow");
         foreach (var schema in Theme.ColorSchemas.Items) {
             Theme.ColorSchema = schema;
             await Task.Delay(50);
             Save(Path.Combine(directory, $"ui-theme-{schema.Name}.png"), 1280, 1000);
+            AssertActionButton(false);
             foreach (var name in new[] { "WorkflowTitleLabel", "WorkflowDescriptionLabel" })
                 if (((SolidColorBrush)((TextBlock)View.FindName(name)).Foreground).Color != schema.PrimaryColor)
                     throw new InvalidOperationException($"{name} must follow the NINA text color in {schema.Name}");
         }
         current.Dispose();
-        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Equipment gating and labels; one-Start workflow and manual wait; Stop cancellation; all built-in themes; quality thresholds; options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA controls, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay; independent drift with no mount motion, realignment warning, duplicate rejection and offline drift replay passed. Synthetic inputs only.");
+        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Unified play/stop/cancel button, visible surfaces and theme foreground; equipment gating and labels; one-Start workflow and manual wait; Stop cancellation; all built-in themes; quality thresholds; options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA controls, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay; independent drift with no mount motion, realignment warning, duplicate rejection and offline drift replay passed. Synthetic inputs only.");
+    }
+
+    private static void AssertActionButton(bool working) {
+        View.UpdateLayout();
+        var button = (Button)View.FindName("PrimaryActionButton");
+        var label = (TextBlock)View.FindName("PrimaryActionText");
+        var icon = (System.Windows.Shapes.Path)View.FindName("PrimaryActionIcon");
+        var surface = (Border)button.Template.FindName("ButtonSurface", button);
+        if (current!.IsWorking != working || button.Command != current.ActionButtonCommand
+            || label.Text != current.ActionButtonLabel || surface.BorderThickness.Left < 1
+            || !ReferenceEquals(icon.Data, View.FindResource(working ? "StopSVG" : "PlaySVG"))
+            || ((SolidColorBrush)label.Foreground).Color != ((SolidColorBrush)button.Foreground).Color
+            || ((SolidColorBrush)icon.Fill).Color != ((SolidColorBrush)button.Foreground).Color)
+            throw new InvalidOperationException("Unified play/stop command, icon, label, surface or theme foreground failed");
+        if (working && !current.IsStopping && (!button.IsEnabled || button.Command != current.StopLiveCommand))
+            throw new InvalidOperationException("The same action button must remain enabled to stop or cancel any running operation");
     }
 
     private static void Save(string path, int width, int height) {

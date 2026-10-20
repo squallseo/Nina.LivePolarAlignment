@@ -74,7 +74,7 @@ public sealed partial class PolarAlignmentDockableVM {
         UiText.Instance.PropertyChanged += LocaleChanged;
         CaptureReferenceCommand = new AsyncRelayCommand(CaptureReferenceAsync, () => EquipmentReady && !liveBusy && session?.IsCalibrated != true);
         StartLiveCommand = new AsyncRelayCommand(RunLiveAsync, () => EquipmentReady && !liveBusy && session?.IsCalibrated == true);
-        StopLiveCommand = new RelayCommand(RequestStopLive, () => liveBusy);
+        StopLiveCommand = new RelayCommand(RequestStopLive, () => liveBusy && !IsStopping);
         ResetLiveCommand = new RelayCommand(ResetLive, () => !liveBusy && !fieldSaving);
         InitializeField(); InitializeVerification(); InitializeDrift();
         PropertyChanged += (_, change) => {

@@ -38,6 +38,11 @@ public sealed partial class PolarAlignmentDockableVM {
         1 => UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoRaSecond" : "Workflow2"),
         _ => UiText.Get("Workflow3")
     };
+    public bool IsStopping => liveBusy && liveCancellation?.IsCancellationRequested == true;
+    public string ActionButtonLabel => !liveBusy ? PrimaryActionLabel : IsStopping ? UiText.Get("ActionStopping")
+        : UiText.Get(IsRotating || WorkflowStep < 2 || driftInProgress ? "ActionCancel" : "ActionStop");
+    public string ActionButtonHint => liveBusy ? UiText.Get("ActionStopHint") : PrimaryActionHint;
+    public ICommand ActionButtonCommand => liveBusy ? StopLiveCommand : PrimaryActionCommand;
     public ICommand PrimaryActionCommand => IndependentDriftEnabled ? IndependentDriftCommand : workflowCommand ??= new AsyncRelayCommand(RunWorkflowAsync, () => EquipmentReady && !liveBusy);
     private async Task RunWorkflowAsync() {
         if (!EquipmentReady) return;
@@ -84,7 +89,7 @@ public sealed partial class PolarAlignmentDockableVM {
         foreach (var name in new[] { nameof(WorkflowStep), nameof(IsRotationStep), nameof(IsAdjustmentStep),
             nameof(IsWorking), nameof(HasOperationError), nameof(OperationError), nameof(HasLiveMeasurement),
             nameof(HasPreview), nameof(HasAlignmentDetail), nameof(HasCurrentFieldGuidance), nameof(FieldGuidance), nameof(PixelScaleArcseconds),
-            nameof(PrimaryActionLabel), nameof(PrimaryActionCommand), nameof(WorkflowTitle), nameof(WorkflowDescription), nameof(WorkflowHelp),
+            nameof(PrimaryActionLabel), nameof(PrimaryActionCommand), nameof(IsStopping), nameof(ActionButtonLabel), nameof(ActionButtonHint), nameof(ActionButtonCommand), nameof(WorkflowTitle), nameof(WorkflowDescription), nameof(WorkflowHelp),
             nameof(RotationReadout), nameof(MeasurementState), nameof(IsWithinTarget), nameof(AltitudeValue),
             nameof(AzimuthValue), nameof(AltitudeAction), nameof(AzimuthAction) }) RaisePropertyChanged(name);
     }

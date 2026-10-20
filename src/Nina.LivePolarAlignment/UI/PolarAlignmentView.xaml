@@ -27,9 +27,35 @@
         </StackPanel>
       </DataTemplate>
 
-      <Style x:Key="AlignmentButton" TargetType="Button" BasedOn="{StaticResource BackgroundButton}">
+      <Style x:Key="AlignmentButton" TargetType="Button">
         <Setter Property="MinHeight" Value="28"/>
         <Setter Property="Padding" Value="9,3"/>
+        <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template"><Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="ButtonSurface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="2" Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" TextElement.Foreground="{TemplateBinding Foreground}"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/><Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/></Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="ButtonSurface" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/><Setter TargetName="ButtonSurface" Property="BorderThickness" Value="2"/></Trigger>
+              <Trigger Property="IsPressed" Value="True"><Setter TargetName="ButtonSurface" Property="Opacity" Value="0.8"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ButtonSurface" Property="Opacity" Value="0.4"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value></Setter>
+      </Style>
+      <Style x:Key="PrimaryAlignmentButton" TargetType="Button" BasedOn="{StaticResource AlignmentButton}">
+        <Setter Property="MinHeight" Value="38"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
       </Style>
       <Style x:Key="AlignmentSwitch" TargetType="ToggleButton">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
@@ -124,16 +150,22 @@
    </Grid>
 
    <Grid Margin="0,0,0,10">
-    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <Grid Margin="0,0,6,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <Button x:Name="PrimaryActionButton" Style="{StaticResource AlignmentButton}" Content="{Binding PrimaryActionLabel}" Command="{Binding PrimaryActionCommand}" ToolTip="{Binding PrimaryActionHint}" ToolTipService.ShowOnDisabled="True"/>
+     <Button x:Name="PrimaryActionButton" Style="{StaticResource PrimaryAlignmentButton}" Command="{Binding ActionButtonCommand}" ToolTip="{Binding ActionButtonHint}" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="{Binding ActionButtonLabel}">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+       <Path x:Name="PrimaryActionIcon" Width="16" Height="16" Margin="0,0,8,0" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"><Path.Style><Style TargetType="Path"><Setter Property="Data" Value="{DynamicResource PlaySVG}"/><Style.Triggers><DataTrigger Binding="{Binding IsWorking}" Value="True"><Setter Property="Data" Value="{DynamicResource StopSVG}"/></DataTrigger></Style.Triggers></Style></Path.Style></Path>
+       <TextBlock x:Name="PrimaryActionText" Text="{Binding ActionButtonLabel}" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+      </StackPanel>
+     </Button>
      <StackPanel x:Name="CameraConnectionHint" Grid.Column="1" Orientation="Horizontal" Margin="5,0,0,0" VerticalAlignment="Center" ToolTip="{Binding CameraConnectionHint}" Visibility="{Binding CameraDisconnected, Converter={StaticResource VisibleIf}}">
       <TextBlock Text="{Binding NotConnectedText}" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
       <CheckBox Width="14" Height="14" BorderBrush="Transparent" IsChecked="False" IsEnabled="False" IsHitTestVisible="False" Style="{StaticResource CheckmarkCheckbox}"/>
      </StackPanel>
     </Grid>
-    <Button Style="{StaticResource AlignmentButton}" Grid.Column="1" Content="{ns:Loc LblStop}" Command="{Binding StopLiveCommand}" Margin="0,0,8,0"/>
-    <Button Style="{StaticResource AlignmentButton}" Grid.Column="2" Content="{local:UiLoc View5}" ToolTip="{local:UiLoc View6}" Command="{Binding ResetLiveCommand}"/>
+    <Button x:Name="ResetActionButton" Style="{StaticResource AlignmentButton}" Grid.Column="1" Width="38" MinHeight="38" Padding="8" ToolTip="{local:UiLoc View6}" Command="{Binding ResetLiveCommand}" AutomationProperties.Name="{local:UiLoc View5}">
+     <Path Data="{DynamicResource RefreshSVG}" Width="16" Height="16" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+    </Button>
    </Grid>
    <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource NotificationErrorTextBrush}" BorderThickness="1" CornerRadius="1" Padding="5" Margin="0,0,0,12" Visibility="{Binding HasOperationError, Converter={StaticResource VisibleIf}}"><StackPanel><TextBlock Text="{local:UiLoc View9}" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/><TextBlock Text="{Binding OperationError}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,5,0,0"/></StackPanel></Border>
 

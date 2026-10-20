@@ -423,4 +423,8 @@
   <data name="ManualRotationRequired" xml:space="preserve"><value>Waiting for manual RA rotation. Rotate only RA by 60–90°, then press Capture rotated field. Live measurement starts after the second reference. For directory simulation, select the RA 90-degree image first.</value></data>
   <data name="NotConnected" xml:space="preserve"><value>Not connected</value></data>
   <data name="CameraRequired" xml:space="preserve"><value>Connect a camera in N.I.N.A. Equipment before starting. Manual alignment does not require a mount connection.</value></data>
+  <data name="ActionCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="ActionStop" xml:space="preserve"><value>Stop</value></data>
+  <data name="ActionStopping" xml:space="preserve"><value>Stopping…</value></data>
+  <data name="ActionStopHint" xml:space="preserve"><value>Stop the current capture, RA rotation, or live measurement. Wait for cleanup before restarting.</value></data>
 </root>
