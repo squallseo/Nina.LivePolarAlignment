@@ -389,6 +389,34 @@ internal static class Program {
         if (!current.HasOperationError || current.HasIndependentResult || !current.HasValidationWarning)
             throw new InvalidOperationException("Duplicate drift exposures must be inconclusive");
         SampleCapture.DriftFault = false; SampleCapture.DriftTestMode = false; current.Dispose();
+        await SelectScene(2);
+        current!.StopLiveCommand.Execute(null);
+        if (currentLoop != null) await currentLoop;
+        current.ValidationTargetArcseconds = 60;
+        current.ScienceExposureSeconds = 300;
+        var vmType = typeof(PolarAlignmentDockableVM);
+        void SetQualityField(string name, object value) => vmType.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(current, value);
+        foreach (var quality in new[] { (30d, "Within", "#43C98F"), (60d, "Within", "#43C98F"),
+            (90d, "Close", "#E9B85C"), (120d, "Close", "#E9B85C"), (150d, "Adjust", "#F07474") }) {
+            SetQualityField("latestError", new Nina.LivePolarAlignment.Core.PolarError(quality.Item1 / 60, 0, quality.Item1 / 60));
+            SetQualityField("measuredAt", DateTimeOffset.UtcNow);
+            SetQualityField("measurementStale", false);
+            SetQualityField("pixelScale", .7755557);
+            vmType.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+            Save(Path.Combine(directory, $"ui-quality-{quality.Item1:0}-1280.png"), 1280, 1000);
+            var qualityIndicator = (TextBlock)View.FindName("AlignmentQualityIndicator");
+            if (current.AlignmentQualityLevel != quality.Item2 || qualityIndicator.Text != current.AlignmentQualityText
+                || ((SolidColorBrush)qualityIndicator.Foreground).Color != (Color)ColorConverter.ConvertFromString(quality.Item3))
+                throw new InvalidOperationException("Quality color, threshold boundary or visible status binding failed");
+            if (!current.EstimatedExposureMotion.Contains("px") || current.EstimatedUnguidedDrift == "—")
+                throw new InvalidOperationException("Fresh measurements must show drift and pixel bounds");
+        }
+        SetQualityField("measurementStale", true);
+        vmType.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+        Save(Path.Combine(directory, "ui-quality-stale-1280.png"), 1280, 1000);
+        if (current.AlignmentQualityLevel != "Unavailable" || current.EstimatedExposureMotion != "—")
+            throw new InvalidOperationException("Paused data must not retain a success status or drift estimate");
+        current.Dispose();
         File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA controls, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay; independent drift with no mount motion, realignment warning, duplicate rejection and offline drift replay passed. Synthetic inputs only.");
     }
 

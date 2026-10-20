@@ -49,6 +49,8 @@ Positive altitude error means the axis is too high. Azimuth increases from north
 
 `ProjectDirection` uses a gnomonic projection to display the axis and pole. Focal length in pixels is `206264.806 / pixel scale in arcseconds per pixel`. Image Y increases downward. Directions outside the forward hemisphere are not projected.
 
+The adjustment panel compares fresh total error with a configurable target and displays a conservative unguided image-drift bound. Its model and the distinction from guiding RMS are documented in [alignment quality](alignment-quality.md).
+
 ## Repeated measurements and verification
 
 `GetGuidance` uses `TransformDirection` to carry the calibrated axis from the second reference orientation into the current solved orientation. Every coordinate conversion uses the frame timestamp. RA/Dec movement or camera remounting requires recalibration. The session rejects changed dimensions or parity, scale changes above 2%, and timestamps preceding the reference.

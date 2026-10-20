@@ -5,6 +5,15 @@
  xmlns:local="clr-namespace:Nina.LivePolarAlignment.UI"
  MinWidth="320" Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource PrimaryBrush}" FontFamily="Segoe UI" FontSize="12">
  <UserControl.Resources>
+      <Style x:Key="AlignmentQualityText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Style.Triggers>
+          <DataTrigger Binding="{Binding AlignmentQualityLevel}" Value="Within"><Setter Property="Foreground" Value="#43C98F"/></DataTrigger>
+          <DataTrigger Binding="{Binding AlignmentQualityLevel}" Value="Close"><Setter Property="Foreground" Value="#E9B85C"/></DataTrigger>
+          <DataTrigger Binding="{Binding AlignmentQualityLevel}" Value="Adjust"><Setter Property="Foreground" Value="#F07474"/></DataTrigger>
+        </Style.Triggers>
+      </Style>
       <DataTemplate x:Key="RotationDirectionIcon">
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
           <Viewbox Width="20" Height="20" Margin="0,0,4,0">
@@ -146,15 +155,24 @@
 
    <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="1" Padding="5" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}">
     <StackPanel>
-     <Grid Margin="0,0,0,6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{local:UiLoc View10}" Style="{StaticResource Caption}"/><TextBlock Grid.Column="1" Text="{Binding MeasurementState}" FontSize="10" Foreground="{DynamicResource ButtonBackgroundSelectedBrush}"/></Grid>
-     <TextBlock Text="{Binding LiveTotalError}" FontSize="26" FontWeight="SemiBold" Margin="0,0,0,5">
-      <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsMeasurementStale}" Value="True"><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/></DataTrigger><DataTrigger Binding="{Binding IsWithinTarget}" Value="True"><Setter Property="Foreground" Value="{DynamicResource ButtonBackgroundSelectedBrush}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-     </TextBlock>
+     <DockPanel Margin="0,0,0,6"><TextBox DockPanel.Dock="Right" Width="48" Text="{Binding ValidationTargetArcseconds, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanConfigureAlignmentTarget}" AutomationProperties.Name="{local:UiLoc PolarTarget}"/><TextBlock Text="{local:UiLoc PolarTarget}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,6,0"/></DockPanel>
+     <TextBlock Text="{local:UiLoc View10}" Style="{StaticResource Caption}"/>
+     <TextBlock Text="{Binding LiveTotalError}" Style="{StaticResource AlignmentQualityText}" FontSize="26" FontWeight="SemiBold" Margin="0,0,0,5"/>
+     <TextBlock x:Name="AlignmentQualityIndicator" Text="{Binding AlignmentQualityText}" Style="{StaticResource AlignmentQualityText}" FontWeight="SemiBold" Margin="0,0,0,8"/>
      <Grid>
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
       <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="0,0,5,0"><StackPanel><TextBlock Text="{ns:Loc LblAltitude}" Style="{StaticResource Caption}"/><TextBlock Text="{Binding AltitudeValue}" FontSize="18" Margin="0,5,0,4"/><TextBlock Text="{Binding AltitudeAction}" Style="{StaticResource Caption}" ToolTip="{local:UiLoc View11}"/></StackPanel></Border>
       <Border Grid.Column="1" Background="{DynamicResource BackgroundBrush}" CornerRadius="1" Padding="5" Margin="5,0,0,0"><StackPanel><TextBlock Text="{ns:Loc LblAzimuth}" Style="{StaticResource Caption}"/><TextBlock Text="{Binding AzimuthValue}" FontSize="18" Margin="0,5,0,4"/><TextBlock Text="{Binding AzimuthAction}" Style="{StaticResource Caption}" ToolTip="{local:UiLoc View11}"/></StackPanel></Border>
      </Grid>
+     <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,7,0,0">
+      <StackPanel ToolTip="{local:UiLoc ImpactHint}">
+       <TextBlock Text="{local:UiLoc ImpactTitle}" Style="{StaticResource Caption}"/>
+       <TextBlock Text="{Binding EstimatedUnguidedDrift}" FontWeight="SemiBold" Margin="0,3,0,3"/>
+       <DockPanel><TextBox DockPanel.Dock="Right" Width="48" Text="{Binding ScienceExposureSeconds, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="{local:UiLoc ScienceExposure}"/><TextBlock Text="{local:UiLoc ScienceExposure}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,6,0"/></DockPanel>
+       <TextBlock Text="{Binding EstimatedExposureMotion}" FontWeight="SemiBold" Margin="0,4,0,3"/>
+       <TextBlock Text="{local:UiLoc ImpactCaveat}" Style="{StaticResource Caption}"/>
+      </StackPanel>
+     </Border>
      <StackPanel x:Name="AlignmentDetailPanel" Visibility="{Binding HasAlignmentDetail, Converter={StaticResource VisibleIf}}" Margin="0,8,0,0">
       <TextBlock Text="{local:UiLoc AlignmentCloseUp}" Style="{StaticResource Caption}" Margin="0,0,0,4"/>
       <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="5" ClipToBounds="True">

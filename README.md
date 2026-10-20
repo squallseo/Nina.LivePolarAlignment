@@ -8,6 +8,7 @@ This experimental version includes camera capture, plate solving, polar error ca
 
 - **Two-position calibration**: Estimate the RA axis from image orientations before and after an RA rotation. Automatic rotation defaults to 90° and supports 60–90°. Manual rotation is also supported.
 - **Live adjustment guidance**: Repeated captures and plate solves update total, altitude, and azimuth errors, axis and pole overlays, and a close-up view.
+- **Alignment quality and image impact**: A configurable polar-error target drives green, amber, and red guidance. An unguided drift upper bound is shown in arcseconds per minute and in arcseconds/pixels over the selected imaging exposure.
 - **Camera streaming**: Process the latest frame through supported native ZWO ASI and ToupTek paths, with fallback to still captures when unsupported.
 - **Alignment verification**: Remeasure using fresh reference images, collect a 20-frame stability check, and optionally perform an independent drift check.
 - **Field recording**: Optionally save reference images, measurements, and notes for offline recalculation.
@@ -58,6 +59,8 @@ The primary workflow reference is [SharpCap Polar Alignment](https://docs.sharpc
 ## Implementation and usage guides
 
 - [Polar alignment logic and references](docs/polar-alignment.md)
+- [Alignment target and image-drift estimate](docs/alignment-quality.md)
+- [QHY600 catalog-image simulator](tools/Nina.LivePolarAlignment.Simulator/README.md)
 - [Automatic RA rotation](docs/auto-ra-rotation.md)
 - [Streaming behavior and limitations](docs/streaming-review.md)
 - [Alignment remeasurement](docs/verification.md)

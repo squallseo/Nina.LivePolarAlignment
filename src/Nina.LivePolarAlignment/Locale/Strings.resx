@@ -407,4 +407,17 @@
   <data name="ManualReady" xml:space="preserve"><value>Polar alignment</value></data>
   <data name="ActionStart" xml:space="preserve"><value>Start</value></data>
   <data name="AdjustBrief" xml:space="preserve"><value>Use the altitude and azimuth bolts to bring the RA axis onto the celestial pole. Keep RA and camera fixed.</value></data>
-  <data name="RotationDirectionHint" xml:space="preserve"><value>ON: N.I.N.A. left / W button direction (default). OFF: right / E. Both follow the N.I.N.A. primary-axis reversal setting; the icon is not a sky-view rotation prediction.</value></data></root>
+  <data name="RotationDirectionHint" xml:space="preserve"><value>ON: N.I.N.A. left / W button direction (default). OFF: right / E. Both follow the N.I.N.A. primary-axis reversal setting; the icon is not a sky-view rotation prediction.</value></data>
+  <data name="PolarTarget" xml:space="preserve"><value>Polar target (arcsec)</value></data>
+  <data name="QualityWithin" xml:space="preserve"><value>✓ Target reached (≤ {0:0}″)</value></data>
+  <data name="QualityClose" xml:space="preserve"><value>△ Fine adjustment needed (target {0:0}″)</value></data>
+  <data name="QualityAdjust" xml:space="preserve"><value>● Continue adjusting (target {0:0}″)</value></data>
+  <data name="QualityUnavailable" xml:space="preserve"><value>Awaiting a fresh measurement</value></data>
+  <data name="ImpactTitle" xml:space="preserve"><value>Polar-error contribution to image drift</value></data>
+  <data name="ImpactRate" xml:space="preserve"><value>≤ {0:0.000}″/min without guiding</value></data>
+  <data name="ImpactMotion" xml:space="preserve"><value>≤ {0:0.00}″ over this exposure</value></data>
+  <data name="ImpactMotionPixels" xml:space="preserve"><value>≤ {0:0.00}″ ({1:0.00} px) over this exposure</value></data>
+  <data name="ScienceExposure" xml:space="preserve"><value>Imaging exposure (s)</value></data>
+  <data name="ImpactCaveat" xml:space="preserve"><value>Unguided upper bound, not guiding RMS.</value></data>
+  <data name="ImpactHint" xml:space="preserve"><value>Conservative upper bound from polar error and sidereal tracking. Actual motion depends on sky position. Guiding can correct drift; residual field rotation is separate. Seeing, periodic error, flexure and guider performance are not included.</value></data>
+</root>

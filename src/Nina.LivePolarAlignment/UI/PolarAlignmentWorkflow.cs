@@ -55,6 +55,7 @@ public sealed partial class PolarAlignmentDockableVM {
         : latestError.Value.AzimuthArcminutes > 0 ? UiText.Get("Workflow25") : UiText.Get("Workflow26");
 
     private void NotifyWorkflow() {
+        NotifyImpact();
         foreach (var name in new[] { nameof(WorkflowStep), nameof(IsRotationStep), nameof(IsAdjustmentStep),
             nameof(IsWorking), nameof(HasOperationError), nameof(OperationError), nameof(HasLiveMeasurement),
             nameof(HasPreview), nameof(HasAlignmentDetail), nameof(HasCurrentFieldGuidance), nameof(FieldGuidance), nameof(PixelScaleArcseconds),

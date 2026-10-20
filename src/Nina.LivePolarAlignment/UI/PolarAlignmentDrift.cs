@@ -35,7 +35,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public bool DriftConfirmed { get => driftConfirmed; set { if (CanConfigureDrift) { driftConfirmed = value; NotifyDrift(); } } }
     public double ValidationTargetArcseconds {
         get => validationTarget;
-        set { if (CanConfigureDrift && double.IsFinite(value) && value is >= 15 and <= 600) { validationTarget = value; NotifyDrift(); NotifyWorkflow(); } }
+        set { if (CanConfigureAlignmentTarget && double.IsFinite(value) && value is >= 15 and <= 600) { validationTarget = value; NotifyDrift(); NotifyWorkflow(); } }
     }
     public bool HasIndependentResult => independentResult != null;
     public string DriftActionLabel => UiText.Get(independentResult != null ? "DriftFinished" : firstDrift == null ? "DriftFirst" : "DriftSecond");

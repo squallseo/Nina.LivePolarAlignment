@@ -2,8 +2,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: Guid("a1968bf0-8fc3-4605-bf07-b29799485257")]
-[assembly: AssemblyVersion("0.1.0.18")]
-[assembly: AssemblyFileVersion("0.1.0.18")]
+[assembly: AssemblyVersion("0.1.0.19")]
+[assembly: AssemblyFileVersion("0.1.0.19")]
 [assembly: AssemblyTitle("Live Polar Alignment")]
 [assembly: AssemblyDescription("Experimental two-position polar alignment with live camera solutions and on-image axis guidance.")]
 [assembly: AssemblyCompany("squallseo")]

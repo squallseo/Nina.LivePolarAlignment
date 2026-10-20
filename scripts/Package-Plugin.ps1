@@ -17,6 +17,8 @@ Copy-Item (Join-Path $root 'docs\field-validation.md') $stage
 Copy-Item (Join-Path $root 'docs\auto-ra-rotation.md') $stage
 Copy-Item (Join-Path $root 'docs\verification.md') $stage
 Copy-Item (Join-Path $root 'docs\independent-drift.md') $stage
+Copy-Item (Join-Path $root 'docs\polar-alignment.md') $stage
+Copy-Item (Join-Path $root 'docs\alignment-quality.md') $stage
 Copy-Item (Join-Path $root 'docs\install-package.txt') (Join-Path $stage 'INSTALL.txt')
 Copy-Item (Join-Path $root 'docs\images\plugin-icon.png') $stage
 $output = Join-Path $root 'artifacts\packages'
