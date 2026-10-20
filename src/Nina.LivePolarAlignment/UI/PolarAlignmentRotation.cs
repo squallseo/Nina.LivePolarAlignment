@@ -22,7 +22,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public RelayCommand IncreaseRotationAngleCommand => increaseRotationAngleCommand ??= new(() => RotationAngleDegrees += 10);
     public bool AutoRaRotation {
         get => autoRaRotation;
-        set { if (!CanConfigureRotation) return; autoRaRotation = value; NotifyRotation(); NotifyWorkflow(); }
+        set { if (!CanConfigureRotation || (value && !captureService.SupportsAutoRaRotation)) return; autoRaRotation = value; NotifyRotation(); NotifyWorkflow(); }
     }
     public bool ReverseRaRotation {
         get => reverseRaRotation;
@@ -30,7 +30,7 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     public bool CanConfigureRotation => !IndependentDriftEnabled && !liveBusy && calibrationSamples < 2 && !automaticRotationCompleted;
     public bool CanConfigureAutoRotation => AutoRaRotation && CanConfigureRotation;
-    public bool CanUseAutoRotation => CanConfigureRotation;
+    public bool CanUseAutoRotation => CanConfigureRotation && captureService.SupportsAutoRaRotation;
     public bool IsRotating => rotationInProgress;
     public string RotationStatus => rotationInProgress ? UiText.Format("AutoRaProgress", rotationProgress, RotationAngleDegrees)
         : UiText.Get(captureService.SupportsAutoRaRotation ? "AutoRaHint" : "AutoRaUnsupported");
@@ -60,6 +60,7 @@ public sealed partial class PolarAlignmentDockableVM {
         }
     }
     private void NotifyRotation() {
+        if (!liveBusy && !captureService.SupportsAutoRaRotation) autoRaRotation = false;
         foreach (var name in new[] { nameof(RotationAngleDegrees), nameof(AutoRaRotation), nameof(ReverseRaRotation),
             nameof(CanConfigureAutoRotation), nameof(CanConfigureRotation), nameof(CanUseAutoRotation), nameof(IsRotating), nameof(RotationStatus) }) RaisePropertyChanged(name);
     }

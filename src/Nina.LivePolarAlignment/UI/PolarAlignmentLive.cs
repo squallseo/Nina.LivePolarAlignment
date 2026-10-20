@@ -212,8 +212,8 @@ public sealed partial class PolarAlignmentDockableVM {
         finally { liveCancellation.Dispose(); liveCancellation = null; liveBusy = false; NotifyLive(); if (fieldDisposed && !fieldSaving) EndFieldSession("disposed"); }
     }
     private void ValidateSite() {
-        if (!captureService.CameraConnected || !captureService.MountConnected)
-            throw new InvalidOperationException(UiText.Get("EquipmentRequired"));
+        if (!captureService.CameraConnected)
+            throw new InvalidOperationException(UiText.Get("CameraRequired"));
         var site = profiles.ActiveProfile.AstrometrySettings;
         if (site.Latitude != calibrationLatitude || site.Longitude != calibrationLongitude) {
             session = null;

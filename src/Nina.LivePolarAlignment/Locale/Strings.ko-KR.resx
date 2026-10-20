@@ -420,10 +420,7 @@
   <data name="ScienceExposure" xml:space="preserve"><value>본 촬영 노출 (초)</value></data>
   <data name="ImpactCaveat" xml:space="preserve"><value>무가이드 상한 추정치이며 가이딩 RMS가 아닙니다.</value></data>
   <data name="ImpactHint" xml:space="preserve"><value>극축 오차와 항성시 추적에서 계산한 보수적인 상한입니다. 실제 이동은 촬영 방향에 따라 달라집니다. 가이딩은 드리프트를 보정할 수 있지만 잔여 시야 회전은 별도입니다. 시상, 주기 오차, 처짐, 가이딩 성능은 포함하지 않습니다.</value></data>
-  <data name="CameraConnected" xml:space="preserve"><value>카메라: 연결됨</value></data>
-  <data name="CameraDisconnected" xml:space="preserve"><value>카메라: 연결 안 됨</value></data>
-  <data name="MountConnected" xml:space="preserve"><value>적도의: 연결됨</value></data>
-  <data name="MountDisconnected" xml:space="preserve"><value>적도의: 연결 안 됨</value></data>
-  <data name="EquipmentRequired" xml:space="preserve"><value>시작하려면 N.I.N.A. 장비 탭에서 카메라와 적도의를 모두 연결하세요.</value></data>
   <data name="ManualRotationRequired" xml:space="preserve"><value>수동 RA 회전을 기다립니다. RA축만 60–90° 회전한 뒤 회전된 시야 촬영을 누르세요. 두 번째 기준 촬영 후 실시간 측정을 시작합니다. 폴더 시뮬레이션에서는 먼저 RA 90° 이미지를 선택하세요.</value></data>
+  <data name="NotConnected" xml:space="preserve"><value>연결 안 됨</value></data>
+  <data name="CameraRequired" xml:space="preserve"><value>시작하려면 N.I.N.A. 장비 탭에서 카메라를 연결하세요. 수동 정렬에는 적도의 연결이 필요하지 않습니다.</value></data>
 </root>

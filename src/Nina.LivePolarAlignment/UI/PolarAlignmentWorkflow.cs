@@ -12,10 +12,12 @@ public sealed partial class PolarAlignmentDockableVM {
     private AsyncRelayCommand? workflowCommand;
     public bool CameraConnected => captureService.CameraConnected;
     public bool MountConnected => captureService.MountConnected;
-    public bool EquipmentReady => CameraConnected && MountConnected;
-    public string CameraConnectionText => UiText.Get(CameraConnected ? "CameraConnected" : "CameraDisconnected");
-    public string MountConnectionText => UiText.Get(MountConnected ? "MountConnected" : "MountDisconnected");
-    public string EquipmentInstruction => UiText.Get("EquipmentRequired");
+    public bool EquipmentReady => CameraConnected;
+    public bool CameraDisconnected => !CameraConnected;
+    public bool MountDisconnected => !MountConnected;
+    public string NotConnectedText => UiText.Get("NotConnected");
+    public string CameraConnectionHint => UiText.Get("CameraRequired");
+    public string PrimaryActionHint => CameraConnected ? WorkflowHelp : CameraConnectionHint;
     public bool WaitingForManualRotation => !IndependentDriftEnabled && WorkflowStep == 1 && !AutoRaRotation && !liveBusy;
     public string ManualRotationInstruction => UiText.Get("ManualRotationRequired");
 
@@ -48,7 +50,7 @@ public sealed partial class PolarAlignmentDockableVM {
         1 => UiText.Get("Workflow5"),
         _ => liveBusy ? UiText.Get("Workflow6") : UiText.Get("Workflow7")
     };
-    public string WorkflowHelp => UiText.Get(AutoRaRotation ? "AutoRaHint" : "Workflow8");
+    public string WorkflowHelp => WaitingForManualRotation ? ManualRotationInstruction : UiText.Get(AutoRaRotation ? "AutoRaHint" : "Workflow8");
     public string WorkflowDescription => IndependentDriftEnabled ? DriftInstruction : WorkflowStep switch {
         0 => UiText.Get(AutoRaRotation ? "AutoBrief" : "ManualBrief"),
         1 => IsRotating ? RotationStatus : UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoBrief" : "ManualRotateBrief"),
@@ -78,7 +80,7 @@ public sealed partial class PolarAlignmentDockableVM {
         (CaptureReferenceCommand as IRelayCommand)?.NotifyCanExecuteChanged();
         (StartLiveCommand as IRelayCommand)?.NotifyCanExecuteChanged();
         foreach (var name in new[] { nameof(CameraConnected), nameof(MountConnected), nameof(EquipmentReady),
-            nameof(CameraConnectionText), nameof(MountConnectionText), nameof(EquipmentInstruction), nameof(WaitingForManualRotation) }) RaisePropertyChanged(name);
+            nameof(CameraDisconnected), nameof(MountDisconnected), nameof(NotConnectedText), nameof(CameraConnectionHint), nameof(PrimaryActionHint), nameof(WaitingForManualRotation) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(WorkflowStep), nameof(IsRotationStep), nameof(IsAdjustmentStep),
             nameof(IsWorking), nameof(HasOperationError), nameof(OperationError), nameof(HasLiveMeasurement),
             nameof(HasPreview), nameof(HasAlignmentDetail), nameof(HasCurrentFieldGuidance), nameof(FieldGuidance), nameof(PixelScaleArcseconds),

@@ -4,7 +4,7 @@
 
 ## Settings and prerequisites
 
-- Connect both camera and mount in N.I.N.A. Equipment. The panel displays each connection state and disables Start until both are connected. Configure the solver, site, focal length, and pixel size, then point near the visible celestial pole.
+- Connect the camera in N.I.N.A. Equipment to enable Start. Manual polar alignment requires only the camera; automatic RA rotation additionally requires a connected, supported mount. Missing camera and mount connections use N.I.N.A.'s red circled-X indicator and a compact Not connected label beside Start and Auto RA respectively. Connected indicators are hidden; details appear on hover. Rotation settings collapse when Auto RA is off. Configure the solver, site, focal length, and pixel size, then point near the visible celestial pole.
 - A connected, unparked equatorial mount must support RA `MoveAxis`, tracking on/off control, and a speed within 0.1–1°/s. Stop other sequences, guiding, and manual movement.
 - Rotation defaults to 90°. Available angles are 60°, 70°, 80°, and 90°; remeasurement uses the same setting.
 - `Reverse RA direction` defaults on and sends the same negative RA command as N.I.N.A.'s manual W button. Off uses the positive command of its E button. N.I.N.A.'s `PrimaryReversed` setting also applies. W/E icons indicate command direction, not image clockwise/counterclockwise motion or live encoder feedback.

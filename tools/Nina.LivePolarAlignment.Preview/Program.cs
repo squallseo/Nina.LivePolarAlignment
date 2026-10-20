@@ -34,7 +34,7 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public bool SupportsStreaming => !UnsupportedStream;
     public bool IsSynthetic => true;
     public static bool UnsupportedAuto, FailRotation;
-    public bool SupportsAutoRaRotation => !UnsupportedAuto;
+    public bool SupportsAutoRaRotation => MountConnected && !UnsupportedAuto;
     public static int Rotations;
     public static double LastRotationAngle;
     public static bool RotationStopped;
@@ -298,7 +298,7 @@ internal static class Program {
         SampleCapture.Rotations = 0;
         SampleCapture.UnsupportedAuto = true;
         await SelectScene(0); current!.AutoRaRotation = true;
-        if (!current.CanUseAutoRotation || !current.CanUseStreaming) throw new InvalidOperationException("Options must remain selectable");
+        if (current.CanUseAutoRotation || !current.CanUseStreaming) throw new InvalidOperationException("Unsupported mounts must disable only automatic RA rotation");
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         if (current.AutoRaRotation || current.HasOperationError || current.WorkflowStep != 1 || SampleCapture.Rotations != 0)
             throw new InvalidOperationException("Unsupported RA must quietly fall back to manual reference capture");
@@ -307,10 +307,10 @@ internal static class Program {
         var settingsPanel = (StackPanel)View.FindName("RotationSettingsPanel");
         Save(Path.Combine(directory, "ui-manual-settings-1280.png"), 1280, 800);
         var manualHeight = settingsPanel.ActualHeight;
-        if (settingsPanel.Visibility != Visibility.Visible || settingsPanel.IsEnabled) throw new InvalidOperationException("Manual mode must retain disabled rotation settings");
+        if (settingsPanel.Visibility != Visibility.Collapsed) throw new InvalidOperationException("Manual mode must collapse rotation settings");
         current!.AutoRaRotation = true;
         Save(Path.Combine(directory, "ui-auto-settings-1280.png"), 1280, 800);
-        if (!settingsPanel.IsEnabled || Math.Abs(settingsPanel.ActualHeight - manualHeight) > .1) throw new InvalidOperationException("Automatic mode must preserve rotation settings layout");
+        if (!settingsPanel.IsEnabled || settingsPanel.Visibility != Visibility.Visible || settingsPanel.ActualHeight < 30) throw new InvalidOperationException("Auto mode must reveal rotation settings");
         current.ReverseRaRotation = false;
         Save(Path.Combine(directory, "ui-east-settings-1280.png"), 1280, 800);
         current.ReverseRaRotation = true;
@@ -427,12 +427,14 @@ internal static class Program {
             SampleCapture.CameraOffline = disconnected.Item1; SampleCapture.MountOffline = disconnected.Item2;
             vmType.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
             Save(Path.Combine(directory, $"ui-equipment-{disconnected.Item1}-{disconnected.Item2}.png"), 1280, 900);
-            if (current!.PrimaryActionCommand.CanExecute(null) || current.EquipmentReady
-                || ((TextBlock)View.FindName("CameraConnectionLabel")).Text != current.CameraConnectionText
-                || ((TextBlock)View.FindName("MountConnectionLabel")).Text != current.MountConnectionText)
-                throw new InvalidOperationException("Disconnected equipment must be visible and prevent Start");
+            if (current!.PrimaryActionCommand.CanExecute(null) == disconnected.Item1 || current.EquipmentReady == disconnected.Item1
+                || ((FrameworkElement)View.FindName("CameraConnectionHint")).Visibility != (disconnected.Item1 ? Visibility.Visible : Visibility.Collapsed)
+                || ((FrameworkElement)View.FindName("MountConnectionHint")).Visibility != (disconnected.Item2 ? Visibility.Visible : Visibility.Collapsed)
+                || (disconnected.Item2 && current.CanUseAutoRotation))
+                throw new InvalidOperationException("Compact camera and mount indicators or independent gating failed");
+            Save(Path.Combine(directory, $"ui-equipment-narrow-{disconnected.Item1}-{disconnected.Item2}.png"), 360, 1000);
         }
-        SampleCapture.CameraOffline = false; SampleCapture.MountOffline = false;
+        SampleCapture.CameraOffline = false; SampleCapture.MountOffline = true;
         vmType.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
         await ((IAsyncRelayCommand)current!.PrimaryActionCommand).ExecuteAsync(null);
         if (!current.WaitingForManualRotation || current.WorkflowStep != 1 || current.IsWorking)
@@ -442,6 +444,7 @@ internal static class Program {
         for (int i = 0; i < 200 && !current.HasLiveMeasurement && !manualSequence.IsCompleted; i++) await Task.Delay(25);
         if (!current.HasLiveMeasurement || !current.IsWorking) throw new InvalidOperationException("Second reference must enter live measurement automatically");
         current.StopLiveCommand.Execute(null); await manualSequence;
+        SampleCapture.MountOffline = false;
         await SelectScene(0); current!.AutoRaRotation = true;
         var autoSequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
         for (int i = 0; i < 300 && !current.HasLiveMeasurement && !autoSequence.IsCompleted; i++) await Task.Delay(25);
@@ -453,10 +456,13 @@ internal static class Program {
         await Task.Delay(150);
         if (!current.IsWorking || resumeSequence.IsCompleted) throw new InvalidOperationException("Resume must restart live measurement after Stop");
         SampleCapture.MountOffline = true;
+        await Task.Delay(300);
+        if (resumeSequence.IsCompleted || current.HasOperationError) throw new InvalidOperationException("Live image measurement must work without a mount connection");
+        SampleCapture.CameraOffline = true;
         for (int i = 0; i < 100 && !resumeSequence.IsCompleted; i++) await Task.Delay(25);
         if (!resumeSequence.IsCompleted || !current.HasOperationError || current.PrimaryActionCommand.CanExecute(null))
-            throw new InvalidOperationException("Losing the mount must stop measurements and prevent restart");
-        await resumeSequence; SampleCapture.MountOffline = false;
+            throw new InvalidOperationException("Losing the camera must stop measurements and prevent restart");
+        await resumeSequence; SampleCapture.MountOffline = false; SampleCapture.CameraOffline = false;
         await SelectScene(0); current!.AutoRaRotation = true;
         var cancelSequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
         while (!current.IsRotating && !cancelSequence.IsCompleted) await Task.Delay(10);
@@ -466,7 +472,7 @@ internal static class Program {
             Theme.ColorSchema = schema;
             await Task.Delay(50);
             Save(Path.Combine(directory, $"ui-theme-{schema.Name}.png"), 1280, 1000);
-            foreach (var name in new[] { "WorkflowTitleLabel", "WorkflowDescriptionLabel", "CameraConnectionLabel", "MountConnectionLabel" })
+            foreach (var name in new[] { "WorkflowTitleLabel", "WorkflowDescriptionLabel" })
                 if (((SolidColorBrush)((TextBlock)View.FindName(name)).Foreground).Color != schema.PrimaryColor)
                     throw new InvalidOperationException($"{name} must follow the NINA text color in {schema.Name}");
         }

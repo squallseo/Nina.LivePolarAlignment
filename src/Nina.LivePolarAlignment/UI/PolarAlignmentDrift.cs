@@ -52,7 +52,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public bool HasValidationWarning => driftFailure != null || CurrentAssessment is ValidationVerdict.Realign or ValidationVerdict.Inconsistent or ValidationVerdict.Inconclusive;
     private void InitializeDrift() {
         IndependentDriftCommand = new AsyncRelayCommand(RunIndependentDriftAsync,
-            () => EquipmentReady && CanConfigureDrift && independentDriftEnabled && driftConfirmed && independentResult == null);
+            () => EquipmentReady && MountConnected && CanConfigureDrift && independentDriftEnabled && driftConfirmed && independentResult == null);
         ResetIndependentDriftCommand = new RelayCommand(ResetDriftEvidence, () => CanConfigureDrift);
     }
     private void ResetDriftEvidence() {

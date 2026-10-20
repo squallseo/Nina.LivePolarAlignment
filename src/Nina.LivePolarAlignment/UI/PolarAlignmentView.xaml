@@ -91,26 +91,21 @@
   <ScrollViewer x:Name="ControlScroll" Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
    <StackPanel Margin="0,0,2,0">
 
-   <StackPanel Margin="2,0,2,10">
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-     <Ellipse Width="8" Height="8" Margin="0,0,6,0"><Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Fill" Value="#F07474"/><Style.Triggers><DataTrigger Binding="{Binding CameraConnected}" Value="True"><Setter Property="Fill" Value="#43C98F"/></DataTrigger></Style.Triggers></Style></Ellipse.Style></Ellipse>
-     <TextBlock x:Name="CameraConnectionLabel" Text="{Binding CameraConnectionText}"/>
-    </StackPanel>
-    <StackPanel Orientation="Horizontal">
-     <Ellipse Width="8" Height="8" Margin="0,0,6,0"><Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Fill" Value="#F07474"/><Style.Triggers><DataTrigger Binding="{Binding MountConnected}" Value="True"><Setter Property="Fill" Value="#43C98F"/></DataTrigger></Style.Triggers></Style></Ellipse.Style></Ellipse>
-     <TextBlock x:Name="MountConnectionLabel" Text="{Binding MountConnectionText}"/>
-    </StackPanel>
-    <TextBlock Text="{Binding EquipmentInstruction}" Margin="0,5,0,0"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource Caption}"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding EquipmentReady}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
-   </StackPanel>
-   <StackPanel Margin="2,0,2,8" MinHeight="60">
+   <StackPanel Margin="2,0,2,8">
     <TextBlock x:Name="WorkflowTitleLabel" Text="{Binding WorkflowTitle}" FontWeight="SemiBold"/>
     <TextBlock x:Name="WorkflowDescriptionLabel" Text="{Binding WorkflowDescription}" Style="{StaticResource Caption}" Margin="0,4,0,0" ToolTip="{Binding WorkflowHelp}"/>
    </StackPanel>
 
-   <Border BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1" Padding="8" Margin="0,0,0,8" Visibility="{Binding WaitingForManualRotation, Converter={StaticResource VisibleIf}}"><TextBlock Text="{Binding ManualRotationInstruction}" FontWeight="SemiBold"/></Border>
    <StackPanel Margin="0,0,0,8" Visibility="{Binding IsPolarView, Converter={StaticResource VisibleIf}}">
-    <DockPanel ToolTip="{Binding RotationStatus}" ToolTipService.ShowOnDisabled="True"><TextBlock Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/><ToggleButton Style="{StaticResource AlignmentSwitch}" HorizontalAlignment="Right" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanUseAutoRotation}"/></DockPanel>
-    <StackPanel x:Name="RotationSettingsPanel" IsEnabled="{Binding CanConfigureAutoRotation}">
+    <Grid ToolTip="{Binding RotationStatus}" ToolTipService.ShowOnDisabled="True"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <TextBlock Text="{local:UiLoc AutoRaOption}" VerticalAlignment="Center"/>
+     <StackPanel x:Name="MountConnectionHint" Grid.Column="1" Orientation="Horizontal" Margin="6,0" VerticalAlignment="Center" Visibility="{Binding MountDisconnected, Converter={StaticResource VisibleIf}}">
+      <TextBlock Text="{Binding NotConnectedText}" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
+      <CheckBox Width="14" Height="14" BorderBrush="Transparent" IsChecked="False" IsEnabled="False" IsHitTestVisible="False" Style="{StaticResource CheckmarkCheckbox}"/>
+     </StackPanel>
+     <ToggleButton x:Name="AutoRaToggle" Grid.Column="2" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanUseAutoRotation}"/>
+    </Grid>
+    <StackPanel x:Name="RotationSettingsPanel" Visibility="{Binding AutoRaRotation, Converter={StaticResource VisibleIf}}" IsEnabled="{Binding CanConfigureAutoRotation}">
      <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger></Style.Triggers></Style></StackPanel.Style>
      <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureRotation}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></DockPanel>
 
@@ -130,7 +125,13 @@
 
    <Grid Margin="0,0,0,10">
     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-    <Button Style="{StaticResource AlignmentButton}" Content="{Binding PrimaryActionLabel}" Command="{Binding PrimaryActionCommand}" Margin="0,0,8,0"/>
+    <Grid Margin="0,0,6,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <Button x:Name="PrimaryActionButton" Style="{StaticResource AlignmentButton}" Content="{Binding PrimaryActionLabel}" Command="{Binding PrimaryActionCommand}" ToolTip="{Binding PrimaryActionHint}" ToolTipService.ShowOnDisabled="True"/>
+     <StackPanel x:Name="CameraConnectionHint" Grid.Column="1" Orientation="Horizontal" Margin="5,0,0,0" VerticalAlignment="Center" ToolTip="{Binding CameraConnectionHint}" Visibility="{Binding CameraDisconnected, Converter={StaticResource VisibleIf}}">
+      <TextBlock Text="{Binding NotConnectedText}" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
+      <CheckBox Width="14" Height="14" BorderBrush="Transparent" IsChecked="False" IsEnabled="False" IsHitTestVisible="False" Style="{StaticResource CheckmarkCheckbox}"/>
+     </StackPanel>
+    </Grid>
     <Button Style="{StaticResource AlignmentButton}" Grid.Column="1" Content="{ns:Loc LblStop}" Command="{Binding StopLiveCommand}" Margin="0,0,8,0"/>
     <Button Style="{StaticResource AlignmentButton}" Grid.Column="2" Content="{local:UiLoc View5}" ToolTip="{local:UiLoc View6}" Command="{Binding ResetLiveCommand}"/>
    </Grid>

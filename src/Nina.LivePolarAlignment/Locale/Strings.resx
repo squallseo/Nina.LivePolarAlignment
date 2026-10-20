@@ -420,10 +420,7 @@
   <data name="ScienceExposure" xml:space="preserve"><value>Imaging exposure (s)</value></data>
   <data name="ImpactCaveat" xml:space="preserve"><value>Unguided upper bound, not guiding RMS.</value></data>
   <data name="ImpactHint" xml:space="preserve"><value>Conservative upper bound from polar error and sidereal tracking. Actual motion depends on sky position. Guiding can correct drift; residual field rotation is separate. Seeing, periodic error, flexure and guider performance are not included.</value></data>
-  <data name="CameraConnected" xml:space="preserve"><value>Camera: connected</value></data>
-  <data name="CameraDisconnected" xml:space="preserve"><value>Camera: disconnected</value></data>
-  <data name="MountConnected" xml:space="preserve"><value>Mount: connected</value></data>
-  <data name="MountDisconnected" xml:space="preserve"><value>Mount: disconnected</value></data>
-  <data name="EquipmentRequired" xml:space="preserve"><value>Connect both the camera and mount in N.I.N.A. Equipment before starting.</value></data>
   <data name="ManualRotationRequired" xml:space="preserve"><value>Waiting for manual RA rotation. Rotate only RA by 60–90°, then press Capture rotated field. Live measurement starts after the second reference. For directory simulation, select the RA 90-degree image first.</value></data>
+  <data name="NotConnected" xml:space="preserve"><value>Not connected</value></data>
+  <data name="CameraRequired" xml:space="preserve"><value>Connect a camera in N.I.N.A. Equipment before starting. Manual alignment does not require a mount connection.</value></data>
 </root>
