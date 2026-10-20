@@ -427,4 +427,14 @@
   <data name="ActionStop" xml:space="preserve"><value>Stop</value></data>
   <data name="ActionStopping" xml:space="preserve"><value>Stopping…</value></data>
   <data name="ActionStopHint" xml:space="preserve"><value>Stop the current capture, RA rotation, or live measurement. Wait for cleanup before restarting.</value></data>
+  <data name="SolvingFrame" xml:space="preserve"><value>Image captured — plate solving…</value></data>
+  <data name="AutoRaDisconnected" xml:space="preserve"><value>Connect a mount to enable automatic RA rotation.</value></data>
+  <data name="AutoRaParked" xml:space="preserve"><value>Mount is parked. Unpark it in N.I.N.A. Equipment to enable automatic RA rotation.</value></data>
+  <data name="AutoRaBusy" xml:space="preserve"><value>Mount is moving. Wait for it to stop before enabling automatic RA rotation.</value></data>
+  <data name="AutoRaNotEquatorial" xml:space="preserve"><value>The mount must be configured for equatorial alignment.</value></data>
+  <data name="AutoRaAxisUnsupported" xml:space="preserve"><value>This driver does not support RA MoveAxis. Use manual RA rotation.</value></data>
+  <data name="AutoRaTrackingUnsupported" xml:space="preserve"><value>This driver cannot change tracking state. Use manual RA rotation.</value></data>
+  <data name="AutoRaRateUnsupported" xml:space="preserve"><value>No supported RA speed from 0.1 to 1 degree per second. Use manual rotation.</value></data>
+  <data name="AutoRaInvalidCoordinates" xml:space="preserve"><value>The mount returned invalid coordinates. Check its connection and configuration.</value></data>
+  <data name="AutoRaDriverError" xml:space="preserve"><value>Could not read mount capabilities. Check the driver and connection.</value></data>
 </root>

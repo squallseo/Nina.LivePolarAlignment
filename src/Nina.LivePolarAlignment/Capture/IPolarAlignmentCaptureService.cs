@@ -10,7 +10,11 @@ public sealed class StreamingCleanupException : InvalidOperationException {
     public StreamingCleanupException(Exception inner) : base("Could not restore the camera after streaming. Reconnect before continuing.", inner) { }
 }
 
+public enum AutoRaAvailability { Ready, Disconnected, Parked, Busy, NotEquatorial, AxisUnsupported, TrackingUnsupported, RateUnsupported, InvalidCoordinates, DriverError }
+
 public interface IPolarAlignmentCaptureService {
+    event Action<BitmapSource>? PreviewAvailable { add { } remove { } }
+    AutoRaAvailability AutoRaAvailability => SupportsAutoRaRotation ? AutoRaAvailability.Ready : AutoRaAvailability.DriverError;
     bool CameraConnected => false;
     bool MountConnected => false;
     bool SupportsStreaming => false;

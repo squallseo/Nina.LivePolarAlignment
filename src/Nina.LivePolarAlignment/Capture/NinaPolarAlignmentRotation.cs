@@ -10,18 +10,25 @@ using Nina.LivePolarAlignment.Core;
 namespace Nina.LivePolarAlignment.Capture;
 
 public sealed partial class NinaPolarAlignmentCaptureService {
-    public bool SupportsAutoRaRotation {
+    public bool SupportsAutoRaRotation => AutoRaAvailability == AutoRaAvailability.Ready;
+    public AutoRaAvailability AutoRaAvailability {
         get {
             try {
                 var info = telescope.GetInfo();
-                RaRotation.SelectRate(new(info.Connected, info.AtPark, info.Slewing,
-                    info.AlignmentMode is AlignmentMode.Polar or AlignmentMode.GermanPolar,
-                    info.CanMovePrimaryAxis, info.CanSetTrackingEnabled, info.TrackingEnabled,
-                    info.RightAscension, info.Declination, (int)info.SideOfPier,
-                    info.PrimaryAxisRates.ToArray()));
-                return true;
-            }
-            catch { return false; }
+                if (info?.Connected != true) return AutoRaAvailability.Disconnected;
+                if (info.AtPark) return AutoRaAvailability.Parked;
+                if (info.Slewing) return AutoRaAvailability.Busy;
+                if (info.AlignmentMode is not (AlignmentMode.Polar or AlignmentMode.GermanPolar)) return AutoRaAvailability.NotEquatorial;
+                if (!info.CanMovePrimaryAxis) return AutoRaAvailability.AxisUnsupported;
+                if (!info.CanSetTrackingEnabled) return AutoRaAvailability.TrackingUnsupported;
+                if (!double.IsFinite(info.RightAscension) || info.RightAscension is < 0 or >= 24
+                    || !double.IsFinite(info.Declination) || Math.Abs(info.Declination) > 90) return AutoRaAvailability.InvalidCoordinates;
+                try {
+                    RaRotation.SelectRate(new(true, false, false, true, true, true, info.TrackingEnabled,
+                        info.RightAscension, info.Declination, (int)info.SideOfPier, info.PrimaryAxisRates.ToArray()));
+                } catch (InvalidOperationException) { return AutoRaAvailability.RateUnsupported; }
+                return AutoRaAvailability.Ready;
+            } catch { return AutoRaAvailability.DriverError; }
         }
     }
     public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {

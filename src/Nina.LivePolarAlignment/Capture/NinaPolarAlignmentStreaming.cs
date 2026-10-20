@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -68,15 +68,11 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                 var frame = await buffer.ReadAsync(token);
                 token.ThrowIfCancellationRequested();
                 var image = await imaging.PrepareImage(frame.Image, new PrepareImageParameters(autoStretch: true, detectStars: false), token);
+                var preview = PublishPreview(image?.Image);
                 var solution = await solver.Solve(frame.Image, parameter, SilentProgress.Instance, token);
                 token.ThrowIfCancellationRequested();
                 if (!solution.Success || solution.Coordinates == null || !double.IsFinite(solution.Pixscale) || solution.Pixscale <= 0)
                     throw new InvalidOperationException("Streaming plate solve failed. Increase exposure or use single frames. No estimated guidance is shown.");
-                var preview = image?.Image;
-                if (preview != null && !preview.IsFrozen) {
-                    preview = preview.Clone();
-                    if (preview.CanFreeze) preview.Freeze(); else preview = null;
-                }
                 yield return new SolvedPolarFrame(solution.Coordinates.RADegrees, solution.Coordinates.Dec,
                     solution.PositionAngle, solution.Pixscale, frame.Image.Properties.Width, frame.Image.Properties.Height,
                     solution.Flipped, frame.CapturedAt, preview, frame.Image);

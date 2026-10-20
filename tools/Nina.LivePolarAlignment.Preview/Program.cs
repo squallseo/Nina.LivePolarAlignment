@@ -30,11 +30,14 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public bool CameraConnected => !CameraOffline;
     public bool MountConnected => !MountOffline;
     public Func<int> Step { get; set; } = () => 0;
+    public event Action<BitmapSource>? PreviewAvailable;
+    public static AutoRaAvailability? AutoUnavailable;
+    public AutoRaAvailability AutoRaAvailability => AutoUnavailable ?? (SupportsAutoRaRotation ? AutoRaAvailability.Ready : AutoRaAvailability.DriverError);
     public static bool UnsupportedStream, StreamCleanupFailure;
     public bool SupportsStreaming => !UnsupportedStream;
     public bool IsSynthetic => true;
     public static bool UnsupportedAuto, FailRotation;
-    public bool SupportsAutoRaRotation => MountConnected && !UnsupportedAuto;
+    public bool SupportsAutoRaRotation => MountConnected && !UnsupportedAuto && AutoUnavailable == null;
     public static int Rotations;
     public static double LastRotationAngle;
     public static bool RotationStopped;
@@ -81,7 +84,9 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
             var time = driftStart.AddSeconds((DriftSecondField ? 600 : 0) + (DriftFault ? 0 : seconds));
             return new(180 + h * 180 / Math.PI, declination, 0, 2, 800, 600, false, time, Image);
         }
-        await Task.Delay(650, token);
+        await Task.Delay(150, token);
+        PreviewAvailable?.Invoke(Image);
+        await Task.Delay(500, token);
         int step = Step();
         if (step == 0) rotatedSinceReference = false;
         if (step == 1 && !rotatedSinceReference) { orientation += 72; rotatedSinceReference = true; }
@@ -422,6 +427,21 @@ internal static class Program {
         if (current.AlignmentQualityLevel != "Unavailable" || current.EstimatedExposureMotion != "—")
             throw new InvalidOperationException("Paused data must not retain a success status or drift estimate");
         current.Dispose();
+        await SelectScene(0);
+        var earlyPreviewCapture = ((IAsyncRelayCommand)current!.PrimaryActionCommand).ExecuteAsync(null);
+        for (int i = 0; i < 50 && !current.HasPreview && !earlyPreviewCapture.IsCompleted; i++) await Task.Delay(10);
+        if (!current.HasPreview || earlyPreviewCapture.IsCompleted || current.WorkflowStep != 0 || !current.IsMeasurementStale || current.HasCurrentFieldGuidance)
+            throw new InvalidOperationException("Captured pixels must appear before plate solve without stale axis guidance");
+        Save(Path.Combine(directory, "ui-before-solve.png"), 1280, 1000);
+        await earlyPreviewCapture;
+        await SelectScene(0);
+        foreach (var unavailable in Enum.GetValues<AutoRaAvailability>().Where(x => x != AutoRaAvailability.Ready)) {
+            SampleCapture.AutoUnavailable = unavailable;
+            vmType.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+            if (current!.CanUseAutoRotation || current.RotationStatus == "AutoRa" + unavailable || string.IsNullOrWhiteSpace(current.RotationStatus))
+                throw new InvalidOperationException("Unavailable automatic rotation must show a specific translated reason");
+        }
+        SampleCapture.AutoUnavailable = null;
         await SelectScene(0);
         foreach (var disconnected in new[] { (true, false), (false, true), (true, true) }) {
             SampleCapture.CameraOffline = disconnected.Item1; SampleCapture.MountOffline = disconnected.Item2;

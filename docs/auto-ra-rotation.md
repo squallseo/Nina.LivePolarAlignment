@@ -23,3 +23,5 @@ No movement response for six seconds, or exceeding the overall timeout, stops th
 The [SharpCap Polar Alignment guide](https://docs.sharpcap.co.uk/4.1/9_PolarAlignment.htm) is the reference for approximately 90° rotation and a 60–80° alternative when considering obstructions and flexure. Smaller rotations are more sensitive to the same orientation error; equivalent precision at 60° and 90° is not assumed. Use the default 90° when clearance permits.
 
 Mock-device tests and synthetic WPF previews cover the workflow. Physical mount movement, stopping, and accuracy remain unverified. The plugin provides no collision avoidance or mechanical-limit detection and cannot fully detect incorrect driver stop feedback. Debug recording saves rotation events and reference images in the session.
+
+The Auto RA tooltip names the failing prerequisite, including parked or moving mounts, non-equatorial mode, missing RA/tracking control, unsupported speed, and invalid coordinates. The plugin does not unpark the mount automatically. Captured image previews appear before solving; axis guidance is displayed only after a successful solution.

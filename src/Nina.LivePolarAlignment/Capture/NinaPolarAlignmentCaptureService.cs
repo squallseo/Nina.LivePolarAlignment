@@ -34,6 +34,18 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
         this.telescope = telescope;
     }
 
+    public event Action<BitmapSource>? PreviewAvailable;
+    private BitmapSource? PublishPreview(BitmapSource? preview) {
+        if (preview == null) return null;
+        if (!preview.IsFrozen) {
+            preview = preview.Clone();
+            if (!preview.CanFreeze) return null;
+            preview.Freeze();
+        }
+        PreviewAvailable?.Invoke(preview);
+        return preview;
+    }
+
     public async Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token,
         IProgress<ApplicationStatus>? progress = null) {
         progress ??= SilentProgress.Instance;
@@ -93,6 +105,7 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
                 ? started.AddSeconds(exposureSeconds / 2)
                 : new DateTimeOffset(midpoint.Kind == DateTimeKind.Unspecified
                     ? DateTime.SpecifyKind(midpoint, DateTimeKind.Utc) : midpoint).ToUniversalTime();
+            var preview = PublishPreview(image.Image);
             progress?.Report(new ApplicationStatus { Status = "Solving polar alignment frame" });
             var result = await solver.Solve(image.RawImageData, parameter, progress!, token);
             token.ThrowIfCancellationRequested();
@@ -102,12 +115,6 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
                 || !double.IsFinite(result.PositionAngle) || !double.IsFinite(result.Pixscale) || result.Pixscale <= 0)
                 throw new InvalidOperationException("The solver returned an invalid position or image scale.");
             var dimensions = image.RawImageData.Properties;
-            BitmapSource? preview = image.Image;
-            if (preview != null && !preview.IsFrozen) {
-                preview = preview.Clone();
-                if (preview.CanFreeze) preview.Freeze();
-                else preview = null;
-            }
             return new SolvedPolarFrame(result.Coordinates.RADegrees, result.Coordinates.Dec,
                 result.PositionAngle, result.Pixscale, dimensions.Width, dimensions.Height,
                 result.Flipped, capturedAt, preview, image.RawImageData);

@@ -9,6 +9,34 @@ namespace Nina.LivePolarAlignment.Integration.Tests;
 [Collection("Isolated NINA environment")]
 public sealed class RotationCaptureTests {
     [Theory]
+    [InlineData(AutoRaAvailability.Ready)]
+    [InlineData(AutoRaAvailability.Disconnected)]
+    [InlineData(AutoRaAvailability.Parked)]
+    [InlineData(AutoRaAvailability.Busy)]
+    [InlineData(AutoRaAvailability.NotEquatorial)]
+    [InlineData(AutoRaAvailability.AxisUnsupported)]
+    [InlineData(AutoRaAvailability.TrackingUnsupported)]
+    [InlineData(AutoRaAvailability.RateUnsupported)]
+    [InlineData(AutoRaAvailability.InvalidCoordinates)]
+    public void ReportsSpecificAutoRotationPrerequisite(AutoRaAvailability expected) {
+        var info = new NINA.Equipment.Equipment.MyTelescope.TelescopeInfo {
+            Connected = expected != AutoRaAvailability.Disconnected,
+            AtPark = expected == AutoRaAvailability.Parked,
+            Slewing = expected == AutoRaAvailability.Busy,
+            AlignmentMode = expected == AutoRaAvailability.NotEquatorial ? AlignmentMode.AltAz : AlignmentMode.GermanPolar,
+            CanMovePrimaryAxis = expected != AutoRaAvailability.AxisUnsupported,
+            CanSetTrackingEnabled = expected != AutoRaAvailability.TrackingUnsupported,
+            RightAscension = expected == AutoRaAvailability.InvalidCoordinates ? double.NaN : 1,
+            Declination = 80,
+            PrimaryAxisRates = new List<(double, double)> { expected == AutoRaAvailability.RateUnsupported ? (2d, 4d) : (0d, 8d) }
+        };
+        var mediator = InterfaceStub.Create<ITelescopeMediator>((method, _) => method.Name == "GetInfo" ? info : null);
+        var service = new NinaPolarAlignmentCaptureService(null!, null!, null!, mediator);
+        Assert.Equal(expected, service.AutoRaAvailability);
+        Assert.Equal(expected == AutoRaAvailability.Ready, service.SupportsAutoRaRotation);
+    }
+
+    [Theory]
     [InlineData(false)] [InlineData(true)]
     public async Task AdapterUsesOnlyPrimaryAxisAndCleansUpCancelledMotion(bool reverse) {
         using var cancellation = new CancellationTokenSource();

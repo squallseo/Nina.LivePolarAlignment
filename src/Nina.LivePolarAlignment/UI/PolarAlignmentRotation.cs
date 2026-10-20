@@ -33,7 +33,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public bool CanUseAutoRotation => CanConfigureRotation && captureService.SupportsAutoRaRotation;
     public bool IsRotating => rotationInProgress;
     public string RotationStatus => rotationInProgress ? UiText.Format("AutoRaProgress", rotationProgress, RotationAngleDegrees)
-        : UiText.Get(captureService.SupportsAutoRaRotation ? "AutoRaHint" : "AutoRaUnsupported");
+        : UiText.Get(captureService.AutoRaAvailability == global::Nina.LivePolarAlignment.Capture.AutoRaAvailability.Ready ? "AutoRaHint" : "AutoRa" + captureService.AutoRaAvailability);
 
     private async Task RotateForReferenceAsync(CancellationToken token) {
         if (automaticRotationCompleted) return;

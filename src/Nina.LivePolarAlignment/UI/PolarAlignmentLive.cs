@@ -70,6 +70,7 @@ public sealed partial class PolarAlignmentDockableVM {
 
     private void InitializeLive(IProfileService profileService, IPolarAlignmentCaptureService service) {
         profiles = profileService; captureService = service;
+        captureService.PreviewAvailable += CapturePreviewAvailable;
         UiText.Configure(() => profileService.ActiveProfile.ApplicationSettings?.Culture);
         UiText.Instance.PropertyChanged += LocaleChanged;
         CaptureReferenceCommand = new AsyncRelayCommand(CaptureReferenceAsync, () => EquipmentReady && !liveBusy && session?.IsCalibrated != true);
@@ -91,6 +92,15 @@ public sealed partial class PolarAlignmentDockableVM {
             NotifyWorkflow(); NotifyField();
         };
         freshnessTimer.Start();
+    }
+    private void CapturePreviewAvailable(BitmapSource preview) {
+        if (!freshnessTimer.Dispatcher.CheckAccess()) {
+            freshnessTimer.Dispatcher.BeginInvoke(() => CapturePreviewAvailable(preview));
+            return;
+        }
+        if (fieldDisposed || !liveBusy || IsStopping) return;
+        livePreview = preview; guidance = null;
+        liveStatus = "SolvingFrame"; NotifyLive();
     }
     private void ResetLive() {
         ResetDriftEvidence();
@@ -234,5 +244,5 @@ public sealed partial class PolarAlignmentDockableVM {
         (ResetLiveCommand as IRelayCommand)?.NotifyCanExecuteChanged();
     }
     private void LocaleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => NotifyLive();
-    public void Dispose() { fieldDisposed = true; RequestStopLive(); freshnessTimer.Stop(); UiText.Instance.PropertyChanged -= LocaleChanged; if (!liveBusy && !fieldSaving) EndFieldSession("disposed"); }
+    public void Dispose() { captureService.PreviewAvailable -= CapturePreviewAvailable; fieldDisposed = true; RequestStopLive(); freshnessTimer.Stop(); UiText.Instance.PropertyChanged -= LocaleChanged; if (!liveBusy && !fieldSaving) EndFieldSession("disposed"); }
 }
