@@ -1,4 +1,4 @@
-﻿# Standalone UI preview
+# Standalone UI preview
 
 This runs the production WPF view and workflow with an explicitly synthetic capture
 service. It never connects a camera or mount. The NINA profile/database context is
@@ -18,7 +18,7 @@ Its top buttons switch between the first
 reference, RA rotation and adjustment stages. The production buttons also work;
 stop/reset marks old guidance stale. Sample exposure/processing times are artificial.
 
-To verify workflow states and render narrow, 1280횞800 and 1920횞1080 layouts:
+To verify workflow states and render narrow, 1280x800 and 1920x1080 layouts:
 
 ```powershell
 dotnet run --project tools/Nina.LivePolarAlignment.Preview -c Release -- --render-to artifacts/ui-preview

@@ -51,6 +51,10 @@ Packages are generated in `artifacts/packages/`. Extract the ZIP, close N.I.N.A.
 
 Integration tests and the UI preview require native libraries from an installed N.I.N.A. distribution. [Integration test setup](tests/Nina.LivePolarAlignment.Integration.Tests/README.md) · [Synthetic UI preview](tools/Nina.LivePolarAlignment.Preview/README.md)
 
+## References
+
+The primary workflow reference is [SharpCap Polar Alignment](https://docs.sharpcap.co.uk/4.1/9_PolarAlignment.htm). The RA axis estimator uses this project's relative 3D orientation geometry. Astronomical coordinate conversion uses N.I.N.A.'s [IAU SOFA](https://www.iausofa.org/current-software) path; the optional drift check follows the observing procedure in the [PHD2 drift alignment tutorial](https://openphdguiding.org/man/Tutorials.htm). See [polar alignment logic and references](docs/polar-alignment.md) for the formulas, source mapping, and scope of each reference.
+
 ## Implementation and usage guides
 
 - [Polar alignment logic and references](docs/polar-alignment.md)

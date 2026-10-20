@@ -1,52 +1,63 @@
-# 극축 정렬 로직과 출처
+# Polar alignment logic and references
 
-현재 구현의 계산 경로를 정리합니다. 수학 코어는 `src/Nina.LivePolarAlignment.Core/`, 촬영·좌표 변환·세션은 `src/Nina.LivePolarAlignment/Capture/`에 있습니다.
+This document describes the implemented calculation path. Geometry lives in `src/Nina.LivePolarAlignment.Core/`; capture, coordinate conversion, and session state live in `src/Nina.LivePolarAlignment/Capture/`.
 
-## 촬영과 좌표 변환
+## Core references and their roles
 
-`NinaPolarAlignmentCaptureService.CaptureAndSolveAsync`는 N.I.N.A. 카메라·이미징 mediator와 설정된 plate solver를 사용합니다. 중심 적경·적위, 영상 회전각, 반전, 픽셀 스케일, 영상 크기와 노출 중간 시각을 하나의 프레임으로 전달합니다. 촬영 점유는 종료·취소 시 해제합니다.
+| Reference | Role in this implementation |
+| --- | --- |
+| [SharpCap 4.1 Polar Alignment](https://docs.sharpcap.co.uk/4.1/9_PolarAlignment.htm) | Primary behavioral reference: solve two images separated by RA rotation, identify the RA axis and celestial pole, then guide altitude and azimuth adjustments using repeated solved images. |
+| [IAU SOFA](https://www.iausofa.org/current-software) through N.I.N.A. | Runtime astronomical coordinate conversion at each exposure's timestamp. The session calls N.I.N.A.'s `SOFA.CelestialToTopocentric`; its Julian-date helper uses NOVAS. |
+| [PHD2 drift alignment tutorial](https://openphdguiding.org/man/Tutorials.htm) | Observing procedure for the optional, separate two-field declination-drift verification. |
+| [N.I.N.A. imaging documentation](https://nighttime-imaging.eu/docs/master/site/tabs/imaging/) and [plugin template](https://github.com/isbeorn/nina.plugin.template) | Host capture, LiveView, and plugin integration. |
 
-`PolarAlignmentSession.ToHorizon`은 J2000 영상의 중심과 접선 방향을 노출 중간 UTC, 관측지 위도·경도와 N.I.N.A.의 SOFA 변환으로 수평 좌표계에 옮깁니다. 방향 벡터는 동·북·천정(ENU) 순서입니다. 영상 자세는 `FromEquatorial`에서 구성하고, 반전은 영상 오른쪽 축에 반영합니다. DUT1이 없거나 유효하지 않으면 0초를 사용하며 `UsedApproximateEarthRotation`에 표시합니다. 현재 대기 굴절과 관측지 고도는 적용하지 않습니다.
+SharpCap is the main reference for the alignment workflow. The axis estimator itself is this project's relative 3D orientation calculation in [PolarAlignmentGeometry.cs](../src/Nina.LivePolarAlignment.Core/PolarAlignmentGeometry.cs). The repository does not attribute that estimator to a specific research paper. The equations below document our implementation; the SharpCap user guide is not a specification of its internal formulas. PHD2 supplies the drift-observation procedure, while the plate-solution regression is implemented in our own `DriftValidation` core.
 
-## 두 위치에서 적경축 추정
+## Capture and coordinate conversion
 
-`PolarAlignmentSession.AddCalibration`은 RA만 회전한 두 영상의 자세를 비교합니다. 고도·방위각, Dec와 카메라 장착은 고정해야 합니다.
+`NinaPolarAlignmentCaptureService.CaptureAndSolveAsync` uses N.I.N.A.'s camera and imaging mediators and the configured plate solver. Each frame carries center RA/Dec, position angle, parity, pixel scale, image dimensions, and exposure midpoint. Capture ownership is released on completion or cancellation.
 
-`PolarAlignmentGeometry.EstimateAxis(SkyOrientation, SkyOrientation)`는 두 정규 직교 기저의 대응 축 외적을 합산해 상대 회전축을 구합니다. 회전각은 기저 내적 합으로 계산하며, 영상 반전 변경과 불안정한 회전을 거부합니다. 축의 부호는 관측 반구의 극을 향하도록 선택합니다.
+`PolarAlignmentSession.ToHorizon` transforms the J2000 center and tangent directions with N.I.N.A.'s SOFA path using exposure-midpoint UTC and site latitude/longitude. Direction vectors use east, north, up (ENU) order. `FromEquatorial` constructs the image basis, with parity applied to the image-right axis. Missing or invalid DUT1 falls back to zero seconds and is flagged by `UsedApproximateEarthRotation`. Atmospheric refraction and site elevation are not currently applied.
 
-세션은 실제 회전량 30° 이상과 천구극 15° 이내를 요구합니다. 권장 회전량은 60–90°입니다. 중심 방향 두 개만으로 축을 유일하게 결정하지 않으며 영상 회전각을 함께 사용합니다. 세 방향 이상을 평면 적합하는 별도 코어 오버로드도 있지만 현재 두 위치 촬영 흐름에는 사용하지 않습니다.
+## Estimating the RA axis from two positions
 
-## 극축 오차와 이미지 표시
+`PolarAlignmentSession.AddCalibration` compares two image orientations separated by RA-only rotation. Altitude, azimuth, Dec, and camera mounting must remain fixed.
 
-`CalculateError`는 단위 적경축 `a = (E, N, U)`를 관측 반구의 극 벡터 `p`와 비교합니다. 위도 `φ`에서 북반구의 극은 `(0, cos(φ), sin(φ))`이며 남반구에서는 그 반대 방향을 사용합니다. 내부 각도는 라디안, 반환값은 각분입니다.
+`PolarAlignmentGeometry.EstimateAxis(SkyOrientation, SkyOrientation)` normalizes each basis and checks orthogonality and matching parity. For corresponding basis directions `u_i` and `v_i`, it computes:
 
 ```text
-전체 오차 = atan2(length(cross(a, p)), dot(a, p))
-고도 오차 = asin(U) - abs(φ)
-방위각 오차 = wrapToPi(atan2(E, N) - atan2(p.E, p.N))
+cos(theta) = clamp((sum(dot(u_i, v_i)) - 1) / 2, -1, 1)
+axis = normalize(sum(cross(u_i, v_i)))
+conditioning = sin(theta / 2)
 ```
 
-고도 오차 양수는 축이 너무 높은 상태입니다. 방위각은 북쪽에서 동쪽으로 증가하며 목표 극에 대한 부호 있는 차이입니다. 두 값은 현재 축의 오차이며 볼트 회전 명령이 아닙니다. 방위각 차이를 고도 오차와 단순 제곱합해 전체 오차로 사용하지 않습니다.
+The core rejects rotations below 1° or above 179°. The session requires at least 30° of measured rotation and calibration within 15° of the visible pole; 60–90° is recommended. The axis sign is selected to point toward that pole.
 
-`ProjectDirection`은 gnomonic 투영으로 축과 극을 영상에 표시합니다. 초점거리 픽셀값은 `206264.806 / 픽셀 스케일(각초/픽셀)`이며, 영상 Y축은 아래쪽으로 증가합니다. 전방 반구 밖의 방향은 투영하지 않습니다.
+Two center directions alone do not uniquely determine the axis: image orientation is also required. A separate core overload fits a plane to three or more boresight directions, but the current two-position capture workflow does not use it.
 
-## 반복 측정과 검증
+## Polar error and image projection
 
-`GetGuidance`는 두 번째 기준 자세에서 현재 촬영 자세로 `TransformDirection`을 적용해 축을 갱신합니다. 각 프레임의 좌표 변환에 촬영 시각을 사용합니다. RA/Dec 이동이나 카메라 재장착은 기준 모델을 무효화하므로 재보정해야 합니다. 영상 크기·반전 변경, 2%를 넘는 스케일 변경과 역순 시각을 거부합니다.
+`CalculateError` compares a normalized mount axis `a = (E, N, U)` with the visible celestial pole `p`. At latitude `phi`, the north pole is `(0, cos(phi), sin(phi))`; the south pole is its opposite. The axis is oriented toward the visible pole before calculating errors. Internal angles are radians; returned errors are arcminutes.
 
-현재 조정 프레임은 매번 전체 plate solve를 수행합니다. 스트리밍은 용량 1의 `LatestFrameBuffer`로 오래된 프레임을 버리고 촬영·해석을 겹칩니다. `FrameRegistration`의 빠른 별 정합은 코어와 테스트만 있으며 실시간 촬영 경로에는 연결하지 않았습니다.
+```text
+total error = atan2(length(cross(a, p)), dot(a, p))
+altitude error = asin(clamp(U, -1, 1)) - abs(phi)
+azimuth error = wrapToPi(atan2(E, N) - atan2(p.E, p.N))
+```
 
-`DriftValidation`은 두 위치의 Dec 변화율과 시간각으로 작은 극축 오차를 추정합니다. 재측정은 새 RA 구간에서 기준 두 장을 다시 구하고, Stability는 정지 상태 20프레임의 표본 표준편차를 계산합니다. 반복성과 절대 정확도를 구분합니다.
+Positive altitude error means the axis is too high. Azimuth increases from north toward east, and its error is the signed offset from the target pole. These are measured offsets, not bolt-turn commands. Total error is calculated from the vectors rather than a simple quadratic sum of altitude and azimuth offsets.
 
-- `tests/Nina.LivePolarAlignment.Core.Tests/`: 축 추정, 반구·반전·투영, 영상 정합, RA 회전, 최신 프레임 버퍼와 드리프트 계산.
-- `tests/Nina.LivePolarAlignment.Integration.Tests/`: 실제 N.I.N.A. SOFA/NOVAS로 만든 독립 좌표 입력, 시간·기준 변경과 촬영 상태 경계.
-- `tools/Nina.LivePolarAlignment.Preview/`: 합성 입력으로 실제 WPF 화면과 워크플로 검증.
-- 실제 장비의 축 정확도·처짐·갱신 시간·회전 정지 동작은 별도 현장 검증 대상입니다.
+`ProjectDirection` uses a gnomonic projection to display the axis and pole. Focal length in pixels is `206264.806 / pixel scale in arcseconds per pixel`. Image Y increases downward. Directions outside the forward hemisphere are not projected.
 
-## 참고 출처
+## Repeated measurements and verification
 
-- [IAU SOFA 공식 라이브러리와 문서](https://www.iausofa.org/current-software): 천문 좌표 및 관측 시각 변환의 기준. 런타임에서는 N.I.N.A.의 SOFA 래퍼를 사용합니다.
-- [SharpCap 공식 Polar Alignment 설명](https://docs.sharpcap.co.uk/4.1/9_PolarAlignment.htm): 두 기준 촬영, RA 회전량과 영상 기반 조정 흐름 참고.
-- [PHD2 Drift Alignment 안내](https://openphdguiding.org/man/Tutorials.htm): 자오선·동서쪽 두 위치에서 Dec 드리프트를 관측하는 절차 참고.
-- [N.I.N.A. 공식 이미징 문서](https://nighttime-imaging.eu/docs/master/site/tabs/imaging/): 촬영과 카메라별 LiveView 동작 참고.
-- [N.I.N.A. 플러그인 템플릿](https://github.com/isbeorn/nina.plugin.template): 플러그인 확장 구조 참고. 실제 대상 API 버전은 프로젝트의 `.csproj`를 기준으로 합니다.
+`GetGuidance` uses `TransformDirection` to carry the calibrated axis from the second reference orientation into the current solved orientation. Every coordinate conversion uses the frame timestamp. RA/Dec movement or camera remounting requires recalibration. The session rejects changed dimensions or parity, scale changes above 2%, and timestamps preceding the reference.
+
+Every adjustment frame currently receives a full plate solve. Streaming overlaps acquisition and processing with a capacity-one `LatestFrameBuffer` that discards superseded frames. Fast star registration exists in `FrameRegistration` and its tests but is not connected to the live capture path.
+
+`DriftValidation` estimates small polar errors from declination slopes and hour angles in two fields. Remeasurement captures a fresh reference pair in a new RA interval. Stability reports sample standard deviation over 20 stationary frames. Repeatability and absolute accuracy are separate properties.
+
+- `tests/Nina.LivePolarAlignment.Core.Tests/`: axis estimation, hemispheres, parity, projection, registration, RA rotation, frame buffering, and drift calculations.
+- `tests/Nina.LivePolarAlignment.Integration.Tests/`: independent coordinate inputs through actual N.I.N.A. SOFA/NOVAS libraries, timestamps, calibration changes, and capture-state boundaries.
+- `tools/Nina.LivePolarAlignment.Preview/`: production WPF views and workflow with synthetic input.
+- Physical axis accuracy, flexure, update cadence, and mount stopping behavior require field validation.

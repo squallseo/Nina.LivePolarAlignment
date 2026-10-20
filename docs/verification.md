@@ -1,31 +1,31 @@
-# 정렬 후 재측정과 Stability
+# Alignment remeasurement and stability
 
-0.1.0.9부터 `Verify alignment`에서 새 기준 두 장으로 극축 오차를 다시 계산할 수 있습니다. **Dec 이동은 하지 않습니다.** 고도·방위각 볼트와 카메라를 고정하고 RA만 움직입니다.
+`Verify alignment` recalculates polar error from a fresh reference pair. Keep the altitude and azimuth bolts, Dec, and camera mounting fixed; only RA is rotated.
 
-## 사용 흐름
+## Workflow
 
-1. 기존 기준 두 장으로 정렬하고, 실시간 측정을 보며 볼트를 조정합니다.
-2. Stop으로 촬영을 멈춥니다. 볼트·Dec·카메라는 그대로 유지합니다.
-3. `Verify alignment`를 펼칩니다. 회전 방향을 선택하고 **현재 위치에서 선택한 추가 60–90°**의 경로와 정지 여유를 확인합니다. 첫 보정 때 확인했던 경로와 다릅니다.
-4. `Verify with auto RA rotation`을 누릅니다. 자동 RA 회전을 지원하는 연결·주차 해제된 적도의가 필요합니다. 지원되지 않으면 Reset 후 기존 수동 촬영 두 장으로 별도 재측정하세요.
-5. 현재 위치에서 새 첫 기준을 촬영합니다. 이전 보정 모델로 이 영상의 잔여 오차도 계산해 비교 기준으로 저장합니다.
-6. RA만 선택한 60–90° 회전하고 정지·안정 대기 후 새 두 번째 기준을 촬영합니다. 새 두 영상만으로 회전축과 잔여 오차를 다시 계산합니다.
-7. 이전 모델의 추정값과 새 재측정값, Alt/Az 차이를 확인합니다. 성공한 새 기준은 이후 실시간 조정에 사용됩니다. 자동 복귀는 하지 않습니다.
+1. Complete calibration and adjust the bolts while watching live measurements.
+2. Stop capture. Keep the bolts, Dec, and camera fixed.
+3. Expand `Verify alignment`, select the rotation direction, and check clearance for an additional 60–90° rotation from the current position, including stopping margin. This differs from the original calibration path.
+4. Select `Verify with auto RA rotation`. A connected, unparked equatorial mount with automatic RA support is required. Otherwise reset and use two manual reference captures for a separate remeasurement.
+5. Capture a new first reference at the current position. The previous calibration model also measures this image to establish the comparison value.
+6. Rotate only RA by the selected 60–90°, verify the stop, wait for settling, and capture the new second reference. Estimate the axis and residual error using only the new pair.
+7. Compare the previous estimate, remeasured error, and Alt/Az differences. Successful calibration replaces the references used for live adjustment. There is no automatic return movement.
 
-재측정 실패·취소 시 불완전한 기준과 결과를 폐기합니다. 다시 기준을 촬영해야 합니다. 이동·정지 처리와 제한은 [자동 RA 회전 안내](auto-ra-rotation.md)를 따릅니다. 실제 적도의에서의 정확도와 동작은 검증 전입니다.
+Failure or cancellation discards incomplete references and results. Capture new references before continuing. Movement handling and limits follow [automatic RA rotation](auto-ra-rotation.md). Physical mount accuracy and behavior remain unverified.
 
-## Stability는 언제 자동인가?
+## When stability starts automatically
 
-- **일반 실시간 조정:** 자동 시작하지 않습니다. 볼트를 고정한 뒤 `Field validation → Stability`로 직접 시작하세요.
-- **재측정:** `Then collect 20 stationary frames`가 기본 켜짐입니다. 재측정 성공 후 새 프레임 20개를 자동 촬영·해석합니다. 이 시간에는 볼트·RA·Dec·카메라를 움직이지 마세요. 옵션을 끄면 두 기준 영상의 비교까지만 수행합니다.
-- 디버그 기록을 꺼도 재측정과 Stability 계산은 사용할 수 있습니다. 파일로 보관하려면 기준 촬영 전에 플러그인 옵션의 디버그 기록을 켜세요.
+- **Normal live adjustment:** start `Field validation → Stability` manually after fixing the bolts.
+- **Remeasurement:** `Then collect 20 stationary frames` defaults on. After successful remeasurement, 20 new frames are captured and solved automatically. Keep the bolts, RA, Dec, and camera stationary. Turning the option off limits the operation to the reference-pair comparison.
+- Remeasurement and stability work with debug recording off. Enable recording before reference capture to retain files.
 
-Stability는 Alt/Az의 표본 표준편차(sigma, arcsec)를 보여줍니다. **측정 흔들림이며 절대 정확도가 아닙니다.** 중단·오래된 측정·중복 프레임 시 진행 중인 검사를 취소합니다. 수집에는 프레임마다 노출과 plate solve 시간이 필요합니다.
+Stability reports the sample standard deviation of Alt/Az in arcseconds. It measures variation rather than absolute accuracy. Stopping, stale measurements, or duplicate frames cancel an in-progress check. Each sample requires exposure and plate-solving time.
 
-## 결과 해석과 기록
+## Interpreting and recording results
 
-새 RA 구간의 재측정은 회전 구간에 따른 오차, 기준 영상의 문제, 광학계의 흔들림 등을 비교하는 데 도움이 됩니다. 같은 solver와 선형 WCS·기하 모델을 사용하므로 공통 편향은 남을 수 있습니다. 작은 차이나 작은 sigma만으로 PoleMaster 수준의 정확도를 인증하지 않습니다. 독립 검증이 필요하면 별의 drift 등 다른 방법과 비교하세요.
+Remeasuring in a new RA interval helps compare rotation-dependent errors, reference-image problems, and optical movement. The same solver and linear WCS geometry can retain shared biases. Small differences or low sigma do not establish absolute accuracy. Use a separate method, such as drift observation, for independent verification.
 
-`Previous`는 재측정 직전 새 첫 영상에 이전 모델을 적용한 값이고, `remeasured`는 새 영상 두 장으로 계산한 값입니다. Alt/Az 차이는 새 값에서 이전 값을 뺀 것입니다. 이후 20프레임의 흔들림과는 별도 결과입니다. 합성 미리보기의 숫자는 실제 장비 정확도 근거가 아닙니다.
+`Previous` applies the old model to the new first image immediately before remeasurement. `Remeasured` uses the new pair. Alt/Az differences are new minus previous values; they are separate from the following 20-frame variation. Synthetic preview values do not demonstrate physical equipment accuracy.
 
-디버그 기록을 켜면 기존 세션을 닫고 재측정용 별도 폴더를 만듭니다. 새 기준 원본, 이전 폴더 경로, 비교값, RA 회전 이벤트, 선택한 Stability 결과를 남깁니다. 저장된 새 WCS는 오프라인 리뷰 도구로 재계산할 수 있습니다.
+With debug recording enabled, the plugin closes the previous session and opens a separate remeasurement folder. It records the new references, previous folder path, comparison, RA events, and optional stability result. Saved WCS data can be recalculated with the offline review tool.

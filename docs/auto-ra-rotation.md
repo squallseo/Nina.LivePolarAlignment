@@ -1,25 +1,25 @@
-# 자동 RA 회전
+# Automatic RA rotation
 
-`Auto RA rotation`은 첫 기준 촬영 → RA 회전 → 정지 확인·안정 대기 → 두 번째 기준 촬영을 수행합니다. 기본 ON이며 미지원 장비에서는 OFF로 전환해 수동 회전을 안내합니다. 이후 고도·방위각 볼트는 사람이 조정합니다.
+`Auto RA rotation` performs the first reference capture, RA rotation, verified stop and settling, then the second reference capture. It defaults on. Unsupported equipment switches the option off and falls back to manual rotation. The user adjusts altitude and azimuth bolts afterward.
 
-## 설정과 전제
+## Settings and prerequisites
 
-- 카메라, solver, 관측지, 초점거리와 픽셀 크기를 설정하고 관측 반구의 천구극 근처를 향하게 합니다.
-- 연결·주차 해제된 적도의가 필요합니다. RA축 `MoveAxis`, 추적 ON/OFF 제어와 0.1–1°/s 범위의 지원 속도가 있어야 합니다. 다른 시퀀스·가이딩·수동 이동은 중단합니다.
-- 회전각은 기본 90°이며 60°, 70°, 80°, 90°를 선택합니다. 재측정에도 같은 각도를 사용합니다.
-- `Reverse RA direction`은 기본 ON이며 N.I.N.A. 수동 이동 W 버튼과 같은 음수 RA 명령입니다. OFF는 E 버튼과 같은 양수 명령입니다. N.I.N.A. `PrimaryReversed`도 적용됩니다. W/E 아이콘은 명령 방향이며 영상의 시계·반시계 방향이나 실시간 엔코더가 아닙니다.
-- 시작 전 선택한 방향의 회전 범위와 정지 여유에 경통·삼각대·케이블 간섭이 없는지 확인합니다. 재측정은 현재 위치에서 추가로 회전하므로 경로를 다시 확인합니다.
+- Configure the camera, solver, site, focal length, and pixel size, then point near the visible celestial pole.
+- A connected, unparked equatorial mount must support RA `MoveAxis`, tracking on/off control, and a speed within 0.1–1°/s. Stop other sequences, guiding, and manual movement.
+- Rotation defaults to 90°. Available angles are 60°, 70°, 80°, and 90°; remeasurement uses the same setting.
+- `Reverse RA direction` defaults on and sends the same negative RA command as N.I.N.A.'s manual W button. Off uses the positive command of its E button. N.I.N.A.'s `PrimaryReversed` setting also applies. W/E icons indicate command direction, not image clockwise/counterclockwise motion or live encoder feedback.
+- Check clearance for the selected direction, full rotation, and stopping margin, including the telescope, tripod, and cables. Remeasurement adds another rotation from the current position, so check that path again.
 
-## 이동·정지 처리
+## Movement and stopping
 
-RA축만 움직이며 Dec 이동, GoTo, sync, 자동 주차 해제나 자동 복귀는 하지 않습니다. 추적을 잠시 끄고 지원 속도 중 최대 1°/s를 사용합니다. RA 좌표의 24시간 경계를 풀어 누적 회전량을 계산하고 선택한 각도에서 정지합니다. 실제 축 추정에는 두 영상에서 측정한 회전량을 사용합니다.
+Only RA is moved. The plugin does not move Dec, issue GoTo or sync, unpark automatically, or return to the starting position. It temporarily disables tracking and selects a supported speed no higher than 1°/s. RA coordinates are unwrapped across the 24-hour boundary to accumulate rotation. Axis estimation uses the rotation measured from the two images.
 
-`Stop` 또는 패널 닫기·숨기기는 취소를 요청합니다. 0속도 명령 후 정지 피드백을 확인하고 원래 추적 상태를 복원합니다. 이어서 2초 안정 대기 후 두 번째 촬영을 합니다. 정지 실패 시 abort를 시도하고 오류를 표시하며 확인 없이 추적을 다시 켜지 않습니다.
+`Stop`, closing, or hiding the panel requests cancellation. The plugin sends zero speed, checks stop feedback, and restores the original tracking state. It waits two seconds before the second capture. If stopping fails, it attempts an abort, reports the error, and does not re-enable tracking without confirmation from the driver.
 
-6초 동안 이동 응답이 없거나 전체 제한 시간을 넘으면 중단합니다. 연결·Dec·pier side 변화와 비정상 좌표 변화도 중단 조건입니다. 회전 실패·취소 시 기준을 폐기합니다. 회전을 마친 뒤 두 번째 solve만 실패했다면 재촬영에서 회전을 반복하지 않습니다.
+No movement response for six seconds, or exceeding the overall timeout, stops the operation. Connection, Dec, pier-side changes, and abnormal coordinate changes also stop it. Failed or cancelled rotation discards calibration. If rotation completes but only the second solve fails, recapturing does not repeat the rotation.
 
-## 회전량과 검증
+## Rotation range and validation
 
-[공식 Polar Alignment 안내](https://docs.sharpcap.co.uk/4.1/9_PolarAlignment.htm)의 약 90° 회전과 장애물·처짐을 고려한 60–80° 대안을 참고했습니다. 작은 회전은 같은 자세 측정 오차에 더 민감하며, 60°와 90°의 정밀도가 같다고 가정하지 않습니다. 제약이 없으면 기본 90°를 사용합니다.
+The [SharpCap Polar Alignment guide](https://docs.sharpcap.co.uk/4.1/9_PolarAlignment.htm) is the reference for approximately 90° rotation and a 60–80° alternative when considering obstructions and flexure. Smaller rotations are more sensitive to the same orientation error; equivalent precision at 60° and 90° is not assumed. Use the default 90° when clearance permits.
 
-가짜 장비 테스트와 합성 WPF 미리보기를 제공하지만 실제 적도의의 이동·정지·정확도는 검증 전입니다. 충돌 회피나 기계 한계 검출은 제공하지 않으며 드라이버의 잘못된 정지 피드백도 완전히 검출할 수 없습니다. 디버그 기록을 켜면 회전 이벤트와 기준 영상을 세션에 저장합니다.
+Mock-device tests and synthetic WPF previews cover the workflow. Physical mount movement, stopping, and accuracy remain unverified. The plugin provides no collision avoidance or mechanical-limit detection and cannot fully detect incorrect driver stop feedback. Debug recording saves rotation events and reference images in the session.
