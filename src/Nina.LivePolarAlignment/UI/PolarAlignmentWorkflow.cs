@@ -39,7 +39,8 @@ public sealed partial class PolarAlignmentDockableVM {
         _ => UiText.Get("Workflow3")
     };
     public bool IsStopping => liveBusy && liveCancellation?.IsCancellationRequested == true;
-    public string ActionButtonLabel => !liveBusy ? UiText.Get(IndependentDriftEnabled ? (firstDrift == null ? "ActionStart" : "ActionContinue")
+    public string ActionButtonLabel => !liveBusy && !IndependentDriftEnabled && AutoRaRotation && HasOperationError ? UiText.Get("ActionRetry")
+        : !liveBusy ? UiText.Get(IndependentDriftEnabled ? (firstDrift == null ? "ActionStart" : "ActionContinue")
         : WorkflowStep == 0 ? "ActionStart" : WorkflowStep == 1 ? "ActionContinue" : "ActionResume") : IsStopping ? UiText.Get("ActionStopping")
         : UiText.Get(IsRotating || WorkflowStep < 2 || driftInProgress ? "ActionCancel" : "ActionStop");
     public string ActionButtonHint => liveBusy ? UiText.Get("ActionStopHint") : PrimaryActionHint;

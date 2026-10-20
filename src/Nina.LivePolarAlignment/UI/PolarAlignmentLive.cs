@@ -105,7 +105,7 @@ public sealed partial class PolarAlignmentDockableVM {
         if (fieldDisposed || !liveBusy || IsStopping) return;
         // A solved image and its overlay are one display unit. Keep that pair while
         // the next frame is being solved; old geometry must not be drawn on new pixels.
-        if (!IndependentDriftEnabled && session?.IsCalibrated == true && guidance != null && livePreview != null) {
+        if (!IndependentDriftEnabled && guidance != null && livePreview != null) {
             liveStatus = "SolvingFrame"; NotifyLive();
             return;
         }
@@ -150,6 +150,8 @@ public sealed partial class PolarAlignmentDockableVM {
     private async Task<SolvedPolarFrame> CaptureReferenceFrameAsync(CancellationToken token, bool rotateDuringSolve = false) {
         EnsureFieldSession();
         RecordFieldEvent("reference_start", new { exposureSeconds = ExposureSeconds });
+        if (calibrationSamples == 0)
+            NINA.Core.Utility.Logger.Info($"Polar workflow: first reference requested; angle={RotationAngleDegrees}");
         if (session == null) {
             var site = profiles.ActiveProfile.AstrometrySettings;
             calibrationLatitude = site.Latitude; calibrationLongitude = site.Longitude;

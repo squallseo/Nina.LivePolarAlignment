@@ -100,6 +100,16 @@ try {
         if (index++ < 2) {
             session.AddCalibration(frame);
             Console.WriteLine($"Reference {index}: solved; rotation={session.RotationDegrees:0.000} deg");
+            if (index == 2) {
+                double target = spec.TryGetProperty("rotationAngleDegrees", out var angle) ? angle.GetDouble() : 90;
+                if (Math.Abs(session.RotationDegrees!.Value - target) > .1)
+                    throw new InvalidOperationException("Recovered rotation differs from selected dataset angle");
+                var initialError = session.Measure(frame);
+                var expectedError = expected.GetProperty("expectedTotalArcminutes").GetDouble();
+                if (Math.Abs(initialError.TotalArcminutes - expectedError) > .15)
+                    throw new InvalidOperationException("Reference-pair axis error differs from renderer by more than 9 arcseconds");
+                Console.WriteLine($"Reference pair error: actual={initialError.TotalArcminutes:0.000}, expected={expectedError:0.000} arcmin");
+            }
         } else {
             var error = session.Measure(frame);
             var expectedTotal = expected.GetProperty("expectedTotalArcminutes").GetDouble();

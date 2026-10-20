@@ -443,4 +443,5 @@
   <data name="AutoRaUnparkHint" xml:space="preserve"><value>Start will unpark the mount, verify readiness, then capture the references and rotate RA.</value></data>
   <data name="ReferenceFirstCapture" xml:space="preserve"><value>Capturing the first reference…</value></data>
   <data name="ReferenceSecondCapture" xml:space="preserve"><value>Capturing the rotated reference…</value></data>
+  <data name="ActionRetry" xml:space="preserve"><value>Retry</value></data>
 </root>

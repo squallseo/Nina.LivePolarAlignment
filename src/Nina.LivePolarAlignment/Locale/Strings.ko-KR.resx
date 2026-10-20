@@ -443,4 +443,5 @@
   <data name="AutoRaUnparkHint" xml:space="preserve"><value>Start를 누르면 적도의를 Unpark하고 상태를 확인한 후 기준 촬영과 RA 회전을 진행합니다.</value></data>
   <data name="ReferenceFirstCapture" xml:space="preserve"><value>첫 번째 기준 이미지 촬영 중…</value></data>
   <data name="ReferenceSecondCapture" xml:space="preserve"><value>회전 후 두 번째 기준 이미지 촬영 중…</value></data>
+  <data name="ActionRetry" xml:space="preserve"><value>재시도</value></data>
 </root>

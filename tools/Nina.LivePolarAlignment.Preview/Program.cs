@@ -53,7 +53,8 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
     public static bool UnsupportedStream, StreamCleanupFailure;
     public bool SupportsStreaming => !UnsupportedStream;
     public bool IsSynthetic => true;
-    public static bool UnsupportedAuto, FailRotation;
+    public static bool UnsupportedAuto, FailRotation, FailSecondSolveOnce;
+    public static Action? AfterPreview;
     public bool SupportsAutoRaRotation => MountConnected && !UnsupportedAuto && AutoUnavailable == null && !Parked;
     public static int Rotations;
     public static double LastRotationAngle;
@@ -104,7 +105,12 @@ internal sealed class SampleCapture : IPolarAlignmentCaptureService {
         }
         await Task.Delay(150, token);
         PreviewAvailable?.Invoke(Image);
+        AfterPreview?.Invoke();
         await Task.Delay(500, token);
+        if (Step() == 1 && FailSecondSolveOnce) {
+            FailSecondSolveOnce = false;
+            throw new InvalidOperationException("Synthetic second-reference solve failure");
+        }
         int step = Step();
         if (step == 0) rotatedSinceReference = false;
         if (step == 1 && !rotatedSinceReference) { orientation += 72; rotatedSinceReference = true; }
@@ -343,6 +349,43 @@ internal static class Program {
         SampleCapture.StreamCleanupFailure = false;
         if (!current.HasOperationError || current.IsWorking) throw new InvalidOperationException("Camera restoration failure must remain visible");
         current.Dispose();
+        foreach (var angle in new[] { 60, 70, 80, 90 }) {
+            foreach (var reverse in new[] { false, true }) {
+                await SelectScene(0);
+                current!.AutoRaRotation = true; current.RotationAngleDegrees = angle; current.ReverseRaRotation = reverse;
+                int rotationsBefore = SampleCapture.Rotations;
+                bool sawSecondPreview = false;
+                SampleCapture.AfterPreview = () => {
+                    if (current.WorkflowStep != 1) return;
+                    sawSecondPreview = true;
+                    if (current.FieldGuidance?.CelestialPole == null || !current.HasCurrentFieldGuidance)
+                        throw new InvalidOperationException("Reference rings disappeared during second solve at " + angle);
+                };
+                var sequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
+                try {
+                    for (int i = 0; i < 500 && !current.HasLiveMeasurement && !sequence.IsCompleted; i++) {
+                        if (current.ActionButtonLabel == UiText.Get("ActionContinue"))
+                            throw new InvalidOperationException("Automatic workflow exposed Continue at " + angle);
+                        await Task.Delay(15);
+                    }
+                    if (!current.HasLiveMeasurement || current.HasOperationError || !sawSecondPreview
+                        || current.WorkflowStep != 2 || SampleCapture.Rotations != rotationsBefore + 1 || SampleCapture.LastRotationAngle != angle)
+                        throw new InvalidOperationException("One-Start angle/direction matrix failed at " + angle + "/" + reverse + ": " + current.OperationError);
+                    Save(Path.Combine(directory, $"ui-angle-{angle}-{reverse}.png"), 1280, 800);
+                } finally { SampleCapture.AfterPreview = null; current.StopLiveCommand.Execute(null); await sequence; }
+            }
+        }
+        await SelectScene(0); current!.AutoRaRotation = true; current.RotationAngleDegrees = 60;
+        SampleCapture.FailSecondSolveOnce = true;
+        int rotationsBeforeRetry = SampleCapture.Rotations;
+        await ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
+        if (!current.HasOperationError || current.ActionButtonLabel != UiText.Get("ActionRetry") || current.WorkflowStep != 1)
+            throw new InvalidOperationException("Automatic second-solve failure must show Retry, not Continue");
+        var retry = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
+        for (int i = 0; i < 300 && !current.HasLiveMeasurement && !retry.IsCompleted; i++) await Task.Delay(15);
+        if (!current.HasLiveMeasurement || SampleCapture.Rotations != rotationsBeforeRetry + 1)
+            throw new InvalidOperationException("Second-solve Retry must reach measurement without repeating RA rotation");
+        current.StopLiveCommand.Execute(null); await retry;
         SampleCapture.Rotations = 0;
         SampleCapture.UnsupportedAuto = true;
         await SelectScene(0); current!.AutoRaRotation = true;

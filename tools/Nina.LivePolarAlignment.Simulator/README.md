@@ -60,14 +60,22 @@ The directory camera alone enables Start for manual image replay. A mount connec
 
 Use the official `astap_cli.exe` for windowless solving. ASTAP documents that it can be renamed to `astap.exe`; keep the star database beside it. The GUI executable may display its own search-progress notifier, especially when a simulator mount supplies a hint far from the recorded image. A connected simulator may start parked: when Auto RA is enabled, Start requests Unpark through N.I.N.A. before capturing, and keep Auto RA off for the manual directory-image controller.
 
-## One-run automatic reference replay
+## Repeated automatic reference replay
 
-The DIRECTORY camera reads files independently of telescope motion. Without scene changes, two successful solves of the same image cannot calibrate the RA axis. For a 90-degree Auto RA test, arm this helper before Start:
+The DIRECTORY camera reads files independently of telescope motion. Without scene changes, two successful solves of the same image cannot calibrate the RA axis. The persistent helper selects 60/70/80/90-degree datasets and resets the first scene when a new calibration starts, including after cancellation:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/Nina.LivePolarAlignment.Simulator/Start-AutoReference.ps1 -Dataset artifacts/camera-simulator/qhy600-1000mm -LogPath "C:\path\to\current-NINA-session.log"
 ```
 
-It publishes reference 1, watches only the specified session log, and atomically publishes reference 2 after the first raw download and a nonzero RA command from a known simulator connection. It never commands equipment and does not alter plugin calculations. Keep the camera DIRECTORY source on this dataset's `feed` folder and the rotation angle at 90 degrees. Wait for the helper's Ready message before Start. It exits after switching; rearm it before each new calibration. Do not change scenes manually during the reference pair. After calibration, open the manual controller for bolt-adjustment scenes only when ready to change the displayed feed (opening it resets to reference 1). Live timestamps differ from the dataset render times, so numerical regression uses the timestamped offline replay instead.
+Keep the camera DIRECTORY source on the root dataset's `feed` folder with exposure at least one second. Wait for Ready before Start. Plugin version 0.1.0.36 or newer logs the requested angle before the exposure; the helper copies its first scene during that exposure, then its second scene after raw download and simulator RA motion begin. It observes only the specified log and known simulator connection IDs, never commands equipment, and does not change plugin calculations. `-NinaProcessId` optionally stops monitoring when that NINA process exits. Restart the helper after restarting NINA so it watches the new session log.
 
-`-Replay` processes a completed log from its beginning and exits at EOF, for file-transition tests using a separate synthetic fixture dataset.
+Create the additional angle datasets once, using the same site as the root manifest:
+
+```powershell
+python tools/Nina.LivePolarAlignment.Simulator/generate.py --output artifacts/camera-simulator/qhy600-1000mm/angles/60 --cache artifacts/simulation --latitude 32.544686794281 --longitude 130.616400539875 --rotation-angle 60 --references-only
+```
+
+Repeat for 70 and 80. The root dataset supplies 90 degrees. Generation supports all four angles; `--references-only` saves just the calibration pair. Do not run the manual scene controller concurrently during automatic reference capture. The existing bolt-correction scenes belong to the root 90-degree orientation; after another angle, generate a full dataset for that angle before manually replaying adjustments. Live timestamps differ from render times, so numerical regression uses timestamped offline replay.
+
+`-Replay` processes a completed log from its beginning and exits at EOF, for transition/restart tests with a separate synthetic fixture dataset.

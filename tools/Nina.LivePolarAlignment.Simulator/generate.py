@@ -119,6 +119,8 @@ def main():
     parser.add_argument("--latitude", type=float, default=37.5)
     parser.add_argument("--longitude", type=float, default=127.)
     parser.add_argument("--bin", type=int, choices=(1, 2, 4), default=1)
+    parser.add_argument("--rotation-angle", type=int, choices=(60, 70, 80, 90), default=90)
+    parser.add_argument("--references-only", action="store_true")
     args = parser.parse_args()
     for folder in ("camera", "fits", "previews"):
         (args.output/folder).mkdir(parents=True, exist_ok=True)
@@ -142,13 +144,15 @@ def main():
     center = unit(axis + np.array([1., 0., 0.])*math.radians(.1))
     up = unit(np.array([0., 0., 1.]) - center*center[2])
     first = np.column_stack((np.cross(up, center), up, center))
-    second = rotation(axis, math.pi/2) @ first
-    steps = [("01_reference", first, axis, 0.), ("02_ra_90deg", second, axis, 0.)]
+    second = rotation(axis, math.radians(args.rotation_angle)) @ first
+    steps = [("01_reference", first, axis, 0.), (f"02_ra_{args.rotation_angle}deg", second, axis, 0.)]
     for i, fraction in enumerate((0., .25, .5, .75, 1.), start=3):
         correction = rotation([1, 0, 0], -altitude_error*fraction) @ rotation([0, 0, 1], azimuth_error*fraction)
         steps.append((f"{i:02d}_adjust_{round(fraction*100):03d}", correction @ second,
                       correction @ axis, fraction))
-    manifest = {"synthetic": True, "catalog": "ESA Gaia DR3 G<15 plus missing Hipparcos V<6 stars",
+    if args.references_only:
+        steps = steps[:2]
+    manifest = {"synthetic": True, "rotationAngleDegrees": args.rotation_angle, "catalog": "ESA Gaia DR3 G<15 plus missing Hipparcos V<6 stars",
         "latitude": args.latitude, "longitude": args.longitude, "width": width, "height": height,
         "pixelSizeUm": pixel_um, "focalLengthMm": focal_mm, "focalRatio": 5,
         "nativeBinning": args.bin, "pixelScaleArcseconds": scale,
