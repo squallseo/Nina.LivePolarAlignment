@@ -22,6 +22,8 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
     private readonly IImagingMediator imaging;
     private readonly ITelescopeMediator telescope;
     private readonly SemaphoreSlim captureGate = new(1, 1);
+    private readonly SolveHintCache solveHints = new();
+    public void ResetSolveHint() => solveHints.Clear();
     public bool CameraConnected => camera.GetInfo()?.Connected == true;
     public bool MountConnected => telescope.GetInfo()?.Connected == true;
 
@@ -81,9 +83,12 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
             var binning = (short)Math.Max(1, (int)settings.Binning);
             var sequence = new CaptureSequence(exposureSeconds, CaptureSequence.ImageTypes.SNAPSHOT,
                 null!, new BinningMode(binning, binning), 1) { Gain = settings.Gain };
+            var hintContext = new SolveHintContext(profile.Id, info.DeviceId ?? profile.CameraSettings.Id ?? string.Empty, focalLength, pixelSize);
+            var previousSolution = solveHints.Get(hintContext);
+            NINA.Core.Utility.Logger.Info($"Polar solve hint: {(previousSolution != null ? "previous solved frame" : "mount or blind search")}");
             var parameter = new PlateSolveParameter {
                 Binning = binning,
-                Coordinates = telescope.GetInfo()?.Connected == true ? telescope.GetCurrentPosition() : null!,
+                Coordinates = previousSolution ?? (telescope.GetInfo()?.Connected == true ? telescope.GetCurrentPosition() : null!),
                 FocalLength = focalLength,
                 PixelSize = pixelSize,
                 DownSampleFactor = settings.DownSampleFactor,
@@ -134,6 +139,7 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
                 if (!double.IsFinite(result.Coordinates.RADegrees) || !double.IsFinite(result.Coordinates.Dec)
                     || !double.IsFinite(result.PositionAngle) || !double.IsFinite(result.Pixscale) || result.Pixscale <= 0)
                     throw new InvalidOperationException("The solver returned an invalid position or image scale.");
+                solveHints.Store(hintContext, result.Coordinates);
                 preview = await Task.Run(() => preparedPreview.CreateFullResolution(solveToken), solveToken);
                 NINA.Core.Utility.Logger.Info($"Polar preview: full-resolution display ready at {timing.ElapsedMilliseconds} ms");
                 var dimensions = image.Properties;

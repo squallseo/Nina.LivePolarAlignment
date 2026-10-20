@@ -19,6 +19,7 @@ public interface IPolarAlignmentCaptureService {
     bool MountConnected => false;
     bool SupportsStreaming => false;
     bool IsSynthetic => false;
+    void ResetSolveHint() { }
     bool SupportsAutoRaRotation => false;
     bool CanPrepareAutoRaRotation => SupportsAutoRaRotation;
     Task PrepareAutoRaAsync(CancellationToken token) { token.ThrowIfCancellationRequested(); return Task.CompletedTask; }

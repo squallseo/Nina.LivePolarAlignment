@@ -75,6 +75,7 @@ public sealed class StreamingCaptureTests {
         var cameraSettings = InterfaceStub.Create<ICameraSettings>((m, _) => m.Name == "get_PixelSize" ? 3.76d : null);
         var solveSettings = new NINA.Profile.PlateSolveSettings();
         var profile = InterfaceStub.Create<IProfile>((m, _) => m.Name switch {
+            "get_Id" => Guid.Empty,
             "get_PlateSolveSettings" => solveSettings, "get_TelescopeSettings" => telescopeSettings,
             "get_CameraSettings" => cameraSettings, _ => null
         });

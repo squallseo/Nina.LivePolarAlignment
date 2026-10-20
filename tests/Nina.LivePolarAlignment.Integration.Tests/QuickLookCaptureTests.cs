@@ -50,6 +50,7 @@ public sealed class QuickLookCaptureTests {
         var optics = InterfaceStub.Create<ITelescopeSettings>((method, _) => method.Name == "get_FocalLength" ? 1000d : null);
         var sensor = InterfaceStub.Create<ICameraSettings>((method, _) => method.Name == "get_PixelSize" ? 3.76d : null);
         var profile = InterfaceStub.Create<IProfile>((method, _) => method.Name switch {
+            "get_Id" => Guid.Empty,
             "get_TelescopeSettings" => optics, "get_CameraSettings" => sensor,
             "get_PlateSolveSettings" => new NINA.Profile.PlateSolveSettings(), _ => null
         });

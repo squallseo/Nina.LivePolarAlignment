@@ -54,6 +54,8 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                 Gain = settings.Gain, Offset = offset, EnableSubSample = false
             };
             var solver = new ImageSolver(PlateSolverFactory.GetPlateSolver(settings), PlateSolverFactory.GetBlindSolver(settings));
+            var hintContext = new SolveHintContext(profiles.ActiveProfile.Id,
+                info.DeviceId ?? profiles.ActiveProfile.CameraSettings.Id ?? string.Empty, focal, pixels);
             var parameter = new PlateSolveParameter {
                 Binning = bin, FocalLength = focal, PixelSize = pixels,
                 DownSampleFactor = settings.DownSampleFactor, MaxObjects = settings.MaxObjects,
@@ -73,10 +75,13 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                 var dispatcher = System.Windows.Application.Current?.Dispatcher;
                 if (dispatcher != null)
                     await dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle, token);
+                parameter.Coordinates = solveHints.Get(hintContext)
+                    ?? (telescope.GetInfo()?.Connected == true ? telescope.GetCurrentPosition() : null!);
                 var solution = await Task.Run(() => solver.Solve(frame.Image, parameter, SilentProgress.Instance, token), token);
                 token.ThrowIfCancellationRequested();
                 if (!solution.Success || solution.Coordinates == null || !double.IsFinite(solution.Pixscale) || solution.Pixscale <= 0)
                     throw new InvalidOperationException("Streaming plate solve failed. Increase exposure or use single frames. No estimated guidance is shown.");
+                solveHints.Store(hintContext, solution.Coordinates);
                 preview = await Task.Run(() => preparedPreview.CreateFullResolution(token), token);
                 yield return new SolvedPolarFrame(solution.Coordinates.RADegrees, solution.Coordinates.Dec,
                     solution.PositionAngle, solution.Pixscale, frame.Image.Properties.Width, frame.Image.Properties.Height,

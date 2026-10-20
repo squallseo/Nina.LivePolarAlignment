@@ -79,3 +79,7 @@ python tools/Nina.LivePolarAlignment.Simulator/generate.py --output artifacts/ca
 Repeat for 70 and 80. The root dataset supplies 90 degrees. Generation supports all four angles; `--references-only` saves just the calibration pair. Do not run the manual scene controller concurrently during automatic reference capture. The existing bolt-correction scenes belong to the root 90-degree orientation; after another angle, generate a full dataset for that angle before manually replaying adjustments. Live timestamps differ from render times, so numerical regression uses timestamped offline replay.
 
 `-Replay` processes a completed log from its beginning and exits at EOF, for transition/restart tests with a separate synthetic fixture dataset.
+
+## Reproduce slow mount-hint fallback and live-solve recovery
+
+Pass `--bad-mount-hint` as the third argument to the .NET replay tool instead of a new-profile path. Its mount reports RA 180/Dec 0 while the catalog images are near the pole. The initial solve uses blind fallback; following frames must log `Polar solve hint: previous solved frame`, skip the repeated bad hint, and preserve the same angle/error regression results. `Production pipeline elapsed` records per-frame processing latency, excluding real exposure latency.

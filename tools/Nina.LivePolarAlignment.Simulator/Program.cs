@@ -18,13 +18,14 @@ using NINA.WPF.Base.Model.Equipment.MyCamera.Simulator;
 using Nina.LivePolarAlignment.Capture;
 
 if (args.Length is < 2 or > 3) {
-    Console.Error.WriteLine("Usage: Simulator <dataset-folder> <astap.exe> [new-profile-file]");
+    Console.Error.WriteLine("Usage: Simulator <dataset-folder> <astap.exe> [new-profile-file | --bad-mount-hint]");
     return 2;
 }
 
 var dataset = Path.GetFullPath(args[0]);
 var astap = Path.GetFullPath(args[1]);
-var profileOutput = args.Length == 3 ? Path.GetFullPath(args[2]) : null;
+var badMountHint = args.Length == 3 && args[2] == "--bad-mount-hint";
+var profileOutput = args.Length == 3 && !badMountHint ? Path.GetFullPath(args[2]) : null;
 CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(dataset, "manifest.json")));
 var spec = manifest.RootElement;
@@ -72,7 +73,7 @@ var cameraMediator = Stub.Create<ICameraMediator>((method, _) => method.Name swi
 });
 var pointing = Stub.Create<ITelescopeMediator>((method, _) => method.Name switch {
     "GetInfo" => new NINA.Equipment.Equipment.MyTelescope.TelescopeInfo { Connected = true },
-    "GetCurrentPosition" => new Coordinates(0, 89.5, Epoch.J2000, Coordinates.RAType.Degrees), _ => null
+    "GetCurrentPosition" => new Coordinates(badMountHint ? 180 : 0, badMountHint ? 0 : 89.5, Epoch.J2000, Coordinates.RAType.Degrees), _ => null
 });
 var imaging = Stub.Create<IImagingMediator>((method, parameters) => method.Name == "CaptureImage"
     ? camera.DownloadExposure((CancellationToken)parameters![1]!)
@@ -90,7 +91,9 @@ try {
     var index = 0;
     foreach (var expected in spec.GetProperty("frames").EnumerateArray()) {
         int previousPreviews = previews;
+        var captureTimer = System.Diagnostics.Stopwatch.StartNew();
         var frame = await capture.CaptureAndSolveAsync(1, CancellationToken.None);
+        Console.WriteLine($"Production pipeline elapsed: frame={index + 1}, milliseconds={captureTimer.ElapsedMilliseconds}");
         if (previews != previousPreviews + 1 || frame.Preview?.PixelWidth != frame.Width || frame.Preview?.PixelHeight != frame.Height)
             throw new InvalidOperationException("Production pipeline must publish an early preview and return a full-resolution display");
         var expectedTime = expected.GetProperty("capturedAtUtc").GetDateTimeOffset();

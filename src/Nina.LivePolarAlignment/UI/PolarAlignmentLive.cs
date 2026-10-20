@@ -114,6 +114,7 @@ public sealed partial class PolarAlignmentDockableVM {
         NINA.Core.Utility.Logger.Info($"Polar preview: applied to UI ({preview.PixelWidth}x{preview.PixelHeight}), rotating={IsRotating}");
     }
     private void ResetLive() {
+        captureService.ResetSolveHint();
         ResetDriftEvidence();
         verificationResult = null;
         automaticRotationCompleted = false; rotationProgress = 0;
