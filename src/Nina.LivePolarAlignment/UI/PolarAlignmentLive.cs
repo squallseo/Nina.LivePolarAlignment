@@ -132,14 +132,14 @@ public sealed partial class PolarAlignmentDockableVM {
                 token.ThrowIfCancellationRequested();
             }
             if (calibrationSamples == 1 && AutoRaRotation) await RotateForReferenceAsync(token);
-            await CaptureReferenceFrameAsync(token);
+            await CaptureReferenceFrameAsync(token, calibrationSamples == 0 && AutoRaRotation);
             if (calibrationSamples == 1 && AutoRaRotation) {
                 await RotateForReferenceAsync(token);
                 await CaptureReferenceFrameAsync(token);
             }
         });
     }
-    private async Task<SolvedPolarFrame> CaptureReferenceFrameAsync(CancellationToken token) {
+    private async Task<SolvedPolarFrame> CaptureReferenceFrameAsync(CancellationToken token, bool rotateDuringSolve = false) {
         EnsureFieldSession();
         RecordFieldEvent("reference_start", new { exposureSeconds = ExposureSeconds });
         if (session == null) {
@@ -149,7 +149,14 @@ public sealed partial class PolarAlignmentDockableVM {
         }
         ValidateSite();
         liveStatus = calibrationSamples == 0 ? "ReferenceFirstCapture" : "ReferenceSecondCapture"; NotifyLive();
-        var frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
+        SolvedPolarFrame frame;
+        if (rotateDuringSolve) {
+            SolvedPolarFrame? captured = null;
+            await RotateForReferenceAsync(token, async (progress, ct) => {
+                captured = await captureService.CaptureAndSolveWithRotationAsync(ExposureSeconds, ReverseRaRotation, progress, ct, RotationAngleDegrees);
+            });
+            frame = captured ?? throw new InvalidOperationException("No reference image was returned.");
+        } else frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
         token.ThrowIfCancellationRequested();
         ValidateSite();
         livePreview = frame.Preview;

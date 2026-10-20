@@ -27,6 +27,13 @@ public interface IPolarAlignmentCaptureService {
     Core.DriftSample GetDriftSample(SolvedPolarFrame frame) => throw new NotSupportedException("Drift verification is unavailable.");
     Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) => throw new NotSupportedException("Automatic RA rotation is unavailable. Use manual rotation.");
     System.Collections.Generic.IAsyncEnumerable<SolvedPolarFrame> StreamAndSolveAsync(double exposureSeconds, CancellationToken token) => throw new NotSupportedException("Streaming is unavailable for this camera.");
+    async Task<SolvedPolarFrame> CaptureAndSolveWithRotationAsync(double exposureSeconds, bool reverse,
+        IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
+        var frame = await CaptureAndSolveAsync(exposureSeconds, token);
+        progress?.Report(0);
+        await RotateRaAsync(reverse, progress, token, targetDegrees);
+        return frame;
+    }
     Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token,
         IProgress<ApplicationStatus>? progress = null);
 }

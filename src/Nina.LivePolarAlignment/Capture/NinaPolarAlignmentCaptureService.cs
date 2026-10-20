@@ -46,8 +46,11 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
         return preview;
     }
 
-    public async Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token,
-        IProgress<ApplicationStatus>? progress = null) {
+    public Task<SolvedPolarFrame> CaptureAndSolveAsync(double exposureSeconds, CancellationToken token,
+        IProgress<ApplicationStatus>? progress = null) => CaptureAndSolveCoreAsync(exposureSeconds, token, progress);
+
+    private async Task<SolvedPolarFrame> CaptureAndSolveCoreAsync(double exposureSeconds, CancellationToken token,
+        IProgress<ApplicationStatus>? progress, Func<CancellationToken, Task>? afterDownload = null) {
         progress ??= SilentProgress.Instance;
         if (!double.IsFinite(exposureSeconds) || exposureSeconds <= 0)
             throw new ArgumentOutOfRangeException(nameof(exposureSeconds), "Exposure must be a positive number of seconds.");
@@ -116,21 +119,28 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
                 ? started.AddSeconds(exposureSeconds / 2)
                 : new DateTimeOffset(midpoint.Kind == DateTimeKind.Unspecified
                     ? DateTime.SpecifyKind(midpoint, DateTimeKind.Utc) : midpoint).ToUniversalTime();
-            progress?.Report(new ApplicationStatus { Status = "Solving polar alignment frame" });
-            var result = await Task.Run(() => solver.Solve(image, parameter, progress!, token), token);
-            NINA.Core.Utility.Logger.Info($"Polar preview: solve finished at {timing.ElapsedMilliseconds} ms");
-            token.ThrowIfCancellationRequested();
-            if (!result.Success || result.Coordinates == null)
-                throw new InvalidOperationException("Plate solve failed. Check focus, stars, exposure, and the configured NINA solver.");
-            if (!double.IsFinite(result.Coordinates.RADegrees) || !double.IsFinite(result.Coordinates.Dec)
-                || !double.IsFinite(result.PositionAngle) || !double.IsFinite(result.Pixscale) || result.Pixscale <= 0)
-                throw new InvalidOperationException("The solver returned an invalid position or image scale.");
-            preview = await Task.Run(() => preparedPreview.CreateFullResolution(token), token);
-            NINA.Core.Utility.Logger.Info($"Polar preview: full-resolution display ready at {timing.ElapsedMilliseconds} ms");
-            var dimensions = image.Properties;
-            return new SolvedPolarFrame(result.Coordinates.RADegrees, result.Coordinates.Dec,
-                result.PositionAngle, result.Pixscale, dimensions.Width, dimensions.Height,
-                result.Flipped, capturedAt, preview, image);
+            if (afterDownload != null)
+                return await Core.ConcurrentReference.RunAsync(SolveAsync, afterDownload, token);
+            return await SolveAsync(token);
+
+            async Task<SolvedPolarFrame> SolveAsync(CancellationToken solveToken) {
+                progress?.Report(new ApplicationStatus { Status = "Solving polar alignment frame" });
+                var result = await Task.Run(() => solver.Solve(image, parameter, progress!, solveToken), solveToken);
+                NINA.Core.Utility.Logger.Info($"Polar preview: solve finished at {timing.ElapsedMilliseconds} ms");
+                solveToken.ThrowIfCancellationRequested();
+                if (!result.Success || result.Coordinates == null)
+                    throw new InvalidOperationException("Plate solve failed. Check focus, stars, exposure, and the configured NINA solver.");
+                if (!double.IsFinite(result.Coordinates.RADegrees) || !double.IsFinite(result.Coordinates.Dec)
+                    || !double.IsFinite(result.PositionAngle) || !double.IsFinite(result.Pixscale) || result.Pixscale <= 0)
+                    throw new InvalidOperationException("The solver returned an invalid position or image scale.");
+                preview = await Task.Run(() => preparedPreview.CreateFullResolution(solveToken), solveToken);
+                NINA.Core.Utility.Logger.Info($"Polar preview: full-resolution display ready at {timing.ElapsedMilliseconds} ms");
+                var dimensions = image.Properties;
+                return new SolvedPolarFrame(result.Coordinates.RADegrees, result.Coordinates.Dec,
+                    result.PositionAngle, result.Pixscale, dimensions.Width, dimensions.Height,
+                    result.Flipped, capturedAt, preview, image);
+            }
+
         } finally {
             try {
                 if (registered) camera.ReleaseCaptureBlock(this);

@@ -31,8 +31,9 @@ public sealed class QuickLookCaptureTests {
         Assert.True(original.AsSpan().SequenceEqual(pixels));
     }
 
-    [Fact]
-    public async Task CapturePublishesPixelsWithoutWaitingForHostPreparationOrSolving() {
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task CapturePublishesPixelsWithoutWaitingForHostPreparationOrSolving(bool automaticRotation) {
         using var cancellation = new CancellationTokenSource();
         var data = Image(Enumerable.Repeat((ushort)300, 128 * 96).ToArray(), 128, 96);
         var exposure = InterfaceStub.Create<IExposureData>((method, _) => method.Name == "ToImageData" ? Task.FromResult(data) : null);
@@ -60,7 +61,9 @@ public sealed class QuickLookCaptureTests {
             Assert.True(preview.IsFrozen);
             cancellation.Cancel(); // Cancellation at first display prevents the solver from starting.
         };
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.CaptureAndSolveAsync(1, cancellation.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => automaticRotation
+            ? service.CaptureAndSolveWithRotationAsync(1, false, null, cancellation.Token)
+            : service.CaptureAndSolveAsync(1, cancellation.Token));
         Assert.True(published); Assert.True(released);
     }
 }

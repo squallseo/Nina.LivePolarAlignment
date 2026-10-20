@@ -72,10 +72,20 @@ public sealed partial class NinaPolarAlignmentCaptureService {
     public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
         if (!await captureGate.WaitAsync(0, token)) throw new InvalidOperationException("Another alignment operation is running.");
         try {
-            var mount = new RotationMount(telescope);
-            await Task.Run(() => new RaRotation().RunAsync(mount, reverse, progress, token, targetDegrees, mount.MaximumRate), CancellationToken.None);
+            await RotateRaCoreAsync(reverse, progress, token, targetDegrees);
         } finally { captureGate.Release(); }
     }
+    private Task RotateRaCoreAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees) {
+        token.ThrowIfCancellationRequested();
+        var mount = new RotationMount(telescope);
+        progress?.Report(0);
+        return Task.Run(() => new RaRotation().RunAsync(mount, reverse, progress, token, targetDegrees, mount.MaximumRate), CancellationToken.None);
+    }
+    public Task<SolvedPolarFrame> CaptureAndSolveWithRotationAsync(double exposureSeconds, bool reverse,
+        IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) =>
+        CaptureAndSolveCoreAsync(exposureSeconds, token, null,
+            ct => RotateRaCoreAsync(reverse, progress, ct, targetDegrees));
+
     private sealed class RotationMount : IRaRotationMount {
         private readonly ITelescopeMediator mediator;
         private readonly ITelescope device;

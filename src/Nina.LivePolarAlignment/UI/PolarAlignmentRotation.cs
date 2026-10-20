@@ -35,17 +35,26 @@ public sealed partial class PolarAlignmentDockableVM {
     public string RotationStatus => rotationInProgress ? UiText.Format("AutoRaProgress", rotationProgress, RotationAngleDegrees)
         : captureService.AutoRaAvailability == global::Nina.LivePolarAlignment.Capture.AutoRaAvailability.Parked && captureService.CanPrepareAutoRaRotation ? UiText.Get("AutoRaUnparkHint") : UiText.Get(captureService.AutoRaAvailability == global::Nina.LivePolarAlignment.Capture.AutoRaAvailability.Ready ? "AutoRaHint" : "AutoRa" + captureService.AutoRaAvailability);
 
-    private async Task RotateForReferenceAsync(CancellationToken token) {
+    private async Task RotateForReferenceAsync(CancellationToken token,
+        Func<IProgress<double>, CancellationToken, Task>? captureAndRotate = null) {
         if (automaticRotationCompleted) return;
         if (!captureService.SupportsAutoRaRotation)
             throw new InvalidOperationException(UiText.Get("AutoRaCheckPath"));
-        rotationInProgress = true; rotationProgress = 0; NotifyLive();
-        RecordFieldEvent("ra_rotation_start", new { targetDegrees = RotationAngleDegrees, reverse = ReverseRaRotation });
+        rotationInProgress = captureAndRotate == null; rotationProgress = 0; NotifyLive();
+        bool acceptingProgress = true, motionStarted = false;
         try {
-            await captureService.RotateRaAsync(ReverseRaRotation, new Progress<double>(angle => {
-                if (!rotationInProgress) return;
-                rotationProgress = angle; ReportHostStatus(); RaisePropertyChanged(nameof(RotationStatus)); RaisePropertyChanged(nameof(LiveStatus)); RaisePropertyChanged(nameof(WorkflowDescription));
-            }), token, RotationAngleDegrees);
+            var progress = new Progress<double>(angle => {
+                if (!acceptingProgress || token.IsCancellationRequested) return;
+                if (!motionStarted) {
+                    motionStarted = true;
+                    RecordFieldEvent("ra_rotation_start", new { targetDegrees = RotationAngleDegrees, reverse = ReverseRaRotation });
+                }
+                rotationInProgress = true; rotationProgress = angle;
+                NotifyLive();
+            });
+            if (captureAndRotate == null)
+                await captureService.RotateRaAsync(ReverseRaRotation, progress, token, RotationAngleDegrees);
+            else await captureAndRotate(progress, token);
             token.ThrowIfCancellationRequested();
             ValidateSite(); automaticRotationCompleted = true;
             RecordFieldEvent("ra_rotation_complete", new { reportedDegrees = rotationProgress });
@@ -56,6 +65,7 @@ public sealed partial class PolarAlignmentDockableVM {
             EndFieldSession("ra_rotation_failed_or_cancelled");
             throw;
         } finally {
+            acceptingProgress = false;
             rotationInProgress = false; NotifyLive();
         }
     }

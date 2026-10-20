@@ -1,6 +1,6 @@
 # Automatic RA rotation
 
-`Auto RA rotation` prepares the mount (including Unpark when required), then performs the first reference capture, RA rotation, verified stop and settling, then the second reference capture and continuous live measurement. It defaults on. Unsupported equipment switches the option off and falls back to manual rotation. In manual mode, Start captures only the first reference and displays an explicit RA-rotation prompt. Rotate RA, then press Continue; continuous live measurement starts automatically after that reference. The user adjusts altitude and azimuth bolts during live measurement.
+`Auto RA rotation` prepares the mount (including Unpark when required), then captures the first reference. Once its raw data and quick-look preview are available, first-image solving and RA rotation run concurrently. Both must succeed, including verified stop and settling, before the second reference capture and continuous live measurement. It defaults on. Unsupported equipment switches the option off and falls back to manual rotation. In manual mode, Start captures only the first reference and displays an explicit RA-rotation prompt. Rotate RA, then press Continue; continuous live measurement starts automatically after that reference. The user adjusts altitude and azimuth bolts during live measurement.
 
 ## Settings and prerequisites
 
@@ -33,3 +33,9 @@ The plugin control panel does not repeat operation status in its heading or belo
 ## Preview latency
 
 Single exposures use N.I.N.A. CaptureImage without waiting for its full image preparation/statistics pipeline. After raw decoding, a reduced grayscale quick-look image is published and the WPF render queue is given a turn before full-resolution ASTAP work runs on a worker thread. A separate display stretch does not modify raw pixels used for solving or saved evidence. When the solve completes, the full-resolution display and computed overlay are published; optional evidence saving does not delay the reference overlay. Timing markers in the N.I.N.A. log distinguish download, first preview, solve, and full-resolution display.
+
+## Overlapping first solve and RA rotation
+
+Automatic calibration freezes the first image, capture midpoint, and solver search coordinates before movement begins. Analysis uses those saved pixels while the mount rotates. A failure in either analysis or rotation cancels the sibling task; both tasks and mount stop verification finish before the operation returns or another capture can start. A failed or cancelled combined operation discards calibration. Manual capture remains sequential.
+
+The first image stays visible during rotation. The Streaming option starts native video only after the two calibration references, during live adjustment; it does not provide a continuously refreshed video preview during calibration or rotation. Native streaming currently supports ZWO ASI and ToupTek drivers; unsupported drivers fall back to single-frame measurement.
