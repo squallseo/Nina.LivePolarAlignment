@@ -359,6 +359,9 @@ internal static class Program {
         var automatic = ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         while (!current.IsRotating && !automatic.IsCompleted) await Task.Delay(10);
         await Task.Delay(300);
+        if (!current.IsRotating || current.FieldGuidance?.CelestialPole == null
+            || current.FieldGuidance.MountAxis != null || !current.HasCurrentFieldGuidance || current.WorkflowStep != 0)
+            throw new InvalidOperationException("First solved pole and rings must be visible during rotation, before calibration completes");
         Save(Path.Combine(directory, "ui-auto-ra-1280.png"), 1280, 1000);
         await automatic;
         if (current.WorkflowStep != 2 || current.HasOperationError || SampleCapture.Rotations != 1 || SampleCapture.LastRotationAngle != 90 || !SampleCapture.RotationStopped)

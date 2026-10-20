@@ -28,8 +28,10 @@ public interface IPolarAlignmentCaptureService {
     Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) => throw new NotSupportedException("Automatic RA rotation is unavailable. Use manual rotation.");
     System.Collections.Generic.IAsyncEnumerable<SolvedPolarFrame> StreamAndSolveAsync(double exposureSeconds, CancellationToken token) => throw new NotSupportedException("Streaming is unavailable for this camera.");
     async Task<SolvedPolarFrame> CaptureAndSolveWithRotationAsync(double exposureSeconds, bool reverse,
-        IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
+        IProgress<double>? progress, CancellationToken token, double targetDegrees = 90,
+        Func<SolvedPolarFrame, Task>? referenceSolved = null) {
         var frame = await CaptureAndSolveAsync(exposureSeconds, token);
+        if (referenceSolved != null) await referenceSolved(frame);
         progress?.Report(0);
         await RotateRaAsync(reverse, progress, token, targetDegrees);
         return frame;

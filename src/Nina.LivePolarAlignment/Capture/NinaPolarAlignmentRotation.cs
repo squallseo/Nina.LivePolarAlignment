@@ -82,9 +82,10 @@ public sealed partial class NinaPolarAlignmentCaptureService {
         return Task.Run(() => new RaRotation().RunAsync(mount, reverse, progress, token, targetDegrees, mount.MaximumRate), CancellationToken.None);
     }
     public Task<SolvedPolarFrame> CaptureAndSolveWithRotationAsync(double exposureSeconds, bool reverse,
-        IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) =>
+        IProgress<double>? progress, CancellationToken token, double targetDegrees = 90,
+        Func<SolvedPolarFrame, Task>? referenceSolved = null) =>
         CaptureAndSolveCoreAsync(exposureSeconds, token, null,
-            ct => RotateRaCoreAsync(reverse, progress, ct, targetDegrees));
+            ct => RotateRaCoreAsync(reverse, progress, ct, targetDegrees), referenceSolved);
 
     private sealed class RotationMount : IRaRotationMount {
         private readonly ITelescopeMediator mediator;

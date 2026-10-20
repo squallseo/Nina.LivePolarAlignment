@@ -156,7 +156,16 @@ public sealed partial class PolarAlignmentDockableVM {
         if (rotateDuringSolve) {
             SolvedPolarFrame? captured = null;
             await RotateForReferenceAsync(token, async (progress, ct) => {
-                captured = await captureService.CaptureAndSolveWithRotationAsync(ExposureSeconds, ReverseRaRotation, progress, ct, RotationAngleDegrees);
+                captured = await captureService.CaptureAndSolveWithRotationAsync(ExposureSeconds, ReverseRaRotation, progress, ct, RotationAngleDegrees, solved =>
+                    uiDispatcher.InvokeAsync(() => {
+                        ct.ThrowIfCancellationRequested();
+                        ValidateSite();
+                        livePreview = solved.Preview; pixelScale = solved.PixelScaleArcseconds;
+                        guidance = session!.GetReferenceGuidance(solved);
+                        measuredAt = solved.CapturedAtUtc; measurementStale = false;
+                        liveStatus = "Live5"; NotifyLive();
+                        NINA.Core.Utility.Logger.Info("Polar preview: first solved reference overlay applied before rotation join");
+                    }, DispatcherPriority.Normal, ct).Task);
             });
             frame = captured ?? throw new InvalidOperationException("No reference image was returned.");
         } else frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);

@@ -50,7 +50,8 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
         IProgress<ApplicationStatus>? progress = null) => CaptureAndSolveCoreAsync(exposureSeconds, token, progress);
 
     private async Task<SolvedPolarFrame> CaptureAndSolveCoreAsync(double exposureSeconds, CancellationToken token,
-        IProgress<ApplicationStatus>? progress, Func<CancellationToken, Task>? afterDownload = null) {
+        IProgress<ApplicationStatus>? progress, Func<CancellationToken, Task>? afterDownload = null,
+        Func<SolvedPolarFrame, Task>? referenceSolved = null) {
         progress ??= SilentProgress.Instance;
         if (!double.IsFinite(exposureSeconds) || exposureSeconds <= 0)
             throw new ArgumentOutOfRangeException(nameof(exposureSeconds), "Exposure must be a positive number of seconds.");
@@ -136,9 +137,12 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
                 preview = await Task.Run(() => preparedPreview.CreateFullResolution(solveToken), solveToken);
                 NINA.Core.Utility.Logger.Info($"Polar preview: full-resolution display ready at {timing.ElapsedMilliseconds} ms");
                 var dimensions = image.Properties;
-                return new SolvedPolarFrame(result.Coordinates.RADegrees, result.Coordinates.Dec,
+                var solved = new SolvedPolarFrame(result.Coordinates.RADegrees, result.Coordinates.Dec,
                     result.PositionAngle, result.Pixscale, dimensions.Width, dimensions.Height,
                     result.Flipped, capturedAt, preview, image);
+                solveToken.ThrowIfCancellationRequested();
+                if (referenceSolved != null) await referenceSolved(solved);
+                return solved;
             }
 
         } finally {
