@@ -51,7 +51,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public string LiveAltitudeError => latestError is { } error
         ? $"Altitude {error.AltitudeArcminutes:+0.00;-0.00;0.00}′ · {(Math.Abs(error.AltitudeArcminutes) < .05 ? "on target" : error.AltitudeArcminutes > 0 ? "lower the polar axis" : "raise the polar axis")}" : "Altitude —";
     public string LiveAzimuthError => latestError is { } error ? $"Azimuth {error.AzimuthArcminutes:+0.00;-0.00;0.00}′" : "Azimuth —";
-    public bool IsMeasurementStale => measurementStale || measuredAt is null || (DateTimeOffset.UtcNow - measuredAt.Value).TotalSeconds > Math.Max(15, ExposureSeconds * 3 + 5);
+    public bool IsMeasurementStale => measurementStale || measuredAt is null || (DateTimeOffset.UtcNow - measuredAt.Value).TotalSeconds > Math.Max(15, Math.Max(ExposureSeconds * 3 + 5, lastCycleMilliseconds / 1000 * 3 + 5));
     public string FrameFreshness => measuredAt is { } time
         ? latestError == null ? UiText.Format("ReferenceAge", Math.Max(0, (DateTimeOffset.UtcNow - time).TotalSeconds))
         : UiText.Format("FrameAge", IsMeasurementStale ? UiText.Get("StalePrefix") : "", Math.Max(0, (DateTimeOffset.UtcNow - time).TotalSeconds), lastCycleMilliseconds / 1000)

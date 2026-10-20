@@ -299,6 +299,31 @@ internal static class Program {
                 || current.LiveTotalError != previousError || !current.HasCurrentFieldGuidance || !current.HasAlignmentDetail)
                 throw new InvalidOperationException("Next-frame solving must retain the solved image, overlay and error in " + name);
             Save(Path.Combine(directory, "ui-retained-" + name + ".png"), 1280, 800);
+            var type = typeof(PolarAlignmentDockableVM);
+            var timeField = type.GetField("measuredAt", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var cycleField = type.GetField("lastCycleMilliseconds", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var previousTime = timeField.GetValue(current);
+            var previousCycle = cycleField.GetValue(current);
+            try {
+                cycleField.SetValue(current, 12000d); // Actual observed solver cycles are about 12 seconds.
+                timeField.SetValue(current, DateTimeOffset.UtcNow.AddSeconds(-20));
+                type.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+                if (current.IsMeasurementStale || !current.HasAlignmentDetail || !current.HasDisplayGuidance)
+                    throw new InvalidOperationException("Expected slow-solver cycle must not expire the display at 15 seconds: " + name);
+                timeField.SetValue(current, DateTimeOffset.UtcNow.AddSeconds(-50));
+                type.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+                if (!current.IsMeasurementStale || current.HasCurrentFieldGuidance || !current.HasDisplayGuidance || !current.HasAlignmentDetail
+                    || !ReferenceEquals(previousImage, current.LivePreview) || !ReferenceEquals(previousGuidance, current.FieldGuidance))
+                    throw new InvalidOperationException("Age-only staleness must retain the solved image and overlay together: " + name);
+                Save(Path.Combine(directory, "ui-retained-stale-" + name + ".png"), 1280, 800);
+                var field = (PolarFieldView)View.FindName("SkyField");
+                var detail = (PolarFieldView)View.FindName("AlignmentDetailView");
+                if (!field.IsCurrent || !detail.IsCurrent || detail.Visibility != Visibility.Visible)
+                    throw new InvalidOperationException("Stale-age transition must not hide or dim either image canvas: " + name);
+            } finally {
+                timeField.SetValue(current, previousTime); cycleField.SetValue(current, previousCycle);
+                type.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+            }
         }
         AssertMeasurementSurvivesNextPreview("single");
         SampleProfile.Language = "ko-KR"; NINA.Core.Locale.Loc.Instance.ReloadLocale(SampleProfile.Language); UiText.Refresh();
