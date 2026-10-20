@@ -42,5 +42,3 @@
 업데이트한 FieldReview 도구는 `drift_sample`로 회귀와 합산을 다시 수행하고 `review.json`의 `independentDrift`, `driftFrames`에 결과를 내보냅니다. 미완료·취소 기록을 통과 결과로 만들지 않습니다. 기존 `frames.csv`는 극축 기준·조정 프레임만 포함합니다. 재계산 일치는 물리적 정확도 검증과 다릅니다.
 
 관측 위치 선정은 [PHD2 drift alignment 안내](https://openphdguiding.org/man/Tutorials.htm)의 두 위치 관측 방식을 참고했습니다. 이 구현은 PHD2에 연결하거나 코드를 복제한 것이 아니라, N.I.N.A. plate solution의 변화율을 사용하는 자체 코드입니다.
-
-![독립 드리프트와 재정렬 권고 — 합성 입력](images/independent-drift-synthetic-preview.png)

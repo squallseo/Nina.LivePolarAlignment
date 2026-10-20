@@ -1,4 +1,4 @@
-﻿# Streaming review and implementation
+# Streaming review and implementation
 
 `Streaming` defaults on for the **adjustment** stage as of 0.1.0.13. Unsupported cameras quietly switch the option off and use repeated still captures. Both calibration references always use still captures.
 The first implementation accepts NINA's native ZWO ASI (`ZWOptical_`) and ToupTek
@@ -51,8 +51,6 @@ The option defaults on, remains selectable before camera connection, and cannot 
 
 - NINA 3.2 source: `CameraVM.LiveView(CaptureSequence, CancellationToken)`,
   `ASICamera.StartLiveView/DownloadLiveView/StopLiveView`, and ToupTek video mode.
-- Local Manual Focuser source: its public mediator video acquisition and stop
-  sequencing, inspected to keep compatible camera ownership behavior.
 - [Official NINA imaging documentation](https://nighttime-imaging.eu/docs/master/site/tabs/imaging/#n-imaging)
   distinguishes repeated exposures from camera-dependent LiveView.
 - Core tests cover dropped backlog, acquisition continuing before a consumer asks
@@ -63,5 +61,3 @@ The option defaults on, remains selectable before camera connection, and cannot 
 - Existing native SOFA/NOVAS integration tests remain in place. No physical camera
   performance, native SDK stop timing, video exposure timestamp, or polar accuracy
   is certified by the synthetic tests.
-
-![Synthetic streaming option preview](images/streaming-synthetic-preview.png)

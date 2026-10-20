@@ -11,5 +11,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "3.2.0.9001")]
 [assembly: AssemblyMetadata("Repository", "https://github.com/squallseo/Nina.LivePolarAlignment")]
 [assembly: AssemblyMetadata("Tags", "Polar Alignment,Imaging")]
-[assembly: AssemblyMetadata("FeaturedImageURL", "https://raw.githubusercontent.com/squallseo/Nina.LivePolarAlignment/feature/live-polar-alignment/docs/images/plugin-icon.png")]
+[assembly: AssemblyMetadata("FeaturedImageURL", "https://raw.githubusercontent.com/squallseo/Nina.LivePolarAlignment/main/docs/images/plugin-icon.png")]
 [assembly: ComVisible(false)]

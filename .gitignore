@@ -1,11 +1,7 @@
-.tools/
-analysis/*
-!analysis/README.md
 **/bin/
 **/obj/
 .vs/
 *.user
-*.rea.backup*
 artifacts/
 **/*_wpftmp.csproj
 

@@ -5,7 +5,7 @@ service. It never connects a camera or mount. The NINA profile/database context 
 isolated in a process-specific temporary directory.
 
 Requires Windows, .NET 8 Desktop Runtime and an installed NINA distribution for
-the native SOFA/NOVAS libraries. No NINA or SharpCap binaries are included here.
+the native SOFA/NOVAS libraries.
 Use `-p:NinaInstallDirectory="C:\path\to\NINA"` for a different installation path.
 
 ```powershell
@@ -21,7 +21,7 @@ stop/reset marks old guidance stale. Sample exposure/processing times are artifi
 To verify workflow states and render narrow, 1280횞800 and 1920횞1080 layouts:
 
 ```powershell
-dotnet run --project tools/Nina.LivePolarAlignment.Preview -c Release -- --render-to analysis/ui-polished
+dotnet run --project tools/Nina.LivePolarAlignment.Preview -c Release -- --render-to artifacts/ui-preview
 ```
 
 This checks all three stages, the image area and control positions, live publication and cancellation/stale behavior,

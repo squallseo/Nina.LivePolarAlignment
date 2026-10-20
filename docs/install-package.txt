@@ -5,10 +5,11 @@ Requires Windows x64 and N.I.N.A. 3.2.0.9001 or newer. No SDK or build required.
 2. Run Install-Plugin.ps1 in PowerShell, or manually copy the contents of
    plugin into %LOCALAPPDATA%\NINA\Plugins\3.0.0\Live Polar Alignment
 3. Start N.I.N.A. Open Plugins > Installed > Live Polar Alignment > Options.
-4. Enable debug recording before capturing the first reference (Reset if already calibrated).
+4. Optionally enable debug recording before the first reference (Reset if already calibrated).
 5. Open the imaging Live Polar Alignment panel. Field validation: Mark / Stability / Folder.
-6. Optional Auto RA rotation (experimental): choose direction and confirm the clear
-   60-degree path before Calibrate automatically. Default is manual. See auto-ra-rotation.md.
+6. Auto RA rotation defaults on: choose direction and a 60-90 degree rotation
+   (default 90). Check the clear path before Start. Unsupported mounts fall back
+   to manual rotation. See auto-ra-rotation.md.
 7. After adjustment, Stop and expand Verify alignment for optional fresh-pair
    remeasurement with a further RA rotation. Dec stays fixed. A 20-frame Stability
    check follows by default; it can be turned off. See verification.md.

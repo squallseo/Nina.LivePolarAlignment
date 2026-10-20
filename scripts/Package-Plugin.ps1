@@ -19,11 +19,7 @@ Copy-Item (Join-Path $root 'docs\verification.md') $stage
 Copy-Item (Join-Path $root 'docs\independent-drift.md') $stage
 Copy-Item (Join-Path $root 'docs\install-package.txt') (Join-Path $stage 'INSTALL.txt')
 Copy-Item (Join-Path $root 'docs\images\plugin-icon.png') $stage
-New-Item -ItemType Directory -Force (Join-Path $stage 'images') | Out-Null
-foreach ($image in @('field-validation-synthetic-preview.png', 'auto-ra-synthetic-preview.png', 'verification-synthetic-preview.png', 'independent-drift-synthetic-preview.png')) {
-    Copy-Item (Join-Path $root "docs\images\$image") (Join-Path $stage 'images')
-}
-$output = Join-Path $root 'downloads'
+$output = Join-Path $root 'artifacts\packages'
 New-Item -ItemType Directory -Force $output | Out-Null
 $zip = Join-Path $output "Nina.LivePolarAlignment.$version.zip"
 if (Test-Path $zip) { throw "Archive already exists: $zip" }
