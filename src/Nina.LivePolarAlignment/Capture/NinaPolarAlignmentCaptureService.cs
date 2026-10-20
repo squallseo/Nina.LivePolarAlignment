@@ -95,29 +95,42 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
             registered = true;
             progress?.Report(new ApplicationStatus { Status = "Capturing polar alignment frame" });
             var started = DateTimeOffset.UtcNow;
-            var image = await imaging.CaptureAndPrepareImage(sequence,
-                new PrepareImageParameters(autoStretch: true, detectStars: false), token, progress!);
+            var timing = System.Diagnostics.Stopwatch.StartNew();
+            // CaptureImage skips NINA's full image-processing/statistics pipeline.
+            var exposure = await imaging.CaptureImage(sequence, token, progress!);
             token.ThrowIfCancellationRequested();
-            if (image == null)
-                throw new InvalidOperationException("NINA did not return an image from the camera.");
-            var midpoint = image.RawImageData.MetaData.Image.ExposureMidPoint;
+            if (exposure == null) throw new InvalidOperationException("NINA did not return an image from the camera.");
+            NINA.Core.Utility.Logger.Info($"Polar preview: download complete at {timing.ElapsedMilliseconds} ms");
+            var image = await Task.Run(() => exposure.ToImageData(progress!, token), token);
+            token.ThrowIfCancellationRequested();
+            var preparedPreview = await Task.Run(() => QuickLookPreview.Prepare(image, token), token);
+            var preview = preparedPreview.Image;
+            PublishPreview(preview);
+            // Data binding and WPF rendering must run before any solver preparation.
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher != null)
+                await dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle, token);
+            NINA.Core.Utility.Logger.Info($"Polar preview: published before solve at {timing.ElapsedMilliseconds} ms ({preview.PixelWidth}x{preview.PixelHeight})");
+            var midpoint = image.MetaData.Image.ExposureMidPoint;
             var capturedAt = midpoint == DateTime.MinValue
                 ? started.AddSeconds(exposureSeconds / 2)
                 : new DateTimeOffset(midpoint.Kind == DateTimeKind.Unspecified
                     ? DateTime.SpecifyKind(midpoint, DateTimeKind.Utc) : midpoint).ToUniversalTime();
-            var preview = PublishPreview(image.Image);
             progress?.Report(new ApplicationStatus { Status = "Solving polar alignment frame" });
-            var result = await solver.Solve(image.RawImageData, parameter, progress!, token);
+            var result = await Task.Run(() => solver.Solve(image, parameter, progress!, token), token);
+            NINA.Core.Utility.Logger.Info($"Polar preview: solve finished at {timing.ElapsedMilliseconds} ms");
             token.ThrowIfCancellationRequested();
             if (!result.Success || result.Coordinates == null)
                 throw new InvalidOperationException("Plate solve failed. Check focus, stars, exposure, and the configured NINA solver.");
             if (!double.IsFinite(result.Coordinates.RADegrees) || !double.IsFinite(result.Coordinates.Dec)
                 || !double.IsFinite(result.PositionAngle) || !double.IsFinite(result.Pixscale) || result.Pixscale <= 0)
                 throw new InvalidOperationException("The solver returned an invalid position or image scale.");
-            var dimensions = image.RawImageData.Properties;
+            preview = await Task.Run(() => preparedPreview.CreateFullResolution(token), token);
+            NINA.Core.Utility.Logger.Info($"Polar preview: full-resolution display ready at {timing.ElapsedMilliseconds} ms");
+            var dimensions = image.Properties;
             return new SolvedPolarFrame(result.Coordinates.RADegrees, result.Coordinates.Dec,
                 result.PositionAngle, result.Pixscale, dimensions.Width, dimensions.Height,
-                result.Flipped, capturedAt, preview, image.RawImageData);
+                result.Flipped, capturedAt, preview, image);
         } finally {
             try {
                 if (registered) camera.ReleaseCaptureBlock(this);

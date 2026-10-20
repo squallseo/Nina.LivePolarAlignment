@@ -66,29 +66,37 @@ var imageFactory = new ImageDataFactory(profiles, detectionSelector, annotationS
 var exposureFactory = new ExposureDataFactory(imageFactory, profiles, detectionSelector, annotationSelector);
 var telescope = Stub.Create<ITelescopeMediator>((_, _) => null);
 var camera = new SimulatorCamera(profiles, telescope, exposureFactory, imageFactory);
-var solver = new ImageSolver(PlateSolverFactory.GetPlateSolver(profile.PlateSolveSettings),
-    PlateSolverFactory.GetBlindSolver(profile.PlateSolveSettings));
+var cameraMediator = Stub.Create<ICameraMediator>((method, _) => method.Name switch {
+    "GetInfo" => new NINA.Equipment.Equipment.MyCamera.CameraInfo { Connected = true, ExposureMin = .01, ExposureMax = 3600 },
+    "IsFreeToCapture" => true, _ => null
+});
+var pointing = Stub.Create<ITelescopeMediator>((method, _) => method.Name switch {
+    "GetInfo" => new NINA.Equipment.Equipment.MyTelescope.TelescopeInfo { Connected = true },
+    "GetCurrentPosition" => new Coordinates(0, 89.5, Epoch.J2000, Coordinates.RAType.Degrees), _ => null
+});
+var imaging = Stub.Create<IImagingMediator>((method, parameters) => method.Name == "CaptureImage"
+    ? camera.DownloadExposure((CancellationToken)parameters![1]!)
+    : throw new InvalidOperationException("Replay must not wait for full NINA image preparation: " + method.Name));
+var capture = new NinaPolarAlignmentCaptureService(profiles, cameraMediator, imaging, pointing);
+int previews = 0;
+capture.PreviewAvailable += preview => {
+    if (!preview.IsFrozen || preview.PixelWidth > 1600 || preview.PixelHeight > 1200) throw new InvalidOperationException("Invalid early preview");
+    previews++; Console.WriteLine($"Production preview before ASTAP: {preview.PixelWidth}x{preview.PixelHeight}");
+};
 var session = new PolarAlignmentSession(profile.AstrometrySettings.Latitude, profile.AstrometrySettings.Longitude);
 var results = new List<object>();
 try {
     if (!await camera.Connect(CancellationToken.None)) throw new InvalidOperationException("Simulator camera connection failed");
     var index = 0;
     foreach (var expected in spec.GetProperty("frames").EnumerateArray()) {
-        var data = await (await camera.DownloadExposure(CancellationToken.None)).ToImageData();
+        int previousPreviews = previews;
+        var frame = await capture.CaptureAndSolveAsync(1, CancellationToken.None);
+        if (previews != previousPreviews + 1 || frame.Preview?.PixelWidth != frame.Width || frame.Preview?.PixelHeight != frame.Height)
+            throw new InvalidOperationException("Production pipeline must publish an early preview and return a full-resolution display");
         var expectedTime = expected.GetProperty("capturedAtUtc").GetDateTimeOffset();
-        if (Math.Abs((data.MetaData.Image.ExposureMidPoint.ToUniversalTime() - expectedTime.UtcDateTime).TotalSeconds) > .01)
+        if (Math.Abs((frame.CapturedAtUtc - expectedTime).TotalSeconds) > .01)
             throw new InvalidOperationException("XISF exposure midpoint was not preserved or directory order changed");
-        var parameter = new PlateSolveParameter {
-            FocalLength = 1000, PixelSize = profile.CameraSettings.PixelSize, Binning = 1,
-            DownSampleFactor = 0, MaxObjects = 500, SearchRadius = 10, Regions = 5000,
-            Coordinates = new Coordinates(0, 89.5, Epoch.J2000, Coordinates.RAType.Degrees),
-            DisableNotifications = true, BlindFailoverEnabled = false
-        };
-        var result = await solver.Solve(data, parameter, new Progress<ApplicationStatus>(), CancellationToken.None);
-        if (!result.Success) throw new InvalidOperationException("Real ASTAP solve failed: " + expected.GetProperty("name").GetString());
-        var frame = new SolvedPolarFrame(result.Coordinates.RADegrees, result.Coordinates.Dec,
-            result.PositionAngle, result.Pixscale, data.Properties.Width, data.Properties.Height,
-            result.Flipped, expectedTime, null, Dut1Seconds: 0);
+        frame = frame with { Dut1Seconds = 0 };
         if (index++ < 2) {
             session.AddCalibration(frame);
             Console.WriteLine($"Reference {index}: solved; rotation={session.RotationDegrees:0.000} deg");
@@ -115,7 +123,7 @@ if (profileOutput != null) {
     new DataContractSerializer(typeof(Profile)).WriteObject(stream, profile);
     Console.WriteLine("New isolated profile: " + profileOutput);
 }
-Console.WriteLine("Verified real SimulatorCamera -> XISF decoder -> N.I.N.A. ASTAP solver -> PolarAlignmentSession.");
+Console.WriteLine("Verified real SimulatorCamera -> production capture/early-preview pipeline -> N.I.N.A. ASTAP solver -> PolarAlignmentSession.");
 return 0;
 
 public class Stub : DispatchProxy {

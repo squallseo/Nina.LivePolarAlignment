@@ -29,3 +29,7 @@ The Auto RA tooltip names the failing prerequisite, including parked or moving m
 The primary button uses short labels (Start, Continue, Resume; Cancel or Stop while working). Preparation/Unpark, reference capture, solving, and RA rotation progress are sent through `IApplicationStatusMediator` to N.I.N.A.'s application status bar at the bottom of the main window. Unpark uses the host mediator so N.I.N.A.'s own refusal conditions still apply. No GoTo or automatic return/parking is added.
 
 The plugin control panel does not repeat operation status in its heading or below the alignment card. The host status entry uses one stable source and clears when the operation ends or the panel is disposed. Manual RA-rotation instructions remain in the host status bar while waiting for Continue.
+
+## Preview latency
+
+Single exposures use N.I.N.A. CaptureImage without waiting for its full image preparation/statistics pipeline. After raw decoding, a reduced grayscale quick-look image is published and the WPF render queue is given a turn before full-resolution ASTAP work runs on a worker thread. A separate display stretch does not modify raw pixels used for solving or saved evidence. When the solve completes, the full-resolution display and computed overlay are published; optional evidence saving does not delay the reference overlay. Timing markers in the N.I.N.A. log distinguish download, first preview, solve, and full-resolution display.
