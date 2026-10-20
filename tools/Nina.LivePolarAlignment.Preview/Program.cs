@@ -202,6 +202,15 @@ internal static class Program {
             current = await Task.Run(() => new PolarAlignmentDockableVM(profiles, capture,
                 DispatchProxy.Create<NINA.WPF.Base.Interfaces.Mediator.IApplicationStatusMediator, SampleStatus>()));
             if (!current.AutoRaRotation || !current.UseStreaming || current.RotationAngleDegrees != 90 || !current.ReverseRaRotation || !current.VerificationReverse) throw new InvalidOperationException("Acquisition defaults must be on with westward RA rotation");
+            if (scene == 0) {
+                SampleCapture.MountOffline = true;
+                typeof(PolarAlignmentDockableVM).GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+                if (!current.AutoRaRotation || current.PrimaryActionCommand.CanExecute(null))
+                    throw new InvalidOperationException("Disconnected startup must preserve default Auto ON and block Start");
+                SampleCapture.MountOffline = false;
+                typeof(PolarAlignmentDockableVM).GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+                if (!current.AutoRaRotation) throw new InvalidOperationException("Reconnection must preserve Auto ON");
+            }
             current.AutoRaRotation = false; current.UseStreaming = false;
             capture.Step = () => current.WorkflowStep;
             View.DataContext = current;
@@ -324,9 +333,12 @@ internal static class Program {
         SampleCapture.UnsupportedAuto = true;
         await SelectScene(0); current!.AutoRaRotation = true;
         if (current.CanUseAutoRotation || !current.CanUseStreaming) throw new InvalidOperationException("Unsupported mounts must disable only automatic RA rotation");
+        if (!current.AutoRaRotation || current.PrimaryActionCommand.CanExecute(null))
+            throw new InvalidOperationException("Unavailable mount must retain Auto ON and prevent automatic Start");
+        current.AutoRaRotation = false;
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         if (current.AutoRaRotation || current.HasOperationError || current.WorkflowStep != 1 || SampleCapture.Rotations != 0)
-            throw new InvalidOperationException("Unsupported RA must quietly fall back to manual reference capture");
+            throw new InvalidOperationException("Explicit manual mode must allow camera-only reference capture");
         SampleCapture.UnsupportedAuto = false;
         await SelectScene(0);
         var settingsPanel = (StackPanel)View.FindName("RotationSettingsPanel");
@@ -362,8 +374,8 @@ internal static class Program {
         SampleCapture.FailRotation = true;
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         SampleCapture.FailRotation = false;
-        if (!current.HasOperationError || current.AutoRaRotation || current.WorkflowStep != 0)
-            throw new InvalidOperationException("A rotation fault must stop, disable auto and invalidate calibration");
+        if (!current.HasOperationError || !current.AutoRaRotation || current.WorkflowStep != 0)
+            throw new InvalidOperationException("A rotation fault must stop and invalidate calibration without changing the selected mode");
         await SelectScene(0); current!.RecordFieldSession = false;
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);
         await ((IAsyncRelayCommand)current.CaptureReferenceCommand).ExecuteAsync(null);

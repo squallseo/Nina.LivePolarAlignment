@@ -153,7 +153,7 @@
       <TextBlock Text="{Binding NotConnectedText}" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
       <CheckBox Width="14" Height="14" BorderBrush="Transparent" IsChecked="False" IsEnabled="False" IsHitTestVisible="False" Style="{StaticResource CheckmarkCheckbox}"/>
      </StackPanel>
-     <ToggleButton x:Name="AutoRaToggle" Grid.Column="2" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanUseAutoRotation}"/>
+     <ToggleButton x:Name="AutoRaToggle" Grid.Column="2" Style="{StaticResource AlignmentSwitch}" IsChecked="{Binding AutoRaRotation}" IsEnabled="{Binding CanConfigureRotation}"/>
     </Grid>
     <StackPanel x:Name="RotationSettingsPanel" Visibility="{Binding AutoRaRotation, Converter={StaticResource VisibleIf}}" IsEnabled="{Binding CanConfigureAutoRotation}">
      <DockPanel Margin="0,5,0,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding CanConfigureRotation}"><Button Content="−" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding DecreaseRotationAngleCommand}"/><TextBox Width="42" Margin="3,0" TextAlignment="Center" Padding="2,3" Text="{Binding RotationAngleDegrees, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/><Button Content="+" Width="26" Padding="0" Style="{StaticResource AlignmentButton}" Command="{Binding IncreaseRotationAngleCommand}"/></StackPanel><TextBlock Text="{local:UiLoc AutoRaAngle}" VerticalAlignment="Center" Style="{StaticResource InputLabel}"/></DockPanel>

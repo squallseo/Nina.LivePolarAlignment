@@ -12,12 +12,12 @@ public sealed partial class PolarAlignmentDockableVM {
     private AsyncRelayCommand? workflowCommand;
     public bool CameraConnected => captureService.CameraConnected;
     public bool MountConnected => captureService.MountConnected;
-    public bool EquipmentReady => CameraConnected;
+    public bool EquipmentReady => CameraConnected && (IndependentDriftEnabled || WorkflowStep >= 2 || !AutoRaRotation || captureService.CanPrepareAutoRaRotation);
     public bool CameraDisconnected => !CameraConnected;
     public bool MountDisconnected => !MountConnected;
     public string NotConnectedText => UiText.Get("NotConnected");
     public string CameraConnectionHint => UiText.Get("CameraRequired");
-    public string PrimaryActionHint => CameraConnected ? WorkflowHelp : CameraConnectionHint;
+    public string PrimaryActionHint => !CameraConnected ? CameraConnectionHint : !EquipmentReady ? RotationStatus : WorkflowHelp;
     public bool WaitingForManualRotation => !IndependentDriftEnabled && WorkflowStep == 1 && !AutoRaRotation && !liveBusy;
     public string ManualRotationInstruction => UiText.Get("ManualRotationRequired");
 

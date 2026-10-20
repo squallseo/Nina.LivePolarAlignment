@@ -22,7 +22,7 @@ public sealed partial class PolarAlignmentDockableVM {
     public RelayCommand IncreaseRotationAngleCommand => increaseRotationAngleCommand ??= new(() => RotationAngleDegrees += 10);
     public bool AutoRaRotation {
         get => autoRaRotation;
-        set { if (!CanConfigureRotation || (value && !captureService.CanPrepareAutoRaRotation)) return; autoRaRotation = value; NotifyRotation(); NotifyWorkflow(); }
+        set { if (!CanConfigureRotation) return; autoRaRotation = value; NotifyRotation(); NotifyWorkflow(); }
     }
     public bool ReverseRaRotation {
         get => reverseRaRotation;
@@ -59,7 +59,6 @@ public sealed partial class PolarAlignmentDockableVM {
             ValidateSite(); automaticRotationCompleted = true;
             RecordFieldEvent("ra_rotation_complete", new { reportedDegrees = rotationProgress });
         } catch {
-            autoRaRotation = false;
             // A partial rotation must never be retried against an old reference automatically.
             session = null; calibrationSamples = 0; guidance = null;
             EndFieldSession("ra_rotation_failed_or_cancelled");
@@ -70,7 +69,6 @@ public sealed partial class PolarAlignmentDockableVM {
         }
     }
     private void NotifyRotation() {
-        if (!liveBusy && !captureService.CanPrepareAutoRaRotation) autoRaRotation = false;
         foreach (var name in new[] { nameof(RotationAngleDegrees), nameof(AutoRaRotation), nameof(ReverseRaRotation),
             nameof(CanConfigureAutoRotation), nameof(CanConfigureRotation), nameof(CanUseAutoRotation), nameof(IsRotating), nameof(RotationStatus) }) RaisePropertyChanged(name);
     }
