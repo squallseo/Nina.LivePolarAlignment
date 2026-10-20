@@ -198,7 +198,9 @@ internal static class Program {
             ((SampleProfile)(object)profile).Settings = DispatchProxy.Create<IApplicationSettings, SampleProfile>();
             var profiles = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)profiles).Active = profile;
             var capture = new SampleCapture();
-            current = new PolarAlignmentDockableVM(profiles, capture, DispatchProxy.Create<NINA.WPF.Base.Interfaces.Mediator.IApplicationStatusMediator, SampleStatus>());
+            // Match the host's possible background MEF composition; its loader Dispatcher is not pumped.
+            current = await Task.Run(() => new PolarAlignmentDockableVM(profiles, capture,
+                DispatchProxy.Create<NINA.WPF.Base.Interfaces.Mediator.IApplicationStatusMediator, SampleStatus>()));
             if (!current.AutoRaRotation || !current.UseStreaming || current.RotationAngleDegrees != 90 || !current.ReverseRaRotation || !current.VerificationReverse) throw new InvalidOperationException("Acquisition defaults must be on with westward RA rotation");
             current.AutoRaRotation = false; current.UseStreaming = false;
             capture.Step = () => current.WorkflowStep;

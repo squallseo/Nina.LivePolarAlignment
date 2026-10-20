@@ -18,6 +18,9 @@ public sealed partial class PolarAlignmentDockableVM : DockableVM, IDisposable {
 
     [ImportingConstructor]
     public PolarAlignmentDockableVM(IProfileService profiles, Capture.IPolarAlignmentCaptureService captureService, IApplicationStatusMediator? applicationStatusMediator = null) : base(profiles) {
+        freshnessTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Background, uiDispatcher) {
+            Interval = TimeSpan.FromSeconds(1)
+        };
         Title = "Live Polar Alignment";
         this.applicationStatusMediator = applicationStatusMediator;
         var iconResources = new PolarAlignmentTemplates();

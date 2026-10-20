@@ -29,7 +29,9 @@ public sealed partial class PolarAlignmentDockableVM {
     private DateTimeOffset? measuredAt;
     private double lastCycleMilliseconds;
     private bool measurementStale = true;
-    private readonly DispatcherTimer freshnessTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    // MEF can create this VM on a loader thread whose Dispatcher is never pumped.
+    private readonly Dispatcher uiDispatcher = System.Windows.Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+    private readonly DispatcherTimer freshnessTimer;
     private bool useStreaming = true;
     public bool UseStreaming {
         get => useStreaming;
@@ -97,13 +99,14 @@ public sealed partial class PolarAlignmentDockableVM {
         freshnessTimer.Start();
     }
     private void CapturePreviewAvailable(BitmapSource preview) {
-        if (!freshnessTimer.Dispatcher.CheckAccess()) {
-            freshnessTimer.Dispatcher.BeginInvoke(() => CapturePreviewAvailable(preview));
+        if (!uiDispatcher.CheckAccess()) {
+            uiDispatcher.BeginInvoke(() => CapturePreviewAvailable(preview));
             return;
         }
         if (fieldDisposed || !liveBusy || IsStopping) return;
         livePreview = preview; guidance = null;
         liveStatus = "SolvingFrame"; NotifyLive();
+        NINA.Core.Utility.Logger.Info($"Polar preview: applied to UI ({preview.PixelWidth}x{preview.PixelHeight}), rotating={IsRotating}");
     }
     private void ResetLive() {
         ResetDriftEvidence();
