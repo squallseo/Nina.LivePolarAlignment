@@ -282,6 +282,19 @@ internal static class Program {
             if (current!.WorkflowStep != scene) throw new InvalidOperationException("Wrong workflow step");
             foreach (var size in new[] { (360, 1000), (1280, 800), (1920, 1080) }) Save(Path.Combine(directory, $"ui-step-{scene + 1}-{size.Item1}.png"), size.Item1, size.Item2);
         }
+        void AssertMeasurementSurvivesNextPreview(string name) {
+            var previousImage = current!.LivePreview;
+            var previousGuidance = current.FieldGuidance;
+            var previousError = current.LiveTotalError;
+            var next = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[] { 0, 255, 255, 0 }, 2);
+            next.Freeze();
+            typeof(PolarAlignmentDockableVM).GetMethod("CapturePreviewAvailable", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, new object[] { next });
+            if (!ReferenceEquals(previousImage, current.LivePreview) || !ReferenceEquals(previousGuidance, current.FieldGuidance)
+                || current.LiveTotalError != previousError || !current.HasCurrentFieldGuidance || !current.HasAlignmentDetail)
+                throw new InvalidOperationException("Next-frame solving must retain the solved image, overlay and error in " + name);
+            Save(Path.Combine(directory, "ui-retained-" + name + ".png"), 1280, 800);
+        }
+        AssertMeasurementSurvivesNextPreview("single");
         SampleProfile.Language = "ko-KR"; NINA.Core.Locale.Loc.Instance.ReloadLocale(SampleProfile.Language); UiText.Refresh();
         if (!System.Text.RegularExpressions.Regex.IsMatch(current!.WorkflowTitle, @"[\uac00-\ud7af]")) throw new InvalidOperationException("Korean locale missing");
         Save(Path.Combine(directory, "ui-korean-1280.png"), 1280, 800);
@@ -296,6 +309,7 @@ internal static class Program {
         currentLoop = ((IAsyncRelayCommand)current.StartLiveCommand).ExecuteAsync(null);
         while (SampleCapture.StreamFrames < 2 && !currentLoop.IsCompleted) await Task.Delay(25);
         if (!current.HasLiveMeasurement || !current.HasCurrentFieldGuidance || SampleCapture.StreamFrames < 2) throw new InvalidOperationException("Streaming workflow failed");
+        AssertMeasurementSurvivesNextPreview("streaming");
         current.FieldNote = "Synthetic stationary window; not physical accuracy.";
         current.CheckStabilityCommand.Execute(null);
         while (!current.HasStabilityResult && !currentLoop.IsCompleted) await Task.Delay(25);

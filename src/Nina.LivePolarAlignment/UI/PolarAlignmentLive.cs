@@ -104,6 +104,12 @@ public sealed partial class PolarAlignmentDockableVM {
             return;
         }
         if (fieldDisposed || !liveBusy || IsStopping) return;
+        // A solved image and its overlay are one display unit. Keep that pair while
+        // the next frame is being solved; old geometry must not be drawn on new pixels.
+        if (!IndependentDriftEnabled && session?.IsCalibrated == true && guidance != null && livePreview != null) {
+            liveStatus = "SolvingFrame"; NotifyLive();
+            return;
+        }
         livePreview = preview; guidance = null;
         liveStatus = "SolvingFrame"; NotifyLive();
         NINA.Core.Utility.Logger.Info($"Polar preview: applied to UI ({preview.PixelWidth}x{preview.PixelHeight}), rotating={IsRotating}");
