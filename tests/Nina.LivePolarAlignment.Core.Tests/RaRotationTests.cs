@@ -47,7 +47,8 @@ public sealed class RaRotationTests {
         Assert.Equal(1, RaRotation.SelectRate(mount.State));
         await Controller().RunAsync(mount, reverse, null, default, 90, 4);
         Assert.Equal(reverse ? -4 : 4, mount.Commands[0]);
-        Assert.InRange(Math.Abs(RaRotation.WrapDegrees((mount.State.RaHours - 23) * 15)), 89.99, 91.01);
+        Assert.Contains(reverse ? -.5 : .5, mount.Commands);
+        Assert.InRange(Math.Abs(RaRotation.WrapDegrees((mount.State.RaHours - 23) * 15)), 89.99, 90.13);
         Assert.Equal(0, mount.Rate); Assert.True(mount.State.Tracking);
     }
 

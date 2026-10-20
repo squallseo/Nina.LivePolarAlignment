@@ -43,6 +43,10 @@ public sealed class RaRotation {
         if (!double.IsFinite(targetDegrees) || targetDegrees < 60 || targetDegrees > 90 || targetDegrees % 10 != 0) throw new ArgumentOutOfRangeException(nameof(targetDegrees));
         token.ThrowIfCancellationRequested();
         var initial = mount.Read(); var rate = SelectRate(initial, maximumRate);
+        double finishRate;
+        try { finishRate = SelectRate(initial, Math.Min(.5, rate)); }
+        catch (InvalidOperationException) { finishRate = rate; }
+        bool decelerated = false;
         bool owned = false, stopped = false;
         try {
             // Mark ownership before a driver call: a driver can move and then throw.
@@ -70,6 +74,10 @@ public sealed class RaRotation {
                     direction = Math.Sign(delta); total += Math.Abs(delta); stagnant = 0; lastMotion = timer.Elapsed.TotalSeconds;
                 } else stagnant++;
                 progress?.Report(total);
+                if (!decelerated && total < targetDegrees && targetDegrees - total <= 5 && finishRate < rate) {
+                    mount.Move(reverse ? -finishRate : finishRate);
+                    decelerated = true;
+                }
                 if (stagnant >= 24 || timer.Elapsed.TotalSeconds - lastMotion > 6)
                     throw new TimeoutException("No fresh RA movement feedback for 6 seconds. Reset calibration.");
                 if (polls * .25 > targetDegrees / rate + 30 || timer.Elapsed.TotalSeconds > targetDegrees / rate + 30)

@@ -59,3 +59,15 @@ N.I.N.A.'s **SKYSURVEY** camera mode is useful with a connected telescope simula
 The directory camera alone enables Start for manual image replay. A mount connection is required only for automatic RA rotation and the separate drift-verification procedure. Missing connections appear beside the affected controls using N.I.N.A.'s compact red circled-X indicator. Keep automatic RA rotation off when using this image controller: change the scene with the controller instead. After the first reference, the panel explicitly waits for manual rotation. Select the RA 90-degree scene and press Continue; live measurement then starts automatically. The offline command-line replay does not require connected equipment.
 
 Use the official `astap_cli.exe` for windowless solving. ASTAP documents that it can be renamed to `astap.exe`; keep the star database beside it. The GUI executable may display its own search-progress notifier, especially when a simulator mount supplies a hint far from the recorded image. A connected simulator may start parked: when Auto RA is enabled, Start requests Unpark through N.I.N.A. before capturing, and keep Auto RA off for the manual directory-image controller.
+
+## One-run automatic reference replay
+
+The DIRECTORY camera reads files independently of telescope motion. Without scene changes, two successful solves of the same image cannot calibrate the RA axis. For a 90-degree Auto RA test, arm this helper before Start:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/Nina.LivePolarAlignment.Simulator/Start-AutoReference.ps1 -Dataset artifacts/camera-simulator/qhy600-1000mm -LogPath "C:\path\to\current-NINA-session.log"
+```
+
+It publishes reference 1, watches only the specified session log, and atomically publishes reference 2 after the first raw download and a nonzero RA command from a known simulator connection. It never commands equipment and does not alter plugin calculations. Keep the camera DIRECTORY source on this dataset's `feed` folder and the rotation angle at 90 degrees. Wait for the helper's Ready message before Start. It exits after switching; rearm it before each new calibration. Do not change scenes manually during the reference pair. After calibration, open the manual controller for bolt-adjustment scenes only when ready to change the displayed feed (opening it resets to reference 1). Live timestamps differ from the dataset render times, so numerical regression uses the timestamped offline replay instead.
+
+`-Replay` processes a completed log from its beginning and exits at EOF, for file-transition tests using a separate synthetic fixture dataset.

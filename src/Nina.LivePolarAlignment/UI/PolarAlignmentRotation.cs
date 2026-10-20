@@ -7,7 +7,7 @@ namespace Nina.LivePolarAlignment.UI;
 
 public sealed partial class PolarAlignmentDockableVM {
     private bool autoRaRotation = true, reverseRaRotation = true, rotationInProgress, automaticRotationCompleted;
-    private double rotationProgress;
+    private double rotationProgress, rotationActualDegrees;
     private int rotationAngleDegrees = 90;
     public int RotationAngleDegrees {
         get => rotationAngleDegrees;
@@ -40,7 +40,7 @@ public sealed partial class PolarAlignmentDockableVM {
         if (automaticRotationCompleted) return;
         if (!captureService.SupportsAutoRaRotation)
             throw new InvalidOperationException(UiText.Get("AutoRaCheckPath"));
-        rotationInProgress = captureAndRotate == null; rotationProgress = 0; NotifyLive();
+        rotationInProgress = captureAndRotate == null; rotationProgress = 0; rotationActualDegrees = 0; NotifyLive();
         bool acceptingProgress = true, motionStarted = false;
         try {
             var progress = new Progress<double>(angle => {
@@ -49,7 +49,7 @@ public sealed partial class PolarAlignmentDockableVM {
                     motionStarted = true;
                     RecordFieldEvent("ra_rotation_start", new { targetDegrees = RotationAngleDegrees, reverse = ReverseRaRotation });
                 }
-                rotationInProgress = true; rotationProgress = angle;
+                rotationInProgress = true; rotationActualDegrees = angle; rotationProgress = Math.Min(angle, RotationAngleDegrees);
                 NotifyLive();
             });
             if (captureAndRotate == null)
@@ -57,7 +57,7 @@ public sealed partial class PolarAlignmentDockableVM {
             else await captureAndRotate(progress, token);
             token.ThrowIfCancellationRequested();
             ValidateSite(); automaticRotationCompleted = true;
-            RecordFieldEvent("ra_rotation_complete", new { reportedDegrees = rotationProgress });
+            RecordFieldEvent("ra_rotation_complete", new { reportedDegrees = rotationActualDegrees, targetDegrees = RotationAngleDegrees });
         } catch {
             // A partial rotation must never be retried against an old reference automatically.
             session = null; calibrationSamples = 0; guidance = null;
