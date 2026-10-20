@@ -53,3 +53,7 @@ N.I.N.A.'s **SKYSURVEY** camera mode is useful with a connected telescope simula
 - [ESA Gaia DR3 documentation](https://gea.esac.esa.int/archive/documentation/GDR3/) and the ESA archive TAP service.
 - [Hipparcos and Tycho catalogs, ESA 1997](https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239), queried through CDS VizieR.
 - [N.I.N.A. Version-3.2 simulator source](https://github.com/isbeorn/nina/blob/Version-3.2/NINA.WPF.Base/Model/Equipment/MyCamera/Simulator/SimulatorCamera.cs).
+
+## Equipment connection indicators
+
+The plugin panel requires both a camera and mount connection before Start. A directory camera alone is insufficient; connect a simulator mount or a real supported mount in N.I.N.A. Equipment. Keep automatic RA rotation off when using this image controller: change the scene with the controller instead. After the first reference, the panel explicitly waits for manual rotation. Select the RA 90-degree scene and press Capture rotated field; live measurement then starts automatically. The offline command-line replay does not require connected equipment.

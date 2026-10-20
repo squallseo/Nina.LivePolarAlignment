@@ -1,5 +1,7 @@
 using System;
 using System.Windows.Input;
+using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Nina.LivePolarAlignment.UI;
 
@@ -7,6 +9,15 @@ public sealed partial class PolarAlignmentDockableVM {
     private int calibrationSamples;
     private double pixelScale;
     private string? operationError;
+    private AsyncRelayCommand? workflowCommand;
+    public bool CameraConnected => captureService.CameraConnected;
+    public bool MountConnected => captureService.MountConnected;
+    public bool EquipmentReady => CameraConnected && MountConnected;
+    public string CameraConnectionText => UiText.Get(CameraConnected ? "CameraConnected" : "CameraDisconnected");
+    public string MountConnectionText => UiText.Get(MountConnected ? "MountConnected" : "MountDisconnected");
+    public string EquipmentInstruction => UiText.Get("EquipmentRequired");
+    public bool WaitingForManualRotation => !IndependentDriftEnabled && WorkflowStep == 1 && !AutoRaRotation && !liveBusy;
+    public string ManualRotationInstruction => UiText.Get("ManualRotationRequired");
 
     public int WorkflowStep => calibrationSamples;
     public bool IsRotationStep => WorkflowStep == 1;
@@ -25,7 +36,13 @@ public sealed partial class PolarAlignmentDockableVM {
         1 => UiText.Get(AutoRaRotation && !automaticRotationCompleted ? "AutoRaSecond" : "Workflow2"),
         _ => UiText.Get("Workflow3")
     };
-    public ICommand PrimaryActionCommand => IndependentDriftEnabled ? IndependentDriftCommand : IsAdjustmentStep ? StartLiveCommand : CaptureReferenceCommand;
+    public ICommand PrimaryActionCommand => IndependentDriftEnabled ? IndependentDriftCommand : workflowCommand ??= new AsyncRelayCommand(RunWorkflowAsync, () => EquipmentReady && !liveBusy);
+    private async Task RunWorkflowAsync() {
+        if (!EquipmentReady) return;
+        if (IsAdjustmentStep) { await RunLiveAsync(); return; }
+        await CaptureReferenceAsync();
+        if (IsAdjustmentStep && !HasOperationError && liveStatus != "Live7" && liveStatus != "Live2" && EquipmentReady) await RunLiveAsync();
+    }
     public string WorkflowTitle => IndependentDriftEnabled ? UiText.Get("DriftTitle") : IsRotating ? UiText.Get("AutoRaWorking") : WorkflowStep switch {
         0 => UiText.Get(AutoRaRotation ? "AutoReady" : "ManualReady"),
         1 => UiText.Get("Workflow5"),
@@ -56,6 +73,12 @@ public sealed partial class PolarAlignmentDockableVM {
 
     private void NotifyWorkflow() {
         NotifyImpact();
+        workflowCommand?.NotifyCanExecuteChanged();
+        (IndependentDriftCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        (CaptureReferenceCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        (StartLiveCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        foreach (var name in new[] { nameof(CameraConnected), nameof(MountConnected), nameof(EquipmentReady),
+            nameof(CameraConnectionText), nameof(MountConnectionText), nameof(EquipmentInstruction), nameof(WaitingForManualRotation) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(WorkflowStep), nameof(IsRotationStep), nameof(IsAdjustmentStep),
             nameof(IsWorking), nameof(HasOperationError), nameof(OperationError), nameof(HasLiveMeasurement),
             nameof(HasPreview), nameof(HasAlignmentDetail), nameof(HasCurrentFieldGuidance), nameof(FieldGuidance), nameof(PixelScaleArcseconds),

@@ -26,6 +26,9 @@ public class SampleProfile : DispatchProxy {
 }
 
 internal sealed class SampleCapture : IPolarAlignmentCaptureService {
+    public static bool CameraOffline, MountOffline;
+    public bool CameraConnected => !CameraOffline;
+    public bool MountConnected => !MountOffline;
     public Func<int> Step { get; set; } = () => 0;
     public static bool UnsupportedStream, StreamCleanupFailure;
     public bool SupportsStreaming => !UnsupportedStream;
@@ -104,6 +107,7 @@ internal static class Program {
     private static PolarAlignmentDockableVM? current;
     private static Task? currentLoop;
     private static PolarAlignmentView View = null!;
+    private static NINA.Profile.ColorSchemaSettings Theme = null!;
     private static readonly StackPanel SceneButtons = new() { Orientation = Orientation.Horizontal };
 
     [STAThread]
@@ -116,6 +120,7 @@ internal static class Program {
         NINA.Core.Locale.Loc.Instance.ReloadLocale("en-US");
         application.Resources["PuzzlePieceSVG"] = new GeometryGroup();
         var theme = new NINA.Profile.ColorSchemaSettings();
+        Theme = theme;
         theme.ColorSchema = theme.ColorSchemas.Items.First(x => x.Name == "Persian");
         var tp = DispatchProxy.Create<IProfile, SampleProfile>(); ((SampleProfile)(object)tp).Theme = theme;
         var ts = DispatchProxy.Create<IProfileService, SampleProfile>(); ((SampleProfile)(object)ts).Active = tp;
@@ -417,7 +422,56 @@ internal static class Program {
         if (current.AlignmentQualityLevel != "Unavailable" || current.EstimatedExposureMotion != "—")
             throw new InvalidOperationException("Paused data must not retain a success status or drift estimate");
         current.Dispose();
-        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA controls, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay; independent drift with no mount motion, realignment warning, duplicate rejection and offline drift replay passed. Synthetic inputs only.");
+        await SelectScene(0);
+        foreach (var disconnected in new[] { (true, false), (false, true), (true, true) }) {
+            SampleCapture.CameraOffline = disconnected.Item1; SampleCapture.MountOffline = disconnected.Item2;
+            vmType.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+            Save(Path.Combine(directory, $"ui-equipment-{disconnected.Item1}-{disconnected.Item2}.png"), 1280, 900);
+            if (current!.PrimaryActionCommand.CanExecute(null) || current.EquipmentReady
+                || ((TextBlock)View.FindName("CameraConnectionLabel")).Text != current.CameraConnectionText
+                || ((TextBlock)View.FindName("MountConnectionLabel")).Text != current.MountConnectionText)
+                throw new InvalidOperationException("Disconnected equipment must be visible and prevent Start");
+        }
+        SampleCapture.CameraOffline = false; SampleCapture.MountOffline = false;
+        vmType.GetMethod("NotifyLive", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(current, null);
+        await ((IAsyncRelayCommand)current!.PrimaryActionCommand).ExecuteAsync(null);
+        if (!current.WaitingForManualRotation || current.WorkflowStep != 1 || current.IsWorking)
+            throw new InvalidOperationException("Manual Start must explicitly wait for RA rotation");
+        Save(Path.Combine(directory, "ui-manual-wait.png"), 1280, 1000);
+        var manualSequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
+        for (int i = 0; i < 200 && !current.HasLiveMeasurement && !manualSequence.IsCompleted; i++) await Task.Delay(25);
+        if (!current.HasLiveMeasurement || !current.IsWorking) throw new InvalidOperationException("Second reference must enter live measurement automatically");
+        current.StopLiveCommand.Execute(null); await manualSequence;
+        await SelectScene(0); current!.AutoRaRotation = true;
+        var autoSequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
+        for (int i = 0; i < 300 && !current.HasLiveMeasurement && !autoSequence.IsCompleted; i++) await Task.Delay(25);
+        if (!current.HasLiveMeasurement || current.WorkflowStep != 2 || !current.IsWorking)
+            throw new InvalidOperationException("One Start must run references, RA rotation and live measurement");
+        current.StopLiveCommand.Execute(null); await autoSequence;
+        var resumeSequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
+        for (int i = 0; i < 100 && !current.IsWorking && !resumeSequence.IsCompleted; i++) await Task.Delay(25);
+        await Task.Delay(150);
+        if (!current.IsWorking || resumeSequence.IsCompleted) throw new InvalidOperationException("Resume must restart live measurement after Stop");
+        SampleCapture.MountOffline = true;
+        for (int i = 0; i < 100 && !resumeSequence.IsCompleted; i++) await Task.Delay(25);
+        if (!resumeSequence.IsCompleted || !current.HasOperationError || current.PrimaryActionCommand.CanExecute(null))
+            throw new InvalidOperationException("Losing the mount must stop measurements and prevent restart");
+        await resumeSequence; SampleCapture.MountOffline = false;
+        await SelectScene(0); current!.AutoRaRotation = true;
+        var cancelSequence = ((IAsyncRelayCommand)current.PrimaryActionCommand).ExecuteAsync(null);
+        while (!current.IsRotating && !cancelSequence.IsCompleted) await Task.Delay(10);
+        current.StopLiveCommand.Execute(null); await cancelSequence;
+        if (current.HasLiveMeasurement || current.IsWorking) throw new InvalidOperationException("Stop must not restart workflow");
+        foreach (var schema in Theme.ColorSchemas.Items) {
+            Theme.ColorSchema = schema;
+            await Task.Delay(50);
+            Save(Path.Combine(directory, $"ui-theme-{schema.Name}.png"), 1280, 1000);
+            foreach (var name in new[] { "WorkflowTitleLabel", "WorkflowDescriptionLabel", "CameraConnectionLabel", "MountConnectionLabel" })
+                if (((SolidColorBrush)((TextBlock)View.FindName(name)).Foreground).Color != schema.PrimaryColor)
+                    throw new InvalidOperationException($"{name} must follow the NINA text color in {schema.Name}");
+        }
+        current.Dispose();
+        File.WriteAllText(Path.Combine(directory, "preview-verification.txt"), "Equipment gating and labels; one-Start workflow and manual wait; Stop cancellation; all built-in themes; quality thresholds; options binding; three workflow stages; layout and localization; streaming and failure; field journal and replay; automatic RA controls, two-reference sequence and cancellation; independent RA remeasurement with optional stability, recording off/on, verification cancellation and journal replay; independent drift with no mount motion, realignment warning, duplicate rejection and offline drift replay passed. Synthetic inputs only.");
     }
 
     private static void Save(string path, int width, int height) {

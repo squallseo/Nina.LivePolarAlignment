@@ -11,6 +11,8 @@ public sealed class StreamingCleanupException : InvalidOperationException {
 }
 
 public interface IPolarAlignmentCaptureService {
+    bool CameraConnected => false;
+    bool MountConnected => false;
     bool SupportsStreaming => false;
     bool IsSynthetic => false;
     bool SupportsAutoRaRotation => false;

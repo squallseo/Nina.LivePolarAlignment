@@ -37,9 +37,9 @@ public sealed class PolarFieldView : FrameworkElement {
     public static readonly DependencyProperty ReferenceScaleProperty = DependencyProperty.Register(nameof(ReferenceScale), typeof(double), typeof(PolarFieldView), new FrameworkPropertyMetadata(1.0, FrameworkPropertyMetadataOptions.AffectsRender));
     public double ReferenceScale { get => (double)GetValue(ReferenceScaleProperty); set => SetValue(ReferenceScaleProperty, value); }
     public Rect VisibleImageRegion { get; private set; }
-    private Brush Mint => TryFindResource("ButtonBackgroundSelectedBrush") as Brush ?? Brushes.LightGray;
-    private Brush Amber => TryFindResource("CrosshairBrush") as Brush ?? Brushes.Gray;
-    private Brush Muted => TryFindResource("PrimaryBrush") as Brush ?? Brushes.LightGray;
+    private Brush Mint => Color("#43C98F");
+    private Brush Amber => Color("#E9B85C");
+    private Brush Muted => Color("#E5E7EB");
 
     protected override Size MeasureOverride(Size availableSize) {
         double width = double.IsInfinity(availableSize.Width) ? 480 : availableSize.Width;

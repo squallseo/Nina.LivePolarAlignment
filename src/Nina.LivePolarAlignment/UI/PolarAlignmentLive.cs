@@ -72,8 +72,8 @@ public sealed partial class PolarAlignmentDockableVM {
         profiles = profileService; captureService = service;
         UiText.Configure(() => profileService.ActiveProfile.ApplicationSettings?.Culture);
         UiText.Instance.PropertyChanged += LocaleChanged;
-        CaptureReferenceCommand = new AsyncRelayCommand(CaptureReferenceAsync, () => !liveBusy && session?.IsCalibrated != true);
-        StartLiveCommand = new AsyncRelayCommand(RunLiveAsync, () => !liveBusy && session?.IsCalibrated == true);
+        CaptureReferenceCommand = new AsyncRelayCommand(CaptureReferenceAsync, () => EquipmentReady && !liveBusy && session?.IsCalibrated != true);
+        StartLiveCommand = new AsyncRelayCommand(RunLiveAsync, () => EquipmentReady && !liveBusy && session?.IsCalibrated == true);
         StopLiveCommand = new RelayCommand(RequestStopLive, () => liveBusy);
         ResetLiveCommand = new RelayCommand(ResetLive, () => !liveBusy && !fieldSaving);
         InitializeField(); InitializeVerification(); InitializeDrift();
@@ -212,6 +212,8 @@ public sealed partial class PolarAlignmentDockableVM {
         finally { liveCancellation.Dispose(); liveCancellation = null; liveBusy = false; NotifyLive(); if (fieldDisposed && !fieldSaving) EndFieldSession("disposed"); }
     }
     private void ValidateSite() {
+        if (!captureService.CameraConnected || !captureService.MountConnected)
+            throw new InvalidOperationException(UiText.Get("EquipmentRequired"));
         var site = profiles.ActiveProfile.AstrometrySettings;
         if (site.Latitude != calibrationLatitude || site.Longitude != calibrationLongitude) {
             session = null;

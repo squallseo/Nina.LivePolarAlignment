@@ -1,10 +1,10 @@
 # Automatic RA rotation
 
-`Auto RA rotation` performs the first reference capture, RA rotation, verified stop and settling, then the second reference capture. It defaults on. Unsupported equipment switches the option off and falls back to manual rotation. The user adjusts altitude and azimuth bolts afterward.
+`Auto RA rotation` performs the first reference capture, RA rotation, verified stop and settling, then the second reference capture and continuous live measurement. It defaults on. Unsupported equipment switches the option off and falls back to manual rotation. In manual mode, Start captures only the first reference and displays an explicit RA-rotation prompt. Rotate RA, then press Capture rotated field; continuous live measurement starts automatically after that reference. The user adjusts altitude and azimuth bolts during live measurement.
 
 ## Settings and prerequisites
 
-- Configure the camera, solver, site, focal length, and pixel size, then point near the visible celestial pole.
+- Connect both camera and mount in N.I.N.A. Equipment. The panel displays each connection state and disables Start until both are connected. Configure the solver, site, focal length, and pixel size, then point near the visible celestial pole.
 - A connected, unparked equatorial mount must support RA `MoveAxis`, tracking on/off control, and a speed within 0.1–1°/s. Stop other sequences, guiding, and manual movement.
 - Rotation defaults to 90°. Available angles are 60°, 70°, 80°, and 90°; remeasurement uses the same setting.
 - `Reverse RA direction` defaults on and sends the same negative RA command as N.I.N.A.'s manual W button. Off uses the positive command of its E button. N.I.N.A.'s `PrimaryReversed` setting also applies. W/E icons indicate command direction, not image clockwise/counterclockwise motion or live encoder feedback.

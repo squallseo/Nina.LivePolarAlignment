@@ -22,6 +22,8 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
     private readonly IImagingMediator imaging;
     private readonly ITelescopeMediator telescope;
     private readonly SemaphoreSlim captureGate = new(1, 1);
+    public bool CameraConnected => camera.GetInfo()?.Connected == true;
+    public bool MountConnected => telescope.GetInfo()?.Connected == true;
 
     [ImportingConstructor]
     public NinaPolarAlignmentCaptureService(IProfileService profiles, ICameraMediator camera,
