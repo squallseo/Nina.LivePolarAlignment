@@ -1,31 +1,37 @@
-# Standalone UI preview
+# Synthetic WPF preview
 
-This runs the production WPF view and workflow with an explicitly synthetic capture
-service. It never connects a camera or mount. The NINA profile/database context is
-isolated in a process-specific temporary directory.
-
-Requires Windows, .NET 8 Desktop Runtime and an installed NINA distribution for
-the native SOFA/NOVAS libraries.
-Use `-p:NinaInstallDirectory="C:\path\to\NINA"` for a different installation path.
+Runs the production views with a synthetic capture service. No camera or mount is
+connected. The NINA database/profile context uses a process-specific temporary folder.
+Requires Windows, .NET 8 Desktop Runtime and an installed NINA distribution for native libraries.
 
 ```powershell
 dotnet run --project tools/Nina.LivePolarAlignment.Preview -c Release
 ```
 
-The sample opens maximized in the adjustment stage, with the image on the left and
-controls on the right. The divider resizes the panels; narrow windows stack them.
-Its top buttons switch between the first
-reference, RA rotation and adjustment stages. The production buttons also work;
-stop/reset marks old guidance stale. Sample exposure/processing times are artificial.
+The main preview has an image area and controls with a draggable divider; a narrow
+window stacks them. The installed plugin exports two independently dockable panels.
+Exposure/capture timing and sky images in the preview are synthetic.
 
-To verify workflow states and render narrow, 1280x800 and 1920x1080 layouts:
+## Current regression suite
 
 ```powershell
-dotnet run --project tools/Nina.LivePolarAlignment.Preview -c Release -- --render-to artifacts/ui-preview
+dotnet run --project tools/Nina.LivePolarAlignment.Preview -c Release -- --render-polemaster-to artifacts/polemaster-preview
 ```
 
-This checks all three stages, the image area and control positions, live publication and cancellation/stale behavior,
-and writes PNGs plus `preview-verification.txt`. It does not test actual camera
-capture, external plate solving or accuracy of a physical mount.
+This exercises automatic identification and clicked fallback before motion, preview
+ownership/cleanup, two 40-degree intervals, return, manual adjustment, monitoring
+restart, shared dock panels, the single toolbar filter, plugin Options binding,
+general-camera fixed-target presentation and progress rail, and camera-method defaults
+and capability warnings. PNGs and a verification report are written to the requested folder.
 
-The preview loads NINA's actual Persian color schema and WPF control dictionaries. The plugin inherits host theme brushes and fonts. Focus follows the celestial pole and measured RA axis without changing the astrometric projection; switch it off to fit the complete frame. The synthetic camera uses 6 arcseconds/pixel. Common labels use NINA's locale resources. Plugin instructions follow the active profile language, with Korean translations and English fallback. The render checks cover English, Korean, and an untranslated locale.
+Use `--render-markers-to artifacts/marker-preview` for isolated overlay rendering.
+Use `--polemaster-demo` for an interactive synthetic daytime workflow. Press Start
+to see calibration, return and adjustment; no physical equipment is controlled.
+
+The older `--render-to` and `--render-adjustment-to` entries are developer fixtures
+for additional numerical/UI scenarios, including internal diagnostics. They do not
+define which tools are exposed in the current installed UI.
+
+For another NINA installation, pass `-p:NinaInstallDirectory="C:/path/to/NINA"`.
+The preview uses NINA theme resources and English/Korean localization. A successful
+synthetic run does not establish hardware frame cadence or absolute alignment accuracy.

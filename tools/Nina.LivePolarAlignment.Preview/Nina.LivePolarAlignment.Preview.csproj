@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Nina.LivePolarAlignment/Nina.LivePolarAlignment.csproj" />
+    <PackageReference Include="Dirkster.AvalonDock" Version="4.72.1"/>
     <None Include="$(NinaInstallDirectory)\External\x64\SOFA\SOFAlib.dll" Condition="Exists('$(NinaInstallDirectory)\External\x64\SOFA\SOFAlib.dll')" Link="External/x64/SOFA/SOFAlib.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(NinaInstallDirectory)\External\x64\NOVAS\NOVAS31lib.dll" Condition="Exists('$(NinaInstallDirectory)\External\x64\NOVAS\NOVAS31lib.dll')" Link="External/x64/NOVAS/NOVAS31lib.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

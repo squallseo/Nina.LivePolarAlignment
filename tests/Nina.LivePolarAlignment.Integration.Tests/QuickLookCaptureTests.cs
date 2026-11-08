@@ -10,6 +10,14 @@ namespace Nina.LivePolarAlignment.Integration.Tests;
 
 [Collection("Isolated NINA environment")]
 public sealed class QuickLookCaptureTests {
+    [Fact] public void LinearPreviewDoesNotClipWideRawPayloadWithNarrowDriverMetadata() {
+        var raw=Enumerable.Repeat((ushort)20000,100*80).ToArray();raw[4000]=50000;
+        var image=new BaseImageData(raw,100,80,8,false,new ImageMetaData(),null!,InterfaceStub.Create<NINA.Image.ImageAnalysis.IStarDetection>((_,_)=>null),null!);
+        var prepared=QuickLookPreview.Prepare(image,default,stretchEnabled:false);
+        var pixels=new byte[raw.Length];prepared.Image.CopyPixels(pixels,100,0);
+        Assert.InRange(pixels[0],77,79);Assert.InRange(pixels[4000],193,196);
+        var repeat=prepared.Render(2.5,default,stretchEnabled:false);var repeated=new byte[raw.Length];repeat.CopyPixels(repeated,100,0);Assert.Equal(pixels,repeated);
+    }
     private static IImageData Image(ushort[] pixels, int width, int height) => new BaseImageData(
         pixels, width, height, 16, false, new ImageMetaData(), null!,
         InterfaceStub.Create<NINA.Image.ImageAnalysis.IStarDetection>((_, _) => null), null!);

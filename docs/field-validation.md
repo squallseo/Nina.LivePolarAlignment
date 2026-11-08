@@ -1,6 +1,10 @@
 # Field validation
 
-Enable **Enable debug recording** under `Plugins → Installed → Live Polar Alignment → Options` to retain validation data. Recording defaults off and is stored per N.I.N.A. profile. It starts with the first reference, so reset before starting again if already calibrated. The `Field validation` panel provides Mark, Stability, and Folder. Physical accuracy remains unverified.
+Enable **Record session** in the `Field validation` section under
+`Plugins → Installed → Live Polar Alignment → Options` to retain validation data.
+Recording defaults off and is stored per NINA profile. It starts with the first
+reference, so reset before starting again if already calibrated. The same section
+provides Mark, Stability and Folder. Physical accuracy remains unverified.
 
 ## Field procedure
 
@@ -38,4 +42,7 @@ dotnet publish tools/Nina.LivePolarAlignment.FieldReview/Nina.LivePolarAlignment
 
 The published tool requires the .NET 8 Windows Desktop Runtime. It writes `frames.csv` and `review.json` in the session's `review` folder, recalculating alignment geometry from saved WCS and DUT1 and comparing it with recorded errors. It does not plate solve FITS again or establish absolute accuracy. If an interrupted write truncates the last JSON line, earlier records are recovered with a warning.
 
-The current model uses two reference images and linear WCS, without atmospheric refraction or optical distortion correction. Replay agreement and stability sigma do not establish physical polar-alignment accuracy. See [calculation and references](polar-alignment.md).
+The general-camera model uses two references; PoleMaster uses three references
+with a shared template scale and consistency checks. Both use linear WCS without
+atmospheric-refraction or optical-distortion correction. Replay agreement and
+stability sigma do not establish physical accuracy. See [calculation and references](polar-alignment.md).

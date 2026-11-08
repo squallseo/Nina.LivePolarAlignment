@@ -21,3 +21,9 @@ production adapter. A fixture redirects `LOCALAPPDATA` inside the test process t
 temporary directory, so no user database is created, migrated, or modified.
 
 These tests do not connect a camera, run a plate solver, or validate a physical mount.
+
+Optional local FITS replays use `POLAR_FIELD_FITS` or `POLAR_REPLAY_FIRST`.
+The latter also requires `POLAR_REPLAY_LATITUDE` and `POLAR_REPLAY_LONGITUDE`
+for the observation site. Personal images and site coordinates are not bundled.
+Without these variables, the optional replay bodies return without processing a
+fixture; the ordinary synthetic integration suite remains independent of them.

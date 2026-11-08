@@ -199,10 +199,10 @@
     <value>Single frames + plate solve</value>
   </data>
   <data name="StreamingHint" xml:space="preserve">
-    <value>Adjustment only; references use still captures. Every displayed measurement is plate solved.</value>
+    <value>Adjustment only; references use still captures. Live guidance uses registered stars; absolute solving verifies and restores tracking.</value>
   </data>
   <data name="StreamingUnsupported" xml:space="preserve">
-    <value>Requires a connected native ZWO ASI or ToupTek camera. Other drivers use single frames.</value>
+    <value>Requires a supported native QHY, ZWO ASI or ToupTek driver and readout mode. Other paths use repeated single frames.</value>
   </data>
   <data name="StreamingStarting" xml:space="preserve">
     <value>Starting native video and plate solving...</value>
@@ -274,7 +274,7 @@
     <value>Auto RA rotation</value>
   </data>
   <data name="AutoRaReverse" xml:space="preserve">
-    <value>Reverse RA direction</value>
+    <value>Counterclockwise RA</value>
   </data>
   <data name="AutoRaClear" xml:space="preserve">
     <value>I checked the {0}-degree path is clear</value>
@@ -301,16 +301,16 @@
     <value>Rotating RA...</value>
   </data>
   <data name="VerificationTitle" xml:space="preserve">
-    <value>Verify alignment</value>
+    <value>Independent axis check · RA motion</value>
   </data>
   <data name="VerificationHint" xml:space="preserve">
-    <value>Keep Dec and adjustment bolts fixed. Takes a fresh reference, rotates RA by the selected angle, then measures again. Check the new path first. Uses the same solver; not an independent accuracy test.</value>
+    <value>Optional: capture a fresh rotation sequence to independently remeasure the axis after locking the bolts. This moves RA. Continuous fine adjustment already runs in live monitoring.</value>
   </data>
   <data name="VerificationStability" xml:space="preserve">
     <value>Then collect 20 stationary frames</value>
   </data>
   <data name="VerificationStart" xml:space="preserve">
-    <value>Verify with auto RA rotation</value>
+    <value>Remeasure axis (moves RA)</value>
   </data>
   <data name="VerificationResult" xml:space="preserve">
     <value>Previous: {0:0.00} arcmin / remeasured: {1:0.00} arcmin. Difference Alt {2:+0.0;-0.0;0.0} arcsec / Az {3:+0.0;-0.0;0.0} arcsec. Keep the mount fixed.</value>
@@ -407,7 +407,7 @@
   <data name="ManualReady" xml:space="preserve"><value>Polar alignment</value></data>
   <data name="ActionStart" xml:space="preserve"><value>Start</value></data>
   <data name="AdjustBrief" xml:space="preserve"><value>Use the altitude and azimuth bolts to bring the RA axis onto the celestial pole. Keep RA and camera fixed.</value></data>
-  <data name="RotationDirectionHint" xml:space="preserve"><value>ON: N.I.N.A. left / W button direction (default). OFF: right / E. Both follow the N.I.N.A. primary-axis reversal setting; the icon is not a sky-view rotation prediction.</value></data>
+  <data name="RotationDirectionHint" xml:space="preserve"><value>ON: counterclockwise command (NINA W / negative RA). OFF: clockwise (E / positive). The NINA primary-axis reversal option still applies.</value></data>
   <data name="PolarTarget" xml:space="preserve"><value>Polar target (arcsec)</value></data>
   <data name="QualityWithin" xml:space="preserve"><value>✓ Target reached (≤ {0:0}″)</value></data>
   <data name="QualityClose" xml:space="preserve"><value>△ Fine adjustment needed (target {0:0}″)</value></data>
@@ -434,7 +434,7 @@
   <data name="AutoRaNotEquatorial" xml:space="preserve"><value>The mount must be configured for equatorial alignment.</value></data>
   <data name="AutoRaAxisUnsupported" xml:space="preserve"><value>This driver does not support RA MoveAxis. Use manual RA rotation.</value></data>
   <data name="AutoRaTrackingUnsupported" xml:space="preserve"><value>This driver cannot change tracking state. Use manual RA rotation.</value></data>
-  <data name="AutoRaRateUnsupported" xml:space="preserve"><value>No supported RA speed from 0.1 to 1 degree per second. Use manual rotation.</value></data>
+  <data name="AutoRaRateUnsupported" xml:space="preserve"><value>Select a driver-supported RA manual movement speed of at least 0.1 degree per second in N.I.N.A. mount controls, or use manual rotation.</value></data>
   <data name="AutoRaInvalidCoordinates" xml:space="preserve"><value>The mount returned invalid coordinates. Check its connection and configuration.</value></data>
   <data name="AutoRaDriverError" xml:space="preserve"><value>Could not read mount capabilities. Check the driver and connection.</value></data>
   <data name="ActionContinue" xml:space="preserve"><value>Continue</value></data>
@@ -444,4 +444,177 @@
   <data name="ReferenceFirstCapture" xml:space="preserve"><value>Capturing the first reference…</value></data>
   <data name="ReferenceSecondCapture" xml:space="preserve"><value>Capturing the rotated reference…</value></data>
   <data name="ActionRetry" xml:space="preserve"><value>Retry</value></data>
+  <data name="AutoRaReturnProgress" xml:space="preserve"><value>Returning RA to the starting position: {0:0.0}°</value></data>
+  <data name="AutoRaReturnSolving" xml:space="preserve"><value>RA returned. Capturing and solving the adjustment reference…</value></data>
+  <data name="FieldAxis" xml:space="preserve"><value>RA rotation axis</value></data>
+  <data name="FieldPole" xml:space="preserve"><value>Target · celestial pole</value></data>
+  <data name="FieldAxisOutside" xml:space="preserve"><value>RA axis · off screen</value></data>
+  <data name="FieldPoleOutside" xml:space="preserve"><value>Target · off screen</value></data>
+  <data name="FieldAlignInstruction" xml:space="preserve"><value>Bring the orange cross onto the green target</value></data>
+  <data name="FieldOverview" xml:space="preserve"><value>Marker locations</value></data>
+  <data name="FieldViewport" xml:space="preserve"><value>Dashed box = current view</value></data>
+  <data name="FieldTargetShort" xml:space="preserve"><value>Target</value></data>
+  <data name="FieldGuidancePaused" xml:space="preserve"><value>Previous measurement · wait before adjusting</value></data>
+  <data name="FieldMarkerLegend" xml:space="preserve"><value>Orange cross = RA axis · green target = celestial pole</value></data>
+  <data name="OperatorAdjust" xml:space="preserve"><value>Adjustment needed</value></data>
+  <data name="OperatorAdjustNext" xml:space="preserve"><value>{0} Make one small adjustment, release the bolt, then check the next measurement.</value></data>
+  <data name="OperatorCalibrating" xml:space="preserve"><value>Measuring the reference</value></data>
+  <data name="OperatorClose" xml:space="preserve"><value>Almost there</value></data>
+  <data name="OperatorConnectCamera" xml:space="preserve"><value>Connect the camera</value></data>
+  <data name="OperatorConnectMount" xml:space="preserve"><value>Connect the mount</value></data>
+  <data name="OperatorDrift" xml:space="preserve"><value>Independent drift check</value></data>
+  <data name="OperatorFailed" xml:space="preserve"><value>Operation interrupted</value></data>
+  <data name="OperatorGoal" xml:space="preserve"><value>Your target: {0} or less</value></data>
+  <data name="OperatorHold" xml:space="preserve"><value>Hold still</value></data>
+  <data name="OperatorKeep" xml:space="preserve"><value>Keep as is</value></data>
+  <data name="OperatorLeft" xml:space="preserve"><value>← Move left</value></data>
+  <data name="OperatorLower" xml:space="preserve"><value>↓ Lower</value></data>
+  <data name="OperatorManual" xml:space="preserve"><value>Rotate RA manually</value></data>
+  <data name="OperatorNextCalibrating" xml:space="preserve"><value>Measuring the axis. Keep altitude/azimuth fixed.</value></data>
+  <data name="OperatorNextConnectCamera" xml:space="preserve"><value>Connect your camera in N.I.N.A. Equipment.</value></data>
+  <data name="OperatorNextConnectMount" xml:space="preserve"><value>Connect the mount for automatic RA calibration, or select manual mode.</value></data>
+  <data name="OperatorNextDrift" xml:space="preserve"><value>Follow the drift check instructions below and hold the mount fixed.</value></data>
+  <data name="OperatorNextFailed" xml:space="preserve"><value>Keep the mount still. Check the error below before retrying.</value></data>
+  <data name="OperatorNextManual" xml:space="preserve"><value>Rotate only RA by 60–90 degrees, then press Continue. Keep Dec and the adjustment bolts fixed.</value></data>
+  <data name="OperatorNextPaused" xml:space="preserve"><value>Keep the mount still. Press Resume and wait for a fresh result before adjusting.</value></data>
+  <data name="OperatorNextReady" xml:space="preserve"><value>Aim near the pole, then press Start.</value></data>
+  <data name="OperatorNextReturning" xml:space="preserve"><value>Wait for the mount to stop and solve a fresh image before adjusting.</value></data>
+  <data name="OperatorNextRotating" xml:space="preserve"><value>RA rotating. Keep the adjustment bolts fixed.</value></data>
+  <data name="OperatorNextStale" xml:space="preserve"><value>Stop adjusting until a fresh result arrives. Displayed markers are from an older image.</value></data>
+  <data name="OperatorNextStopping" xml:space="preserve"><value>Wait until camera capture and mount movement have stopped.</value></data>
+  <data name="OperatorNextVerifying" xml:space="preserve"><value>Leave the adjustment bolts alone until remeasurement finishes.</value></data>
+  <data name="OperatorNextWithin" xml:space="preserve"><value>Lock the bolts, then watch that the error stays within target.</value></data>
+  <data name="OperatorPaused" xml:space="preserve"><value>Measurement paused</value></data>
+  <data name="OperatorPrevious" xml:space="preserve"><value>Previous: {0}</value></data>
+  <data name="OperatorRaise" xml:space="preserve"><value>↑ Raise</value></data>
+  <data name="OperatorReady" xml:space="preserve"><value>Ready to start</value></data>
+  <data name="OperatorRemaining" xml:space="preserve"><value>Error: {0}</value></data>
+  <data name="OperatorReturning" xml:space="preserve"><value>Returning to the start</value></data>
+  <data name="OperatorRight" xml:space="preserve"><value>→ Move right</value></data>
+  <data name="OperatorRotating" xml:space="preserve"><value>RA is rotating</value></data>
+  <data name="OperatorStale" xml:space="preserve"><value>Waiting for a fresh result</value></data>
+  <data name="OperatorStatusLabel" xml:space="preserve"><value>RIGHT NOW</value></data>
+  <data name="OperatorStopping" xml:space="preserve"><value>Stopping safely</value></data>
+  <data name="OperatorVerifying" xml:space="preserve"><value>Checking alignment</value></data>
+  <data name="OperatorWithin" xml:space="preserve"><value>On target · monitoring</value></data>
+  <data name="OperatorFirstRight" xml:space="preserve"><value>First, adjust azimuth slightly right.</value></data>
+  <data name="OperatorFirstRaise" xml:space="preserve"><value>First, raise the polar axis slightly.</value></data>
+  <data name="OperatorFirstLower" xml:space="preserve"><value>First, lower the polar axis slightly.</value></data>
+  <data name="OperatorFirstLeft" xml:space="preserve"><value>First, adjust azimuth slightly left.</value></data>
+  <data name="OperatorDirectionReference" xml:space="preserve"><value>Left/right: facing the visible celestial pole.</value></data>
+  <data name="OperatorRecalibrate" xml:space="preserve"><value>Check calibration first</value></data>
+  <data name="OperatorOutsideNext" xml:space="preserve"><value>{0} Use the location map and numerical errors to approach in small steps. If you cannot compare the markers, stop, reframe and Reset before recalibrating.</value></data>
+  <data name="OperatorFar" xml:space="preserve"><value>Large error: approach gradually</value></data>
+  <data name="OperatorNextRecalibrate" xml:space="preserve"><value>Stop adjusting. The error exceeds 5 degrees or marker geometry is unavailable. Check the initial pointing and camera setup, then Reset and recalibrate.</value></data>
+  <data name="OperatorFarNext" xml:space="preserve"><value>{0} The error is large: adjust one axis at a time and check a fresh result after every small turn. Bolt rotation amount cannot be inferred from sky error.</value></data>
+  <data name="OperatorOutside" xml:space="preserve"><value>Markers outside the image</value></data>
+  <data name="OperatorNextSolveFailed" xml:space="preserve"><value>Stop adjusting. Check that stars are visible, then check focus and exposure before retrying the plate solve.</value></data>
+  <data name="TrackingAbsolute" xml:space="preserve"><value>Absolute plate solution</value></data>
+  <data name="OperatorRecovering" xml:space="preserve"><value>Recovering star tracking</value></data>
+  <data name="TrackingActive" xml:space="preserve"><value>Tracking {0} stars · RMS {1:0.00} px · update {2:0.00} s</value></data>
+  <data name="StreamingBinning" xml:space="preserve"><value>Adjustment binning (1/2/4)</value></data>
+  <data name="OperatorNextRecovering" xml:space="preserve"><value>The last measured image and markers stay fixed while a fresh measurement is acquired. Pause adjustment if this message persists.</value></data>
+  <data name="StreamingExposure" xml:space="preserve"><value>Adjustment exposure (s)</value></data>
+  <data name="TrackingRecovering" xml:space="preserve"><value>Live image · tracking unavailable · recovering with plate solving</value></data>
+  <data name="TrackingHeld" xml:space="preserve"><value>Last measured image and markers held · waiting for a fresh measurement</value></data>
+  <data name="PoleMasterMode" xml:space="preserve"><value>PoleMaster automatic alignment</value></data>
+  <data name="PoleMasterInstructions" xml:space="preserve"><value>Select PoleMaster in NINA and aim near the celestial pole. Clear the 80° RA path, then press Start. Star centres and matching are automatic at three locations. After return, follow live guidance to adjust altitude and azimuth.</value></data>
+  <data name="PoleMasterWrongCamera" xml:space="preserve"><value>PoleMaster mode requires a connected native QHY camera with a 1280×960 sensor. Select the PoleMaster in NINA, or turn this mode off for another camera. RA has not been requested by this check.</value></data>
+  <data name="PoleMasterWrongField" xml:space="preserve"><value>The solution does not match a stock PoleMaster field near the visible celestial pole. Check the selected camera, stock lens, focus and pointing. Reset calibration.</value></data>
+  <data name="PoleMasterRotating" xml:space="preserve"><value>RA interval {0}/2 · total {1:0.0}° / 80°</value></data>
+  <data name="PoleMasterStage" xml:space="preserve"><value>Reference fields: {0}/3 · star centres and field matching are automatic</value></data>
+  <data name="PoleMasterConsistent" xml:space="preserve"><value>Three-location axis disagreement: {0:0.0}″ (consistency, not absolute accuracy)</value></data>
+  <data name="PoleMasterInconsistent" xml:space="preserve"><value>Rotation-centre estimates disagree by {0:0.0} arcseconds (limit 60). Alignment stopped. Calculation inputs and failure details were written to the NINA log.</value></data>
+  <data name="PolePreviewOff" xml:space="preserve"><value>Live preview stopped. Toggle PoleMaster off/on to restart.</value></data>
+  <data name="PolePreviewWaiting" xml:space="preserve"><value>Connect PoleMaster in NINA. Preview starts automatically after connection.</value></data>
+  <data name="PolePreviewStarting" xml:space="preserve"><value>Starting live preview… RA remains still.</value></data>
+  <data name="PolePreviewLive" xml:space="preserve"><value>Live aiming preview · no solving or RA motion.</value></data>
+  <data name="PolePreviewFailed" xml:space="preserve"><value>Live preview failed: {0}</value></data>
+  <data name="PolePreviewEnded" xml:space="preserve"><value>The camera stopped returning live preview frames.</value></data>
+  <data name="OperatorPolePreview" xml:space="preserve"><value>Aim at the pole</value></data>
+  <data name="OperatorNextPolePreview" xml:space="preserve"><value>Bring Polaris into view, then press Start.</value></data>
+  <data name="Stretch" xml:space="preserve"><value>Stretch</value></data>
+  <data name="StretchHint" xml:space="preserve"><value>Display only: left is darker, right is brighter. Raw pixels, star centres and solving are unchanged.</value></data>
+  <data name="ResetStretch" xml:space="preserve"><value>Reset automatic stretch to 1.00×</value></data>
+  <data name="AcquisitionSettings" xml:space="preserve"><value>Capture and RA settings</value></data>
+  <data name="LiveExposure" xml:space="preserve"><value>Live exposure (s)</value></data>
+  <data name="OperatorPreviewFailed" xml:space="preserve"><value>Preview unavailable</value></data>
+  <data name="TrackedStarBoxes" xml:space="preserve"><value>□ Tracking {0} stars</value></data>
+  <data name="DetectedStarBoxes" xml:space="preserve"><value>□ Detected {0} · matching pending</value></data>
+  <data name="PausedStarBoxes" xml:space="preserve"><value>□ Tracking paused ({0} stars)</value></data>
+  <data name="PreviewLoopStart" xml:space="preserve"><value>Start looping</value></data>
+  <data name="PreviewLoopStop" xml:space="preserve"><value>Stop looping</value></data>
+  <data name="PatternMatchedStars" xml:space="preserve"><value>Fixed template: {0}/4 surrounding stars matched</value></data>
+  <data name="PoleMasterPatternInconsistent" xml:space="preserve"><value>The rotation model misses the middle-frame stars by {0:0.00} pixels (limit 1.5). Alignment stopped; images and calculation details are recorded.</value></data>
+  <data name="RestartAxisFar" xml:space="preserve"><value>The computed rotation axis is too far from the pole to start adjustment. Three-position coordinates and failure details were written to the NINA log.</value></data>
+  <data name="SkyPatternHelp" xml:space="preserve"><value>Start identifies the fixed Polaris star pattern automatically. Click Polaris only if automatic identification fails.</value></data>
+  <data name="PoleMasterPatternStep" xml:space="preserve"><value>Matching surrounding star pattern {0}/3. Keep the adjustment bolts fixed.</value></data>
+  <data name="CaptureExposure" xml:space="preserve"><value>Exposure (s)</value></data>
+  <data name="PolarisCandidateLabel" xml:space="preserve"><value>Polaris candidate · unverified</value></data>
+  <data name="RestartHomeButton" xml:space="preserve"><value>Restart · return Home</value></data>
+  <data name="RestartCurrentButton" xml:space="preserve"><value>New alignment here · no motion</value></data>
+  <data name="RestartSelectButton" xml:space="preserve"><value>Click Polaris first</value></data>
+  <data name="RestartBeginButton" xml:space="preserve"><value>Start alignment</value></data>
+  <data name="RestartHomePlan" xml:space="preserve"><value>Stop capture → actual Home → start again. RA and DEC may move. Exposure and equipment gain are retained.</value></data>
+  <data name="RestartHomingPlan" xml:space="preserve"><value>Moving to actual Home. Press Start after arrival to identify Polaris automatically.</value></data>
+  <data name="RestartSelectPlan" xml:space="preserve"><value>Automatic identification failed. Click Polaris in the image, then press Start.</value></data>
+  <data name="RestartReadyPlan" xml:space="preserve"><value>Start identifies Polaris automatically, measures two 40° RA intervals, then returns to the starting position.</value></data>
+  <data name="OperatorNeedHomeRestart" xml:space="preserve"><value>Reset required before alignment</value></data>
+  <data name="OperatorSelectPolaris" xml:space="preserve"><value>Select Polaris</value></data>
+  <data name="OperatorHomingRestart" xml:space="preserve"><value>Returning mount to Home</value></data>
+  <data name="RestartStepHome" xml:space="preserve"><value>1 / 3 · Home the mount</value></data>
+  <data name="RestartStepHoming" xml:space="preserve"><value>1 / 3 · Homing · RA and DEC may move</value></data>
+  <data name="RestartStepSelect" xml:space="preserve"><value>2 / 3 · Click Polaris</value></data>
+  <data name="RestartStepReady" xml:space="preserve"><value>3 / 3 · Ready for a fresh 40° + 40° calibration</value></data>
+  <data name="RestartCurrentHelp" xml:space="preserve"><value>Discard all samples without moving the mount. Select Polaris again; Start will begin a new calibration from this pose.</value></data>
+  <data name="RestartHomeUnsupported" xml:space="preserve"><value>The connected mount does not expose FindHome. Automatic restart is unavailable; check the mount connection and driver Home support.</value></data>
+  <data name="RestartCoordinateError" xml:space="preserve"><value>The mount reported a coordinate change during rotation, so motion stopped. Home the mount and begin a fresh alignment.</value></data>
+  <data name="RestartErrorDetails" xml:space="preserve"><value>Technical details</value></data>
+  <data name="OperatorPolarisMove" xml:space="preserve"><value>Move Polaris into the green circle</value></data>
+  <data name="OperatorNextPolarisMove" xml:space="preserve"><value>Use the adjustment bolts to move Polaris into the green circle, then start fine monitoring.</value></data>
+  <data name="PolarisCurrent" xml:space="preserve"><value>Polaris · current</value></data>
+  <data name="PolarisDestination" xml:space="preserve"><value>Move Polaris here</value></data>
+  <data name="PolarisMoveLegend" xml:space="preserve"><value>Move the visible Polaris into the fixed green circle using the adjustment bolts.</value></data>
+  <data name="StartPoleMasterMonitor" xml:space="preserve"><value>Start monitoring · fine adjustment</value></data>
+  <data name="MonitorLegend" xml:space="preserve"><value>Center the red cross in the green square using the adjustment bolts.</value></data>
+  <data name="StretchOff" xml:space="preserve"><value>OFF</value></data>
+  <data name="ManualPolarisVideo" xml:space="preserve"><value>Live camera · move Polaris into the green circle. Distance appears when Polaris is confirmed in the close-up.</value></data>
+  <data name="BackToPolarisTarget" xml:space="preserve"><value>Return to Polaris target</value></data>
+  <data name="MonitorTarget" xml:space="preserve"><value>Target center</value></data>
+  <data name="MonitorCurrent" xml:space="preserve"><value>Current RA axis</value></data>
+  <data name="ManualTargetDistance" xml:space="preserve"><value>Distance to target: {0}</value></data>
+  <data name="ManualTargetUnconfirmed" xml:space="preserve"><value>Polaris unconfirmed · distance —</value></data>
+  <data name="CaptureExposureMs" xml:space="preserve"><value>Exposure (ms)</value></data>
+  <data name="ArrangePanels" xml:space="preserve"><value>Reset panel layout</value></data>
+  <data name="ProgressSteps" xml:space="preserve"><value>Alignment steps</value></data>
+  <data name="ProgressStep0" xml:space="preserve"><value>Polaris</value></data>
+  <data name="ProgressStep1" xml:space="preserve"><value>First 40°</value></data>
+  <data name="ProgressStep2" xml:space="preserve"><value>Second 40°</value></data>
+  <data name="ProgressStep3" xml:space="preserve"><value>Return to start</value></data>
+  <data name="ProgressStep4" xml:space="preserve"><value>Adjust mount</value></data>
+  <data name="ProgressStep5" xml:space="preserve"><value>Fine monitor</value></data>
+  <data name="CaptureSettingsLocked" xml:space="preserve"><value>Exposure is locked. Restart to adjust it. Gain is controlled in NINA Equipment.</value></data>
+  <data name="CaptureSettingsBeforeStart" xml:space="preserve"><value>Set exposure before alignment. Set gain in NINA Equipment.</value></data>
+  <data name="FixedPolarisMethod" xml:space="preserve"><value>Click Polaris · fixed star pattern</value></data>
+  <data name="AdvancedSettingsTitle" xml:space="preserve"><value>Settings</value></data>
+  <data name="AdvancedSettingsHint" xml:space="preserve"><value>All capture exposures use milliseconds. Set gain in NINA Equipment.</value></data>
+  <data name="AlignmentMethod" xml:space="preserve"><value>Alignment method</value></data>
+  <data name="MethodPoleMaster" xml:space="preserve"><value>PoleMaster · Polaris pattern</value></data>
+  <data name="MethodNinaSolver" xml:space="preserve"><value>General camera · NINA plate solving</value></data>
+  <data name="PolarisAutoFailed" xml:space="preserve"><value>Polaris could not be identified automatically. Click Polaris in the image, then press Start. RA has not rotated.</value></data>
+  <data name="OperatorReferenceStarMove" xml:space="preserve"><value>Move the reference star to the target</value></data>
+  <data name="OperatorNextReferenceStarMove" xml:space="preserve"><value>Move the boxed reference star into the fixed green circle, then start fine monitoring.</value></data>
+  <data name="ReferenceStar" xml:space="preserve"><value>Reference star</value></data>
+  <data name="ReferenceDestination" xml:space="preserve"><value>Target</value></data>
+  <data name="ReferenceMoveLegend" xml:space="preserve"><value>Boxed reference star → fixed green circle</value></data>
+  <data name="CameraFieldOfView" xml:space="preserve"><value>Field of view {0:0.00}° × {1:0.00}°</value></data>
+  <data name="MethodPatternUnsupported" xml:space="preserve"><value>This pattern method requires a native QHY PoleMaster with its stock lens and 1280 × 960 sensor. Select NINA plate solving for the connected camera.</value></data>
+  <data name="MethodPatternNeedsVideo" xml:space="preserve"><value>The selected driver/readout does not support PoleMaster live video. Check the native driver and readout mode, or choose NINA plate solving.</value></data>
+  <data name="MethodOpticsRequired" xml:space="preserve"><value>Set focal length and camera pixel size in the NINA equipment profile before solving.</value></data>
+  <data name="MethodSnapshotFallback" xml:space="preserve"><value>Live video is unavailable with this driver/readout. Alignment will use consecutive still exposures.</value></data>
+  <data name="OperatorMethodUnavailable" xml:space="preserve"><value>This method cannot start</value></data>
+  <data name="GeneralStep0" xml:space="preserve"><value>Reference</value></data>
+  <data name="GeneralStep1" xml:space="preserve"><value>RA rotate</value></data>
+  <data name="GeneralStep2" xml:space="preserve"><value>2nd solve</value></data>
+  <data name="GeneralStepManualRa" xml:space="preserve"><value>Manual RA</value></data>
 </root>

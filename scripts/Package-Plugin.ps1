@@ -1,4 +1,4 @@
-param()
+﻿param()
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
 $assembly = Join-Path $root 'src\Nina.LivePolarAlignment\bin\Release\net8.0-windows\Nina.LivePolarAlignment.dll'
@@ -12,9 +12,12 @@ $build = Split-Path $assembly
 foreach ($file in @('Nina.LivePolarAlignment.dll','Nina.LivePolarAlignment.Core.dll','ko-KR\Nina.LivePolarAlignment.resources.dll')) {
     Copy-Item -LiteralPath (Join-Path $build $file) -Destination (Join-Path $plugin $file)
 }
+New-Item -ItemType Directory -Force (Join-Path $plugin 'External\PolarisPattern') | Out-Null
+foreach ($file in @('LICENSE.txt','NOTICE.txt')) { Copy-Item -LiteralPath (Join-Path $build "External\PolarisPattern\$file") -Destination (Join-Path $plugin "External\PolarisPattern\$file") }
 Copy-Item (Join-Path $PSScriptRoot 'Install-Plugin.ps1') $stage
 Copy-Item (Join-Path $root 'docs\field-validation.md') $stage
 Copy-Item (Join-Path $root 'docs\auto-ra-rotation.md') $stage
+Copy-Item (Join-Path $root 'docs\polemaster.md') $stage
 Copy-Item (Join-Path $root 'docs\verification.md') $stage
 Copy-Item (Join-Path $root 'docs\independent-drift.md') $stage
 Copy-Item (Join-Path $root 'docs\polar-alignment.md') $stage

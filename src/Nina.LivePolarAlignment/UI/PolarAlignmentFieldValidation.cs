@@ -99,11 +99,12 @@ public sealed partial class PolarAlignmentDockableVM {
                 new(frame.RightAscensionDegrees, frame.DeclinationDegrees, frame.PositionAngleDegrees, frame.PixelScaleArcseconds,
                     frame.Width, frame.Height, frame.Flipped, frame.CapturedAtUtc, session?.LastDut1Seconds),
                 kind == "reference" ? "still_reference" : UseStreaming && !verificationInProgress ? "native_streaming" : "single_frames",
-                ExposureSeconds, cycleMs, (DateTimeOffset.UtcNow - frame.CapturedAtUtc).TotalSeconds,
+                frame.IsTracked ? StreamingExposureSeconds : ExposureSeconds, cycleMs, (DateTimeOffset.UtcNow - frame.CapturedAtUtc).TotalSeconds,
                 session?.RotationDegrees, session?.UsedApproximateEarthRotation ?? false,
                 error?.AltitudeArcminutes * 60, error?.AzimuthArcminutes * 60, error?.TotalArcminutes * 60,
                 pointGuidance?.MountAxis?.X, pointGuidance?.MountAxis?.Y,
-                pointGuidance?.CelestialPole?.X, pointGuidance?.CelestialPole?.Y, failure?.Message);
+                pointGuidance?.CelestialPole?.X, pointGuidance?.CelestialPole?.Y, failure?.Message,
+                frame.IsTracked ? "star_tracking" : "absolute", frame.TrackedStars, frame.IsTracked ? frame.TrackingRmsPixels : null);
             var id = fieldJournal.WriteFrame(record);
             if (accepted) { lastFieldFrame = frame; lastFieldFrameId = id; }
         } catch (Exception error) { fieldFailure = error.Message; }

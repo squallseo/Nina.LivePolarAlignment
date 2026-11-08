@@ -10,6 +10,58 @@ using Nina.LivePolarAlignment.Core;
 namespace Nina.LivePolarAlignment.Capture;
 
 public sealed partial class NinaPolarAlignmentCaptureService {
+    private sealed record RaReturnPosition(ITelescope Device, double StartHourAngle, double EndHourAngle,
+        double Declination, int PierSide, bool Reverse);
+    private RaReturnPosition? raReturn;
+    public void ResetRaReturn() => raReturn = null;
+    private static double HourAngle(ITelescope device) {
+        var sidereal = device.SiderealTime;
+        var ra = device.RightAscension;
+        if (!double.IsFinite(sidereal) || sidereal is < 0 or >= 24 || !double.IsFinite(ra) || ra is < 0 or >= 24)
+            throw new InvalidOperationException("Valid sidereal time and RA are required to return to the starting position.");
+        return RaRotation.WrapDegrees((sidereal - ra) * 15);
+    }
+    public Task ReturnRaToStartAsync(IProgress<double>? progress, CancellationToken token) => ReturnRaToStartCoreAsync(progress,token);
+    private async Task ReturnRaToStartCoreAsync(IProgress<double>? progress, CancellationToken token,bool gateAlreadyHeld=false) {
+        token.ThrowIfCancellationRequested();
+        if (!gateAlreadyHeld && !await captureGate.WaitAsync(0, token)) throw new InvalidOperationException("Another alignment operation is running.");
+        try {
+            var saved = raReturn ?? throw new InvalidOperationException("No completed RA rotation to return from. Reset calibration.");
+            // Consume before attempting motion: cancellation/failure must never repeat a full return.
+            raReturn = null;
+            var mount = new RotationMount(telescope);
+            var current = mount.Read();
+            RaRotation.SelectRate(current, mount.SelectedRate);
+            if (!ReferenceEquals(saved.Device, telescope.GetDevice()) || Math.Abs(current.DecDegrees - saved.Declination) > .2
+                || (saved.PierSide >= 0 && current.PierSide != saved.PierSide))
+                throw new InvalidOperationException("Mount, Dec or pier side changed before RA return. Reset calibration.");
+            var currentHourAngle = HourAngle(saved.Device);
+            var outbound = RaRotation.WrapDegrees(saved.EndHourAngle - saved.StartHourAngle);
+            var remaining = RaRotation.WrapDegrees(currentHourAngle - saved.StartHourAngle);
+            if (Math.Sign(remaining) != Math.Sign(outbound) || Math.Abs(RaRotation.WrapDegrees(currentHourAngle - saved.EndHourAngle)) > 1)
+                throw new InvalidOperationException("Mount moved since calibration. Automatic RA return refused. Reset calibration.");
+            NINA.Core.Utility.Logger.Info($"Polar RA return: target={Math.Abs(remaining):F4} deg, selectedRate={mount.SelectedRate:G8} deg/s");
+            await Task.Run(() => new RaRotation().ReturnAsync(mount, !saved.Reverse, progress, token,
+                Math.Abs(remaining), mount.SelectedRate, Math.Sign(outbound)), CancellationToken.None);
+            token.ThrowIfCancellationRequested();
+            var residual = RaRotation.WrapDegrees(HourAngle(saved.Device) - saved.StartHourAngle);
+            for(int attempt=0;attempt<2 && Math.Abs(residual)>.5 && Math.Abs(residual)<=5;attempt++) {
+                var fineState=mount.Read();
+                if(Math.Abs(fineState.DecDegrees-saved.Declination)>.2 || (saved.PierSide>=0 && fineState.PierSide!=saved.PierSide))
+                    throw new InvalidOperationException("Dec or pier side changed before fine RA return correction.");
+                double fineRate=RaRotation.SelectRate(fineState,Math.Min(.25,mount.SelectedRate));
+                bool fineReverse=Math.Sign(residual)==Math.Sign(outbound)?!saved.Reverse:saved.Reverse;
+                NINA.Core.Utility.Logger.Info($"Polar RA return fine correction: residual={residual:F4} deg; rate={fineRate:G8} deg/s; reverse={fineReverse}");
+                await Task.Run(()=>new RaRotation().ReturnAsync(mount,fineReverse,null,token,Math.Abs(residual),fineRate,Math.Sign(residual)),CancellationToken.None);
+                token.ThrowIfCancellationRequested();residual=RaRotation.WrapDegrees(HourAngle(saved.Device)-saved.StartHourAngle);
+            }
+            var error = Math.Abs(residual);
+            if (error > .5) throw new InvalidOperationException($"RA return missed the starting position by {error:F3} degrees. Reset calibration.");
+            NINA.Core.Utility.Logger.Info($"Polar RA return complete: position error={error:F4} deg");
+        } catch (Exception error) {
+            NINA.Core.Utility.Logger.Error(error); throw;
+        } finally { if(!gateAlreadyHeld)captureGate.Release(); }
+    }
     public bool SupportsAutoRaRotation => AutoRaAvailability == AutoRaAvailability.Ready;
     public AutoRaAvailability AutoRaAvailability {
         get {
@@ -25,8 +77,9 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                     || !double.IsFinite(info.Declination) || Math.Abs(info.Declination) > 90) return AutoRaAvailability.InvalidCoordinates;
                 try {
                     RaRotation.SelectRate(new(true, false, false, true, true, true, info.TrackingEnabled,
-                        info.RightAscension, info.Declination, (int)info.SideOfPier, info.PrimaryAxisRates.ToArray()), RaRotation.MaximumRateForDriver((telescope.GetDevice() as ITelescope)?.Id));
+                        info.RightAscension, info.Declination, (int)info.SideOfPier, info.PrimaryAxisRates.ToArray()), (telescope.GetDevice() as ITelescope)?.PrimaryMovingRate ?? double.NaN);
                 } catch (InvalidOperationException) { return AutoRaAvailability.RateUnsupported; }
+                  catch (ArgumentOutOfRangeException) { return AutoRaAvailability.RateUnsupported; }
                 return AutoRaAvailability.Ready;
             } catch { return AutoRaAvailability.DriverError; }
         }
@@ -39,7 +92,7 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                 var device = telescope.GetDevice() as ITelescope;
                 if (device?.CanUnpark != true) return false;
                 var state = new RotationMount(telescope).Read();
-                RaRotation.SelectRate(state with { Parked = false }, RaRotation.MaximumRateForDriver(device.Id));
+                RaRotation.SelectRate(state with { Parked = false }, device.PrimaryMovingRate);
                 return true;
             } catch { return false; }
         }
@@ -48,10 +101,11 @@ public sealed partial class NinaPolarAlignmentCaptureService {
         token.ThrowIfCancellationRequested();
         if (!await captureGate.WaitAsync(0, token)) throw new InvalidOperationException("Another alignment operation is running.");
         try {
+            manualPolarisAdjustment=false;fixedPolarisSeed=null;
             var device = telescope.GetDevice() as ITelescope ?? throw new InvalidOperationException("Connect a mount before automatic alignment.");
             var mount = new RotationMount(telescope);
             var before = mount.Read();
-            RaRotation.SelectRate(before with { Parked = false }, mount.MaximumRate);
+            RaRotation.SelectRate(before with { Parked = false }, mount.SelectedRate);
             if (before.Parked) {
                 if (!device.CanUnpark) throw new InvalidOperationException("The mount does not support Unpark. Unpark it manually before starting.");
                 token.ThrowIfCancellationRequested();
@@ -66,7 +120,13 @@ public sealed partial class NinaPolarAlignmentCaptureService {
                 await Task.Delay(100, token);
             }
             token.ThrowIfCancellationRequested();
-            RaRotation.SelectRate(mount.Read(), mount.MaximumRate);
+            if(PoleMasterMode && device.TrackingEnabled) {
+                device.TrackingEnabled=false;
+                await Task.Delay(500,token);
+                if(device.TrackingEnabled)throw new InvalidOperationException("The mount did not disable tracking before polar calibration.");
+                NINA.Core.Utility.Logger.Info("Polar preparation: tracking disabled before the first reference; coordinate model remains consistent through calibration and return.");
+            }
+            RaRotation.SelectRate(mount.Read(), mount.SelectedRate);
         } finally { captureGate.Release(); }
     }
     public async Task RotateRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 90) {
@@ -75,11 +135,44 @@ public sealed partial class NinaPolarAlignmentCaptureService {
             await RotateRaCoreAsync(reverse, progress, token, targetDegrees);
         } finally { captureGate.Release(); }
     }
-    private Task RotateRaCoreAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees) {
+    public async Task ContinueRaAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees = 40) {
+        if (!await captureGate.WaitAsync(0, token)) throw new InvalidOperationException("Another alignment operation is running.");
+        try { await RotateRaCoreAsync(reverse, progress, token, targetDegrees, true); }
+        finally { captureGate.Release(); }
+    }
+    private async Task RotateRaCoreAsync(bool reverse, IProgress<double>? progress, CancellationToken token, double targetDegrees, bool continuePath = false) {
         token.ThrowIfCancellationRequested();
         var mount = new RotationMount(telescope);
+        var saved = raReturn;
+        raReturn = null;
         progress?.Report(0);
-        return Task.Run(() => new RaRotation().RunAsync(mount, reverse, progress, token, targetDegrees, mount.MaximumRate), CancellationToken.None);
+        var rate = mount.SelectedRate;
+        var initial = mount.Read();
+        var device = telescope.GetDevice() as ITelescope ?? throw new InvalidOperationException("No telescope device connected.");
+        var startHourAngle = HourAngle(device);
+        if (continuePath) {
+            if (saved == null || saved.Reverse != reverse || !ReferenceEquals(saved.Device, device)
+                || Math.Abs(initial.DecDegrees - saved.Declination) > .2
+                || (saved.PierSide >= 0 && initial.PierSide != saved.PierSide)
+                || Math.Abs(RaRotation.WrapDegrees(startHourAngle - saved.EndHourAngle)) > 1
+                || Math.Abs(RaRotation.WrapDegrees(startHourAngle - saved.StartHourAngle)) + targetDegrees > 95)
+                throw new InvalidOperationException("RA position changed between calibration intervals. Reset calibration.");
+        }
+        NINA.Core.Utility.Logger.Info($"Polar RA rotation: driver={mount.DriverId}, selectedRate={rate:G8} deg/s, reverse={reverse}, target={targetDegrees}, initialRA={initial.RaHours:G12} h");
+        try {
+            await Task.Run(() => new RaRotation().RunAsync(mount, reverse, progress, token, targetDegrees, rate, baseline => {
+                NINA.Core.Utility.Logger.Info($"Polar stationary baseline after tracking off: Dec {initial.DecDegrees:F5} -> {baseline.DecDegrees:F5}; pier {initial.PierSide} -> {baseline.PierSide}; RA={baseline.RaHours:F7}");
+                initial=baseline;startHourAngle=HourAngle(device);
+            }, homeCoordinatesRefreshed: refreshed => {
+                NINA.Core.Utility.Logger.Warning($"Polar ASI Home coordinate refresh after initial RA motion: Dec {initial.DecDegrees:F5} -> {refreshed.DecDegrees:F5}; original RA return position retained.");
+                initial = initial with { DecDegrees = refreshed.DecDegrees };
+            },coarseCalibration:PoleMasterMode), CancellationToken.None);
+            token.ThrowIfCancellationRequested();
+            raReturn = new(device, continuePath ? saved!.StartHourAngle : startHourAngle, HourAngle(device), initial.DecDegrees, initial.PierSide, reverse);
+        } catch (Exception error) {
+            NINA.Core.Utility.Logger.Error(error);
+            throw;
+        }
     }
     public Task<SolvedPolarFrame> CaptureAndSolveWithRotationAsync(double exposureSeconds, bool reverse,
         IProgress<double>? progress, CancellationToken token, double targetDegrees = 90,
@@ -91,11 +184,13 @@ public sealed partial class NinaPolarAlignmentCaptureService {
         private readonly ITelescopeMediator mediator;
         private readonly ITelescope device;
         private readonly (double, double)[] rates;
-        public double MaximumRate => RaRotation.MaximumRateForDriver(device.Id);
+        public double SelectedRate { get; }
+        public string DriverId => device.Id;
         public RotationMount(ITelescopeMediator mediator) {
             this.mediator = mediator;
             device = mediator.GetDevice() as ITelescope ?? throw new InvalidOperationException("No telescope device connected.");
             rates = device.GetAxisRates(TelescopeAxes.Primary).ToArray();
+            SelectedRate = device.PrimaryMovingRate;
         }
         private void CheckDevice() {
             if (!ReferenceEquals(mediator.GetDevice(), device)) throw new InvalidOperationException("Telescope device changed during rotation.");
@@ -105,7 +200,11 @@ public sealed partial class NinaPolarAlignmentCaptureService {
             return new(device.Connected, device.AtPark, device.Slewing, device.AlignmentMode is AlignmentMode.Polar or AlignmentMode.GermanPolar,
                 device.CanMovePrimaryAxis, device.CanSetTrackingEnabled, device.TrackingEnabled,
                 device.RightAscension, device.Declination, (int)device.SideOfPier,
-                rates);
+                rates) {
+                HomePoleCoordinatesMayBeStale = Math.Abs(device.Declination) >= 85
+                    && string.Equals(device.Id, "ASCOM.ASIMount.Telescope", StringComparison.OrdinalIgnoreCase)
+                    && device.AtHome
+            };
         }
         public void SetTracking(bool enabled) { CheckDevice(); device.TrackingEnabled = enabled; }
         // Use NINA's manual-control reversal setting, as its direction buttons do.

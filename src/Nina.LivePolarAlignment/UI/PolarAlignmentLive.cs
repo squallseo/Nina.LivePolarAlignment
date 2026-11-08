@@ -20,10 +20,15 @@ public sealed partial class PolarAlignmentDockableVM {
     private PolarAlignmentSession? session;
     private CancellationTokenSource? liveCancellation;
     private bool liveBusy;
+    private TaskCompletionSource<bool>? liveOperationFinished;
     private double calibrationLatitude, calibrationLongitude;
     private string liveStatus = "Live0";
     private string liveError = "—";
     private BitmapSource? livePreview;
+    private StarOverlay? displayedStars;
+    public StarOverlay? DisplayStars => displayedStars;
+    public bool HasFreshStars => (liveBusy || poleMasterPreviewing) && !IsStopping && CameraConnected && displayedStars is { } stars
+        && stars.CapturedAt!=default && (DateTimeOffset.UtcNow-stars.CapturedAt).TotalSeconds is >= 0 and < 2;
     private PolarGuidance? guidance;
     private PolarError? latestError;
     private DateTimeOffset? measuredAt;
@@ -33,6 +38,20 @@ public sealed partial class PolarAlignmentDockableVM {
     private readonly Dispatcher uiDispatcher = System.Windows.Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
     private readonly DispatcherTimer freshnessTimer;
     private bool useStreaming = true;
+    private double streamingExposureSeconds = .25;
+    private int streamingBinning = 2;
+    private bool trackingRecovery;
+    private bool holdingStreamMeasurement;
+    private string trackingReadout = string.Empty;
+    public double StreamingExposureSeconds {
+        get => streamingExposureSeconds;
+        set { if (!CaptureSettingsLocked && !liveBusy && double.IsFinite(value) && value is >= .02 and <= 10) { streamingExposureSeconds = value; RaisePropertyChanged();RaisePropertyChanged(nameof(CaptureExposureSeconds)); if(PoleMasterMode && !captureService.TryQueueLiveExposure(value))UpdatePoleMasterPreview(true); } }
+    }
+    public int StreamingBinning {
+        get => streamingBinning;
+        set { if (!liveBusy && value is 1 or 2 or 4) { streamingBinning = PoleMasterMode ? 1 : value; RaisePropertyChanged(); } }
+    }
+    public string TrackingReadout => trackingReadout;
     public bool UseStreaming {
         get => useStreaming;
         set { if (liveBusy || useStreaming == value) return; useStreaming = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(AcquisitionMode)); }
@@ -75,22 +94,33 @@ public sealed partial class PolarAlignmentDockableVM {
     private void InitializeLive(IProfileService profileService, IPolarAlignmentCaptureService service) {
         profiles = profileService; captureService = service;
         captureService.PreviewAvailable += CapturePreviewAvailable;
+        captureService.StreamingPreviewAvailable += StreamingPreviewAvailable;
         UiText.Configure(() => profileService.ActiveProfile.ApplicationSettings?.Culture);
         UiText.Instance.PropertyChanged += LocaleChanged;
         CaptureReferenceCommand = new AsyncRelayCommand(CaptureReferenceAsync, () => EquipmentReady && !liveBusy && session?.IsCalibrated != true);
         StartLiveCommand = new AsyncRelayCommand(RunLiveAsync, () => EquipmentReady && !liveBusy && session?.IsCalibrated == true);
+        StartPoleMasterMonitoringCommand=new RelayCommand(()=>{poleMasterMonitoring=true;manualOffset=null;manualOffsetAt=null;captureService.SetManualPolarisAdjustment(null);NotifyLive();},()=>ShowPoleMasterMonitoringAction && CameraConnected && liveBusy);
+        ReturnToPolarisTargetCommand=new RelayCommand(()=>{
+            if(guidance?.PolarisTarget is not {} target)return;
+            poleMasterMonitoring=false;manualOffset=null;manualOffsetAt=null;captureService.SetManualPolarisAdjustment(new(target.X/guidance.Width,target.Y/guidance.Height));NotifyLive();
+        },()=>IsPoleMasterMonitoring && liveBusy && CameraConnected);
         StopLiveCommand = new RelayCommand(RequestStopLive, () => liveBusy && !IsStopping);
         ResetLiveCommand = new RelayCommand(ResetLive, () => !liveBusy && !fieldSaving);
         InitializeField(); InitializeVerification(); InitializeDrift();
         PropertyChanged += (_, change) => {
-            if ((change.PropertyName == nameof(IsClosed) && IsClosed)
-                || (change.PropertyName == nameof(IsVisible) && !IsVisible)) RequestStopLive();
+            if(change.PropertyName is nameof(IsClosed) or nameof(IsVisible))UpdateWorkspaceVisibility();
         };
         freshnessTimer.Tick += (_, _) => {
+            if(liveBusy && holdingStreamMeasurement && measuredAt is {} heldAt && (DateTimeOffset.UtcNow-heldAt).TotalSeconds>2) {
+                measurementStale=true;trackingRecovery=true;
+            }
+            UpdatePoleMasterPreview();
             UiText.Refresh(); RaisePropertyChanged(nameof(LiveStatus));
             RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(StreamingAvailability));
             NotifyRotation();
+            RaisePropertyChanged(nameof(HasFreshStars));
             RaisePropertyChanged(nameof(FrameFreshness)); RaisePropertyChanged(nameof(IsMeasurementStale));
+            NotifyManualOffset();
             RaisePropertyChanged(nameof(HasVisibleGuidance)); RaisePropertyChanged(nameof(GuidanceText));
             if (IsMeasurementStale) AbortStability("measurement became stale");
             NotifyWorkflow(); NotifyField();
@@ -109,19 +139,69 @@ public sealed partial class PolarAlignmentDockableVM {
             liveStatus = "SolvingFrame"; NotifyLive();
             return;
         }
-        livePreview = preview; guidance = null;
+        livePreview = preview; displayedStars=null; guidance = null;
         liveStatus = "SolvingFrame"; NotifyLive();
         NINA.Core.Utility.Logger.Info($"Polar preview: applied to UI ({preview.PixelWidth}x{preview.PixelHeight}), rotating={IsRotating}");
     }
+    private void StreamingPreviewAvailable(StreamingPreview preview) {
+        if (!uiDispatcher.CheckAccess()) {
+            uiDispatcher.BeginInvoke(() => StreamingPreviewAvailable(preview)); return;
+        }
+        if(fieldDisposed)return;
+        if(preview.IsManualPolarisAdjustment) {
+            if(liveBusy && UsePolarisTarget && !IsStopping && guidance?.PolarisTarget!=null) {
+                livePreview=preview.Image;displayedStars=null;guidance=guidance with{Polaris=null};
+                manualOffset=preview.ManualOffset;manualOffsetAt=preview.CapturedAt;
+                if(HasFreshManualOffset)manualOffsetSeen=true;
+                measurementStale=true;trackingRecovery=false;holdingStreamMeasurement=false;
+                trackingReadout=UiText.Get("ManualPolarisVideo");NotifyLive();
+            }
+            return;
+        }
+        if(preview.IsRotationPreview) {
+            if(PoleMasterMode && liveBusy && IsRotating && !IsStopping) {
+                livePreview=preview.Image;displayedStars=preview.Stars;guidance=null;measurementStale=true;NotifyLive();
+            }
+            return;
+        }
+        if(preview.IsAimingPreview) {
+            if(PoleMasterMode && poleMasterPreviewing && !liveBusy && poleMasterPreviewCancellation?.IsCancellationRequested==false) {
+                livePreview=preview.Image;displayedStars=preview.Stars;guidance=null;measurementStale=true;
+                poleMasterPreviewStatusKey="PolePreviewLive";RaisePropertyChanged(nameof(PoleMasterPreviewStatus));NotifyLive();
+            }
+            return;
+        }
+        if (!liveBusy || IsStopping || (measuredAt != null && preview.CapturedAt <= measuredAt)) return;
+        if(guidance != null && livePreview != null && latestError != null) {
+            // Keep a measured image and its markers together. An unmeasured
+            // frame must never erase them or carry old geometry on new pixels.
+            holdingStreamMeasurement=true;
+            bool expired=measuredAt==null || (DateTimeOffset.UtcNow-measuredAt.Value).TotalSeconds>2;
+            measurementStale=expired;trackingRecovery=expired;
+            if(expired)trackingReadout=UiText.Get("TrackingHeld");
+            NotifyLive();return;
+        }
+        livePreview = preview.Image; displayedStars=preview.Stars; guidance = null; measurementStale = true;
+        trackingRecovery = true; trackingReadout = UiText.Get("TrackingRecovering");
+        NotifyLive();
+    }
     private void ResetLive() {
+        poleMasterCaptureLocked=false;polarisClickRequired=false;
+        manualOffset=null;manualOffsetAt=null;manualOffsetSeen=false;
+        poleMasterMonitoring=false;
+        polarisCandidate=null;captureService.PolarisCandidate=null;RaisePropertyChanged(nameof(PolarisCandidate));
         captureService.ResetSolveHint();
+        captureService.ResetRaReturn();
         ResetDriftEvidence();
         verificationResult = null;
         automaticRotationCompleted = false; rotationProgress = 0;
         EndFieldSession("reset"); fieldFailure = null; stabilityResult = null;
-        session = null; livePreview = null; guidance = null; liveError = "—";
+        session = null; livePreview = null; displayedStars=null; guidance = null; liveError = "—";
         calibrationSamples = 0; pixelScale = 0; operationError = null;
         latestError = null; measuredAt = null; measurementStale = true;
+        trackingRecovery = false; trackingReadout = string.Empty;
+        holdingStreamMeasurement=false;
+        poleMasterAxisSpread = null; poleMasterStage = 0;
         liveStatus = "Live1";
         NotifyLive();
     }
@@ -135,17 +215,20 @@ public sealed partial class PolarAlignmentDockableVM {
     private async Task CaptureReferenceAsync() {
         await WithLiveOperation(async token => {
             if (session == null && calibrationSamples == 0) { verificationResult = null; stabilityResult = null; }
+            captureService.ValidateAlignmentCamera();
+            if (PoleMasterMode) { await CapturePoleMasterReferencesAsync(token); return; }
             if (AutoRaRotation) {
                 liveStatus = "AutoRaPreparing"; NotifyLive();
                 await captureService.PrepareAutoRaAsync(token);
                 token.ThrowIfCancellationRequested();
             }
             if (calibrationSamples == 1 && AutoRaRotation) await RotateForReferenceAsync(token);
-            await CaptureReferenceFrameAsync(token, calibrationSamples == 0 && AutoRaRotation);
+            await CaptureReferenceFrameAsync(token, calibrationSamples == 0 && AutoRaRotation && !PoleMasterMode);
             if (calibrationSamples == 1 && AutoRaRotation) {
                 await RotateForReferenceAsync(token);
                 await CaptureReferenceFrameAsync(token);
             }
+            if (AutoRaRotation && session?.IsCalibrated == true) await ReturnForAdjustmentAsync(token);
         });
     }
     private async Task<SolvedPolarFrame> CaptureReferenceFrameAsync(CancellationToken token, bool rotateDuringSolve = false) {
@@ -168,7 +251,7 @@ public sealed partial class PolarAlignmentDockableVM {
                     uiDispatcher.InvokeAsync(() => {
                         ct.ThrowIfCancellationRequested();
                         ValidateSite();
-                        livePreview = solved.Preview; pixelScale = solved.PixelScaleArcseconds;
+                        livePreview = solved.Preview; displayedStars=solved.Stars; pixelScale = solved.PixelScaleArcseconds;
                         guidance = session!.GetReferenceGuidance(solved);
                         measuredAt = solved.CapturedAtUtc; measurementStale = false;
                         liveStatus = "Live5"; NotifyLive();
@@ -179,7 +262,7 @@ public sealed partial class PolarAlignmentDockableVM {
         } else frame = await captureService.CaptureAndSolveAsync(ExposureSeconds, token);
         token.ThrowIfCancellationRequested();
         ValidateSite();
-        livePreview = frame.Preview;
+        livePreview = frame.Preview;displayedStars=frame.Stars;
         pixelScale = frame.PixelScaleArcseconds;
         int count;
         try { count = session.AddCalibration(frame); }
@@ -197,14 +280,18 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private async Task RunLiveAsync() {
         await WithLiveOperation(async token => {
-            RecordFieldEvent("live_start", new { acquisition = UseStreaming ? "native_streaming" : "single_frames", exposureSeconds = ExposureSeconds });
+            if(PoleMasterMode && UsePolarisTarget && guidance?.PolarisTarget is {} target)
+                captureService.SetManualPolarisAdjustment(new(target.X/guidance.Width,target.Y/guidance.Height));
+            else captureService.SetManualPolarisAdjustment(null);
+            RecordFieldEvent("live_start", new { acquisition = UseStreaming ? "native_streaming" : "single_frames", exposureSeconds = UseStreaming ? StreamingExposureSeconds : ExposureSeconds, streamingBinning = StreamingBinning });
             var cycle = Stopwatch.StartNew();
             if (UseStreaming) {
                 ValidateSite();
                 if (captureService.SupportsStreaming) {
+                    captureService.StreamingBinning = StreamingBinning;
                     liveStatus = "StreamingStarting"; NotifyLive();
                     // Dispose the native stream before starting ordinary exposures.
-                    await using var frames = captureService.StreamAndSolveAsync(ExposureSeconds, token).GetAsyncEnumerator(token);
+                    await using var frames = captureService.StreamAndSolveAsync(StreamingExposureSeconds, token).GetAsyncEnumerator(token);
                     while (true) {
                         bool available;
                         try { available = await frames.MoveNextAsync(); }
@@ -237,7 +324,12 @@ public sealed partial class PolarAlignmentDockableVM {
         var error = guidance.Error;
         lastCycleMilliseconds = cycleMilliseconds;
         latestError = error; measuredAt = frame.CapturedAtUtc; measurementStale = false;
-        livePreview = frame.Preview; pixelScale = frame.PixelScaleArcseconds;
+        holdingStreamMeasurement=false;
+        trackingRecovery = false;
+        trackingReadout = PoleMasterMode ? UiText.Format("PatternMatchedStars",frame.Stars?.Markers.Length-1??0)
+            : frame.IsTracked ? UiText.Format("TrackingActive", frame.TrackedStars, frame.TrackingRmsPixels, cycleMilliseconds / 1000)
+            : UiText.Get("TrackingAbsolute");
+        livePreview = frame.Preview;displayedStars=frame.Stars; pixelScale = frame.PixelScaleArcseconds;
         liveError = $"{error.TotalArcminutes:0.00} total";
         RecordFieldFrame(frame, "measurement", true, cycleMilliseconds);
         UpdateStability(frame);
@@ -245,11 +337,26 @@ public sealed partial class PolarAlignmentDockableVM {
     }
     private async Task WithLiveOperation(Func<CancellationToken, Task> operation) {
         if (liveBusy) return;
+        var finished=liveOperationFinished=new(TaskCreationOptions.RunContinuationsAsynchronously);
+        holdingStreamMeasurement=false;
+        trackingRecovery = false; trackingReadout = string.Empty;
         liveBusy = true; operationError = null; liveCancellation = new CancellationTokenSource(); NotifyLive();
-        try { await operation(liveCancellation.Token); }
-        catch (OperationCanceledException) { AbortStability("cancelled"); RecordFieldEvent("operation_cancelled", new { }); liveStatus = "Live7"; measurementStale = true; guidance = null; }
-        catch (Exception ex) { AbortStability("operation failed"); RecordFieldEvent("operation_failed", new { error = ex.ToString() }); operationError = ex.Message; liveStatus = "Live8"; liveError = "—"; guidance = null; measurementStale = true; }
-        finally { liveCancellation.Dispose(); liveCancellation = null; liveBusy = false; NotifyLive(); if (fieldDisposed && !fieldSaving) EndFieldSession("disposed"); }
+        try {
+            await StopPoleMasterPreviewAsync();
+            liveCancellation.Token.ThrowIfCancellationRequested();
+            captureService.PoleMasterMode=PoleMasterMode;
+            await operation(liveCancellation.Token);
+        }
+        catch (OperationCanceledException) { if(PoleMasterMode && !IsAdjustmentStep)poleMasterNeedsHome=true;AbortStability("cancelled"); RecordFieldEvent("operation_cancelled", new { }); liveStatus = "Live7"; measurementStale = true; guidance = null; }
+        catch (PolarisIdentificationException ex) when(PoleMasterMode && !IsAdjustmentStep && poleMasterStage==0) {
+            NINA.Core.Utility.Logger.Info("Polar initial pattern not identified: "+ex.InnerException?.Message);
+            polarisClickRequired=true;polarisCandidate=null;captureService.PolarisCandidate=null;
+            poleMasterNeedsHome=false;poleMasterCaptureLocked=false;
+            operationError=UiText.Get("PolarisAutoFailed");liveStatus="Live8";liveError="—";guidance=null;measurementStale=true;
+            previewAttempted=false;previewManuallyPaused=false;
+        }
+        catch (Exception ex) { NINA.Core.Utility.Logger.Error(ex); if(PoleMasterMode && !IsAdjustmentStep)poleMasterNeedsHome=true;AbortStability("operation failed"); RecordFieldEvent("operation_failed", new { error = ex.ToString() }); operationError = ex.Message; liveStatus = "Live8"; liveError = "—"; guidance = null; measurementStale = true; }
+        finally { liveCancellation.Dispose(); liveCancellation = null; liveBusy = false; NotifyLive(); if (fieldDisposed && !fieldSaving) EndFieldSession("disposed"); finished.TrySetResult(true); }
     }
     private void ValidateSite() {
         if (!captureService.CameraConnected)
@@ -270,9 +377,18 @@ public sealed partial class PolarAlignmentDockableVM {
         applicationStatusMediator?.StatusUpdate(new NINA.Core.Model.ApplicationStatus { Source = "Live Polar Alignment", Status = message });
     }
     private void NotifyLive() {
+        RaisePropertyChanged(nameof(UsePolarisTarget));RaisePropertyChanged(nameof(IsPoleMasterMonitoring));RaisePropertyChanged(nameof(ShowPoleMasterMonitoringAction));
+        RaisePropertyChanged(nameof(ShowPolarErrorReadout));
+        NotifyManualOffset();
+        (StartPoleMasterMonitoringCommand as RelayCommand)?.NotifyCanExecuteChanged();
+        (ReturnToPolarisTargetCommand as RelayCommand)?.NotifyCanExecuteChanged();
+        RaisePropertyChanged(nameof(PolarisCandidate));
+        NotifyCaptureControls();
+        NotifyPreviewLoop();
         ReportHostStatus();
         NotifyWorkflow(); NotifyField(); NotifyRotation(); NotifyVerification(); NotifyDrift();
         RaisePropertyChanged(nameof(CanUseStreaming)); RaisePropertyChanged(nameof(AcquisitionMode)); RaisePropertyChanged(nameof(StreamingAvailability));
+        RaisePropertyChanged(nameof(TrackingReadout));RaisePropertyChanged(nameof(DisplayStars));RaisePropertyChanged(nameof(HasFreshStars));
         foreach (var name in new[] { nameof(LiveStatus), nameof(LiveError), nameof(LivePreview), nameof(CanConfigureLive), nameof(ImageWidth), nameof(ImageHeight), nameof(MarkerSize), nameof(AxisLeft), nameof(AxisTop), nameof(PoleLeft), nameof(PoleTop), nameof(HasVisibleGuidance), nameof(GuidanceText) }) RaisePropertyChanged(name);
         foreach (var name in new[] { nameof(LiveTotalError), nameof(LiveAltitudeError), nameof(LiveAzimuthError), nameof(FrameFreshness), nameof(IsMeasurementStale) }) RaisePropertyChanged(name);
         (CaptureReferenceCommand as IRelayCommand)?.NotifyCanExecuteChanged();
@@ -280,6 +396,6 @@ public sealed partial class PolarAlignmentDockableVM {
         (StopLiveCommand as IRelayCommand)?.NotifyCanExecuteChanged();
         (ResetLiveCommand as IRelayCommand)?.NotifyCanExecuteChanged();
     }
-    private void LocaleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => NotifyLive();
-    public void Dispose() { captureService.PreviewAvailable -= CapturePreviewAvailable; fieldDisposed = true; ReportHostStatus(); RequestStopLive(); freshnessTimer.Stop(); UiText.Instance.PropertyChanged -= LocaleChanged; if (!liveBusy && !fieldSaving) EndFieldSession("disposed"); }
+    private void LocaleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {NotifyLive();RaisePropertyChanged(nameof(PolarisSelectionHelp));}
+    public void Dispose() { DisposePanels(); captureService.PreviewAvailable -= CapturePreviewAvailable; captureService.StreamingPreviewAvailable -= StreamingPreviewAvailable; fieldDisposed = true; poleMasterPreviewCancellation?.Cancel(); ReportHostStatus(); RequestStopLive(); freshnessTimer.Stop(); UiText.Instance.PropertyChanged -= LocaleChanged; if (!liveBusy && !fieldSaving) EndFieldSession("disposed"); }
 }

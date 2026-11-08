@@ -1,0 +1,15 @@
+North-pole star template derived from HYG Star Database v4.1.
+Copyright David Nash / Astronexus and contributors.
+Source: https://github.com/astronexus/HYG-Database
+Pinned commit: c7f7f883fe678cc7680169a50ccd7dcc49b060ce
+Input: hyg/CURRENT/hygdata_v41.csv
+Changes: selected five fixed stars: HIP 11767, 37391, 115746, 19454, 84535;
+retained HIP identifier, J2000 RA in hours, Dec in degrees, magnitude and proper motions.
+Fixed pattern identification: matched the four surrounding overlay circles in the
+QHYCCD PoleMaster User Manual (Northern Hemisphere), page 4, Steve Richards 2017.
+https://www.firstlightoptics.com/user/manuals/polemaster_user_manual_english_UK_northern_hemisphere.pdf
+The star identification is our catalog-based inference from the published diagram;
+QHYCCD does not provide HIP identifiers in that diagram. No QHY program code or artwork is included.
+The derived CSV and original data are licensed CC BY-SA 4.0:
+https://creativecommons.org/licenses/by-sa/4.0/
+This notice licenses the data, independently of the plugin source code.

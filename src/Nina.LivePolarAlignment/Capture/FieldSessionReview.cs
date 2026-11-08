@@ -28,6 +28,7 @@ public static class FieldSessionReview {
         if (incomplete) warnings.Add("Ignored incomplete final journal line; preceding records were recovered.");
         int references = 0, measurements = 0, rejected = 0, marks = 0, fits = 0;
         double? largestDifference = null;
+        SolvedPolarFrame? firstReference = null, middleReference = null;
         var csv = new StringBuilder("frame_id,kind,accepted,acquisition,captured_utc,ra_degrees,dec_degrees,position_angle_degrees,pixel_scale_arcseconds,dut1_seconds,altitude_arcseconds,azimuth_arcseconds,total_arcseconds,cycle_ms,frame_age_seconds,replayed_total_arcseconds,replay_max_difference_arcseconds\n");
         foreach (var entry in entries) {
             if (entry.Type == "sample_saved") {
@@ -50,7 +51,18 @@ public static class FieldSessionReview {
                     var solved = new SolvedPolarFrame(solution.RightAscensionDegrees, solution.DeclinationDegrees, solution.PositionAngleDegrees,
                         solution.PixelScaleArcseconds, solution.Width, solution.Height, solution.Flipped,
                         solution.CapturedAtUtc, null, Dut1Seconds: solution.Dut1Seconds);
-                    if (frame.Kind == "reference") { session.AddCalibration(solved); references++; }
+                    if (frame.Kind == "reference") {
+                        firstReference ??= solved;
+                        session.AddCalibration(solved); references++;
+                        if (session.IsCalibrated && middleReference != null)
+                            session = PoleMasterCalibration.Calculate(firstReference, middleReference, solved,
+                                metadata.GetProperty("latitudeDegrees").GetDouble(), metadata.GetProperty("longitudeDegrees").GetDouble()).Session;
+                    } else if (frame.Kind == "polemaster_middle") {
+                        if (firstReference == null || session.IsCalibrated || middleReference != null)
+                            throw new InvalidDataException("PoleMaster middle reference is out of sequence.");
+                        session.GetReferenceGuidance(solved); middleReference = solved; references++;
+                    }
+                    else if (frame.Kind == "adjustment_reference") { session.RebaseAdjustment(solved); }
                     else if (frame.Kind == "measurement") {
                         var error = session.Measure(solved); measurements++; replayedTotal = error.TotalArcminutes * 60;
                         if (frame.AltitudeArcseconds is { } alt && frame.AzimuthArcseconds is { } az && frame.TotalArcseconds is { } total) {

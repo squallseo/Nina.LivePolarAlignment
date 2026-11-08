@@ -16,6 +16,8 @@ public sealed class Plugin : PluginBase, INotifyPropertyChanged {
         this.profiles = profiles;
         UiText.Configure(() => profiles.ActiveProfile.ApplicationSettings?.Culture);
     }
+    [Import]
+    public Lazy<PolarAlignmentDockableVM> AlignmentSession { get; set; } = null!;
     public bool EnableDebugRecording {
         get => ReadDebugRecording(profiles);
         set {

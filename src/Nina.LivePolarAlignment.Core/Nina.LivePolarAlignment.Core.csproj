@@ -1,3 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup><EmbeddedResource Include="Data\north-pole-hyg41.csv"/><EmbeddedResource Include="Data\HYG-LICENSE.txt"/></ItemGroup>
 </Project>

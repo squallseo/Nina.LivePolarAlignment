@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.ComponentModel.Composition;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +24,17 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
     private readonly ITelescopeMediator telescope;
     private readonly SemaphoreSlim captureGate = new(1, 1);
     private readonly SolveHintCache solveHints = new();
-    public void ResetSolveHint() => solveHints.Clear();
+    public Core.PixelPoint? PolarisCandidate { get; set; }
+    private volatile bool manualPolarisAdjustment;
+    private Core.PixelPoint? fixedPolarisSeed;
+    public void SetManualPolarisAdjustment(Core.PixelPoint? normalizedTarget) {
+        if(normalizedTarget is {} target)fixedPolarisSeed=target;
+        manualPolarisAdjustment=normalizedTarget!=null;
+    }
+    private (SolveHintContext Context, SolvedPolarFrame Frame)? streamingAnchor;
+    public int StreamingBinning { get; set; } = 2;
+    public event Action<StreamingPreview>? StreamingPreviewAvailable;
+    public void ResetSolveHint() { solveHints.Clear(); streamingAnchor = null; calibratedPatternScale=null;manualPolarisAdjustment=false;fixedPolarisSeed=null; }
     public bool CameraConnected => camera.GetInfo()?.Connected == true;
     public bool MountConnected => telescope.GetInfo()?.Connected == true;
 
@@ -71,34 +82,34 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
                 || (info.ExposureMax > 0 && exposureSeconds > info.ExposureMax))
                 throw new InvalidOperationException("The requested exposure is outside the camera's supported range.");
 
+            ValidateAlignmentCamera();
             var profile = profiles.ActiveProfile;
             var settings = profile.PlateSolveSettings;
-            var focalLength = profile.TelescopeSettings.FocalLength;
-            var pixelSize = profile.CameraSettings.PixelSize;
+            var (focalLength, pixelSize) = AlignmentOptics;
             if (!double.IsFinite(focalLength) || focalLength <= 0 || !double.IsFinite(pixelSize) || pixelSize <= 0)
                 throw new InvalidOperationException("Set the telescope focal length and camera pixel size in the active NINA profile.");
 
             // Request full-frame captures at the configured solve binning.
             // No filter or readout-mode changes are made by this service.
-            var binning = (short)Math.Max(1, (int)settings.Binning);
+            var binning = PoleMasterMode ? (short)1 : (short)Math.Max(1, (int)settings.Binning);
             var sequence = new CaptureSequence(exposureSeconds, CaptureSequence.ImageTypes.SNAPSHOT,
-                null!, new BinningMode(binning, binning), 1) { Gain = settings.Gain };
+                null!, new BinningMode(binning, binning), 1) { Gain = PoleMasterMode ? CameraGain : settings.Gain };
             var hintContext = new SolveHintContext(profile.Id, info.DeviceId ?? profile.CameraSettings.Id ?? string.Empty, focalLength, pixelSize);
             var previousSolution = solveHints.Get(hintContext);
             NINA.Core.Utility.Logger.Info($"Polar solve hint: {(previousSolution != null ? "previous solved frame" : "mount or blind search")}");
             var parameter = new PlateSolveParameter {
                 Binning = binning,
-                Coordinates = previousSolution ?? (telescope.GetInfo()?.Connected == true ? telescope.GetCurrentPosition() : null!),
+                Coordinates = previousSolution ?? InitialAlignmentHint()!,
                 FocalLength = focalLength,
                 PixelSize = pixelSize,
-                DownSampleFactor = settings.DownSampleFactor,
+                DownSampleFactor = PoleMasterMode ? 1 : settings.DownSampleFactor,
                 MaxObjects = settings.MaxObjects,
                 Regions = settings.Regions,
-                SearchRadius = settings.SearchRadius,
+                SearchRadius = PoleMasterMode ? Math.Max(15, settings.SearchRadius) : settings.SearchRadius,
                 BlindFailoverEnabled = settings.BlindFailoverEnabled,
                 DisableNotifications = true
             };
-            var solver = new ImageSolver(PlateSolverFactory.GetPlateSolver(settings),
+            var solver = UsePolarisPattern ? null : new ImageSolver(PlateSolverFactory.GetPlateSolver(settings),
                 PlateSolverFactory.GetBlindSolver(settings));
             camera.RegisterCaptureBlock(this);
             registered = true;
@@ -112,7 +123,8 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
             NINA.Core.Utility.Logger.Info($"Polar preview: download complete at {timing.ElapsedMilliseconds} ms");
             var image = await Task.Run(() => exposure.ToImageData(progress!, token), token);
             token.ThrowIfCancellationRequested();
-            var preparedPreview = await Task.Run(() => QuickLookPreview.Prepare(image, token), token);
+            var preparedPreview = await Task.Run(() => QuickLookPreview.Prepare(image, token, PreviewStretchStrength,PreviewStretchEnabled), token);
+            lastPreparedPreview = preparedPreview;
             var preview = preparedPreview.Image;
             PublishPreview(preview);
             // Data binding and WPF rendering must run before any solver preparation.
@@ -131,7 +143,7 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
 
             async Task<SolvedPolarFrame> SolveAsync(CancellationToken solveToken) {
                 progress?.Report(new ApplicationStatus { Status = "Solving polar alignment frame" });
-                var result = await Task.Run(() => solver.Solve(image, parameter, progress!, solveToken), solveToken);
+                var result = await SolveAlignmentImageAsync(image,parameter,solver,solveToken);
                 NINA.Core.Utility.Logger.Info($"Polar preview: solve finished at {timing.ElapsedMilliseconds} ms");
                 solveToken.ThrowIfCancellationRequested();
                 if (!result.Success || result.Coordinates == null)
@@ -143,9 +155,12 @@ public sealed partial class NinaPolarAlignmentCaptureService : IPolarAlignmentCa
                 preview = await Task.Run(() => preparedPreview.CreateFullResolution(solveToken), solveToken);
                 NINA.Core.Utility.Logger.Info($"Polar preview: full-resolution display ready at {timing.ElapsedMilliseconds} ms");
                 var dimensions = image.Properties;
+                var stars=await Task.Run(()=>FindAlignmentStars(image,preparedPreview,solveToken),solveToken);
                 var solved = new SolvedPolarFrame(result.Coordinates.RADegrees, result.Coordinates.Dec,
                     result.PositionAngle, result.Pixscale, dimensions.Width, dimensions.Height,
-                    result.Flipped, capturedAt, preview, image);
+                    result.Flipped, capturedAt, preview, image, Stars:new(UsePolarisPattern?patternMatchedStars!:stars.Select((p,i)=>new Core.TrackedStar(i+1,p)).ToArray(),dimensions.Width,dimensions.Height,UsePolarisPattern,capturedAt,UsePolarisPattern?patternTemplateStars:null));
+                if (PoleMasterMode) PoleMasterSetup.ValidateSolution(solved, profile.AstrometrySettings.Latitude);
+                streamingAnchor = (hintContext, solved);
                 solveToken.ThrowIfCancellationRequested();
                 if (referenceSolved != null) await referenceSolved(solved);
                 return solved;

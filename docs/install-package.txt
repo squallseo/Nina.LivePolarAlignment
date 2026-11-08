@@ -1,26 +1,26 @@
-Live Polar Alignment - experimental field-test build
-Requires Windows x64 and N.I.N.A. 3.2.0.9001 or newer. No SDK or build required.
+Live Polar Alignment 0.1.0.90
+Requires Windows x64 and N.I.N.A. 3.2.0.9001 or newer.
 
-1. Extract the entire ZIP. Close all N.I.N.A. instances.
-2. Run Install-Plugin.ps1 in PowerShell, or manually copy the contents of
-   plugin into %LOCALAPPDATA%\NINA\Plugins\3.0.0\Live Polar Alignment
-3. Start N.I.N.A. Open Plugins > Installed > Live Polar Alignment > Options.
-4. Optionally enable debug recording before the first reference (Reset if already calibrated).
-5. Open the imaging Live Polar Alignment panel. Field validation: Mark / Stability / Folder.
-6. Auto RA rotation defaults on: choose direction and a 60-90 degree rotation
-   (default 90). Check the clear path before Start. Unsupported mounts fall back
-   to manual rotation. See auto-ra-rotation.md.
-7. After adjustment, Stop and expand Verify alignment for optional fresh-pair
-   remeasurement with a further RA rotation. Dec stays fixed. A 20-frame Stability
-   check follows by default; it can be turned off. See verification.md.
-8. Optional Independent drift verification: manually select two equatorial fields,
-   keep sidereal tracking on and all guiding/corrections off. The plugin records
-   Dec drift and assesses residuals against your target. See independent-drift.md.
+1. Extract the entire ZIP and close NINA.
+2. Run Install-Plugin.ps1, or copy plugin contents into:
+   %LOCALAPPDATA%/NINA/Plugins/3.0.0/Live Polar Alignment
+3. Start NINA. Open PA Image and PA Controls using their single Imaging toolbar icon.
+4. Connect the camera/mount and check the selected method.
+   PoleMaster uses its stock-optics pattern. A main camera uses NINA's solvers.
+5. Settings: Plugins > Installed > Live Polar Alignment > Options.
+   Exposure is in milliseconds. Adjust gain in NINA Equipment.
+6. Press Start. PoleMaster identifies Polaris automatically; click only if asked.
+   Allow calibration and return to finish before using the adjustment bolts.
+7. Move the selected star to the fixed target, then start fine monitoring.
 
-Recording is off by default and stored per N.I.N.A. profile.
-Existing records are kept when off.
-Recordings: %LOCALAPPDATA%\NINA\LivePolarAlignment\FieldSessions
-Keep the entire session folder for later review. No automatic upload.
-Stability is repeatability, not absolute accuracy. Equipment accuracy remains unverified.
-Offline review is a separate developer tool; it is not required to collect field data.
+General automatic RA defaults to 90 degrees. PoleMaster measures two 40-degree
+intervals. Check cable clearance and direction. Home restart can move RA and Dec.
+
+Field recording is optional, off by default and stored per NINA profile.
+Records: %LOCALAPPDATA%/NINA/LivePolarAlignment/FieldSessions
+Keep the whole session folder for offline review. No automatic upload.
+Estimated image drift and independent drift verification are not user features.
+
+The package does not alter NINA application DLLs or camera SDKs.
+Stability measures repeatability; absolute equipment accuracy needs field validation.
 Source: https://github.com/squallseo/Nina.LivePolarAlignment

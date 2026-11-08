@@ -9,7 +9,10 @@
     <RootNamespace>Nina.LivePolarAlignment</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="..\Nina.LivePolarAlignment.Core\Data\HYG-LICENSE.txt" Link="External\PolarisPattern\LICENSE.txt" CopyToOutputDirectory="PreserveNewest"/>
+    <None Include="..\Nina.LivePolarAlignment.Core\Data\HYG-NOTICE.txt" Link="External\PolarisPattern\NOTICE.txt" CopyToOutputDirectory="PreserveNewest"/>
     <PackageReference Include="NINA.Plugin" Version="3.2.0.9001" />
+    <PackageReference Include="Dirkster.AvalonDock" Version="4.72.1" IncludeAssets="compile;build" />
     <ProjectReference Include="../Nina.LivePolarAlignment.Core/Nina.LivePolarAlignment.Core.csproj" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -12,7 +12,7 @@ public sealed record VerificationResult(DateTimeOffset CompletedAtUtc, PolarErro
 }
 
 public sealed partial class PolarAlignmentDockableVM {
-    private bool verificationInProgress, verificationReverse = true, autoVerificationStability = true;
+    private bool verificationInProgress, verificationReverse, autoVerificationStability = true;
     private VerificationResult? verificationResult;
     public ICommand VerifyAlignmentCommand { get; private set; } = null!;
     public bool CanConfigureVerification => !IndependentDriftEnabled && !liveBusy && !fieldSaving && session?.IsCalibrated == true;
@@ -43,12 +43,18 @@ public sealed partial class PolarAlignmentDockableVM {
             reverseRaRotation = verificationReverse;
             latestError = null; guidance = null; NotifyLive();
             try {
-                var first = await CaptureReferenceFrameAsync(token);
-                var before = previousSession.Measure(first);
-                RecordFieldEvent("verification_start", new { previousDirectory, before, reverse = verificationReverse });
-                await RotateForReferenceAsync(token);
-                var second = await CaptureReferenceFrameAsync(token);
-                PublishMeasurement(second, 0);
+                PolarError before = default;
+                void SaveBefore(Capture.SolvedPolarFrame first) {
+                    before = previousSession.Measure(first);
+                    RecordFieldEvent("verification_start", new { previousDirectory, before, reverse = verificationReverse });
+                }
+                if (PoleMasterMode) await CapturePoleMasterReferencesAsync(token, SaveBefore);
+                else {
+                    var first = await CaptureReferenceFrameAsync(token); SaveBefore(first);
+                    await RotateForReferenceAsync(token);
+                    await CaptureReferenceFrameAsync(token);
+                    await ReturnForAdjustmentAsync(token);
+                }
                 verificationResult = new(DateTimeOffset.UtcNow, before, latestError!.Value);
                 RecordFieldEvent("verification_result", verificationResult); NotifyVerification();
                 if (AutoVerificationStability) {

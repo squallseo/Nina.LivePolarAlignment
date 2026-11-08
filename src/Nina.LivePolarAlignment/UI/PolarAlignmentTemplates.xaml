@@ -13,13 +13,12 @@
   <PathGeometry Figures="M24 0 L25.8 5.2 L31 7 L25.8 8.8 L24 14 L22.2 8.8 L17 7 L22.2 5.2 Z"/>
  </GeometryGroup>
  <DataTemplate x:Key="Nina.LivePolarAlignment.UI.PolarAlignmentDockableVM_Dockable">
-  <local:PolarAlignmentView/>
+  <local:PolarAlignmentControlsView/>
+ </DataTemplate>
+ <DataTemplate x:Key="Nina.LivePolarAlignment.UI.PolarAlignmentImageDockableVM_Dockable">
+  <local:PolarAlignmentImageView DataContext="{Binding Session}"/>
  </DataTemplate>
  <DataTemplate x:Key="Live Polar Alignment_Options">
-  <StackPanel Margin="12" MaxWidth="420">
-   <TextBlock Text="{local:UiLoc DebugTitle}" FontWeight="Bold" Margin="0,0,0,8"/>
-   <CheckBox Content="{local:UiLoc DebugEnable}" IsChecked="{Binding EnableDebugRecording, Mode=TwoWay}" Margin="0,0,0,8"/>
-   <TextBlock Text="{local:UiLoc DebugHelp}" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryBrush}" FontSize="11"/>
-  </StackPanel>
+  <local:PolarAdvancedSettingsView DataContext="{Binding AlignmentSession.Value}"/>
  </DataTemplate>
 </ResourceDictionary>

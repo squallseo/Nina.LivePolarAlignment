@@ -11,6 +11,8 @@ namespace Nina.LivePolarAlignment.UI;
 
 /// <summary>Manual RA calibration, camera-based live polar guidance, and a separate synthetic demo.</summary>
 [Export(typeof(IDockableVM))]
+[Export(typeof(PolarAlignmentDockableVM))]
+[PartCreationPolicy(CreationPolicy.Shared)]
 public sealed partial class PolarAlignmentDockableVM : DockableVM, IDisposable {
     private int samples;
     private bool running;
@@ -21,7 +23,8 @@ public sealed partial class PolarAlignmentDockableVM : DockableVM, IDisposable {
         freshnessTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Background, uiDispatcher) {
             Interval = TimeSpan.FromSeconds(1)
         };
-        Title = "Live Polar Alignment";
+        Title = "PA Controls";
+        HasSettings = false;
         this.applicationStatusMediator = applicationStatusMediator;
         var iconResources = new PolarAlignmentTemplates();
         ImageGeometry = (System.Windows.Media.GeometryGroup)iconResources["Nina.LivePolarAlignment.PolarAxisIcon"];
@@ -30,6 +33,9 @@ public sealed partial class PolarAlignmentDockableVM : DockableVM, IDisposable {
         CaptureCommand = new RelayCommand(Capture, () => running && samples < 2);
         StopCommand = new RelayCommand(Stop, () => running);
         InitializeLive(profiles, captureService);
+        void ApplyStartupMode() {if(fieldDisposed)return;previewSuspended=!IsVisible;PoleMasterMode=true;}
+        if(uiDispatcher.CheckAccess())ApplyStartupMode();
+        else uiDispatcher.BeginInvoke((Action)ApplyStartupMode);
     }
 
     public override bool IsTool => true;

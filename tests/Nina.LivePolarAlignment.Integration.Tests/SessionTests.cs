@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using NINA.Astrometry;
 using Nina.LivePolarAlignment.Capture;
 using Nina.LivePolarAlignment.Core;
@@ -11,6 +11,122 @@ public sealed class SessionTests {
     private static readonly DateTimeOffset Start = new(2026, 10, 18, 12, 0, 0, TimeSpan.Zero);
     private const double Longitude = 127;
     private const double Radians = Math.PI / 180;
+    [Theory][InlineData(false)][InlineData(true)]
+    public void PolarisDestinationStaysFixedWhileMeasuredStarMovesAndMeetsItAfterAdjustment(bool generalCamera) {
+        const double lat=37.5;const bool flip=true;
+        var axis=Axis(lat,.6,-.8);var original=Camera(axis,flip);
+        var session=new PolarAlignmentSession(lat,Longitude);
+        SolvedPolarFrame F(SkyOrientation camera,DateTimeOffset time) {
+            var f=Frame(camera,lat,flip,time) with{Width=1280,Height=960,PixelScaleArcseconds=30.855};
+            var eq=PolarAlignmentGeometry.FromEquatorial(f.RightAscensionDegrees,f.DeclinationDegrees,f.PositionAngleDegrees,flip);
+            double year=2000+(time.UtcDateTime-new DateTime(2000,1,1)).TotalDays/365.25;
+            var star=PolarisPattern.Catalog(year).Single(s=>s.Id==11767);
+            var point=PolarAlignmentGeometry.ProjectDirection(star.Direction,eq,206264.80624709636/f.PixelScaleArcseconds,640,480)!.Value;
+            var markers=new[]{new TrackedStar(generalCamera?1:11767,point)};
+            return f with{Stars=new(markers,1280,960,true,time,generalCamera?null:markers)};
+        }
+        session.AddCalibration(F(original,Start));
+        session.AddCalibration(F(Rotate(original,axis,80*Radians),Start.AddSeconds(40)));
+        var reference=F(original,Start.AddSeconds(80));session.RebaseAdjustment(reference);
+        var before=session.GetGuidance(reference);
+        var after=session.GetGuidance(F(PoleMasterTarget.AlignedCamera(original,axis,lat),reference.CapturedAtUtc));
+        Assert.NotNull(before.PolarisTarget);Assert.Equal(before.PolarisTarget,after.PolarisTarget);
+        Assert.NotEqual(before.Polaris,after.Polaris);
+        Assert.InRange(Math.Abs(after.Polaris!.Value.X-after.PolarisTarget!.Value.X),0,.5);
+        Assert.InRange(Math.Abs(after.Polaris.Value.Y-after.PolarisTarget.Value.Y),0,.5);
+        Assert.True(before.TargetIsPolaris);
+    }
+
+    [Fact] public void GeneralCameraUsesAFixedReferenceStarWhenPolarisIsOutsideTheFrame() {
+        const double lat=37.5;const bool flip=true;
+        var axis=Axis(lat,1.5,-1.5);var original=Camera(axis,flip);
+        var session=new PolarAlignmentSession(lat,Longitude);
+        SolvedPolarFrame F(SkyOrientation pose)=>Frame(pose,lat,flip,Start) with{Width=1280,Height=960,PixelScaleArcseconds=2};
+        session.AddCalibration(F(original));session.AddCalibration(F(Rotate(original,axis,80*Radians)));
+        var reference=F(original) with{Stars=new(new[]{new TrackedStar(1,new(640,480))},1280,960,true,Start)};
+        session.RebaseAdjustment(reference);
+        var before=session.GetGuidance(reference);
+        Assert.NotNull(before.PolarisTarget);Assert.False(before.TargetIsPolaris);
+        var after=session.GetGuidance(F(PoleMasterTarget.AlignedCamera(original,axis,lat)));
+        Assert.Equal(before.PolarisTarget,after.PolarisTarget);
+        Assert.InRange(PoleMasterTarget.AngularDistance(after.Polaris!.Value,after.PolarisTarget!.Value,1280,960,2),0,2);
+        Assert.Equal(before.PolarisTarget,session.GetGuidance(F(original) with{CapturedAtUtc=Start.AddSeconds(20)}).PolarisTarget);
+    }
+
+    [Theory][InlineData(false,false)][InlineData(true,false)][InlineData(false,true)]
+    public void FixedPatternPosesFromThreeRealisticRaRotationsCalibrateInHorizonFrame(bool firstFrameSparse,bool flex) {
+        const double latitude=37.9;const bool flipped=true;
+        var axis=Axis(latitude,.1,-.1);var original=Camera(axis,flipped);
+        var catalog=PolarisPattern.Catalog(2026.8);
+        SolvedPolarFrame Matched(double degrees,DateTimeOffset time) {
+            var physical=Rotate(original,axis,degrees*Radians);if(flex && degrees==42)physical=Rotate(physical,new Vector3d(1,0,0),.001);
+            var expected=Frame(physical,latitude,flipped,time) with{Width=1280,Height=960,PixelScaleArcseconds=30.854};
+            var pose=PolarAlignmentGeometry.FromEquatorial(expected.RightAscensionDegrees,expected.DeclinationDegrees,expected.PositionAngleDegrees,flipped);
+            PixelPoint P(PatternStar star)=>PolarAlignmentGeometry.ProjectDirection(star.Direction,pose,206264.80624709636/expected.PixelScaleArcseconds,640,480)!.Value;
+            var points=catalog.Select(P).Where(p=>p.X>0&&p.X<1280&&p.Y>0&&p.Y<960).ToArray();
+            if(firstFrameSparse && degrees==0)points=points.Take(2).ToArray();
+            var result=PolarisPattern.Match(points,1280,960,P(catalog.Single(s=>s.Id==11767)),2026.8,default);
+            var c=result.Orientation.Center;var up=result.Orientation.Up;
+            double ra=(Math.Atan2(c.Y,c.X)/Radians+360)%360,dec=Math.Asin(c.Z)/Radians;
+            var basis=PolarAlignmentGeometry.FromEquatorial(ra,dec,0);
+            double pa=Math.Atan2(up.Dot(basis.Right),up.Dot(basis.Up))/Radians;
+            return expected with{RightAscensionDegrees=ra,DeclinationDegrees=dec,PositionAngleDegrees=pa,Flipped=result.Flipped,PixelScaleArcseconds=result.PixelScale,
+                Stars=new(result.Stars,1280,960,true,time,result.Stars)};
+        }
+        var first=Matched(0,Start);var middle=Matched(42,Start.AddSeconds(20));var last=Matched(84,Start.AddSeconds(40));
+        if(flex){Assert.Throws<InvalidOperationException>(()=>PoleMasterCalibration.Calculate(first,middle,last,latitude,Longitude));return;}
+        var calibration=PoleMasterCalibration.Calculate(first,middle,last,latitude,Longitude);
+        Assert.InRange(calibration.AxisSpreadArcseconds,0,2);
+        AssertError(calibration.Session.Measure(last),axis,latitude);
+    }
+
+    [Theory]
+    [InlineData(37.5,false,false)] [InlineData(37.5,true,false)]
+    [InlineData(-33.9,false,false)] [InlineData(-33.9,true,false)]
+    [InlineData(37.5,false,true)]
+    public void ThreePoleMasterLocationsAgreeUnlessCameraFlexes(double latitude, bool flipped, bool flex) {
+        var axis=Axis(latitude,.1,-.1); var original=Camera(axis,flipped);
+        var middle=Rotate(original,axis,40*Radians); var last=Rotate(original,axis,80*Radians);
+        if(flex) middle=Rotate(middle,new Vector3d(1,0,0),.01);
+        SolvedPolarFrame Stock(SkyOrientation pose,DateTimeOffset time)=>Frame(pose,latitude,flipped,time)
+            with { Width=1280,Height=960,PixelScaleArcseconds=30.94 };
+        var first=Stock(original,Start);var second=Stock(middle,Start.AddSeconds(25));var third=Stock(last,Start.AddSeconds(50));
+        if(flex) Assert.Throws<InvalidOperationException>(()=>PoleMasterCalibration.Calculate(first,second,third,latitude,Longitude));
+        else {
+            var result=PoleMasterCalibration.Calculate(first,second,third,latitude,Longitude);
+            Assert.InRange(result.AxisSpreadArcseconds,0,2);
+            AssertError(result.Session.Measure(third),axis,latitude);
+            var returned=Stock(original,Start.AddSeconds(80));result.Session.RebaseAdjustment(returned);
+            AssertError(result.Session.Measure(returned),axis,latitude);
+        }
+    }
+
+    [Theory]
+    [InlineData(37.5, false)] [InlineData(37.5, true)]
+    [InlineData(-33.9, false)] [InlineData(-33.9, true)]
+    public void ReturnReferencePreservesAxisAndMeasuresAdjustmentAtOriginalCameraPose(double latitude, bool flipped) {
+        var axis = Axis(latitude, .6, -.8);
+        var original = Camera(axis, flipped);
+        var outward = Rotate(original, axis, 90 * Radians);
+        var session = new PolarAlignmentSession(latitude, Longitude);
+        session.AddCalibration(Frame(original, latitude, flipped, Start));
+        session.AddCalibration(Frame(outward, latitude, flipped, Start.AddMinutes(1)));
+        // Return is slightly imperfect. Fresh reference must retain the computed axis.
+        var returned = Rotate(original, axis, .2 * Radians);
+        var reference = Frame(returned, latitude, flipped, Start.AddMinutes(2));
+        session.RebaseAdjustment(reference);
+        AssertError(session.Measure(reference), axis, latitude);
+        Assert.InRange(session.RotationDegrees!.Value, 89.97, 90.03);
+        var correctedAxis = Axis(latitude, .1, -.1);
+        var correctionAxis = axis.Cross(correctedAxis).Normalized();
+        var correctionAngle = Math.Atan2(axis.Cross(correctedAxis).Length, axis.Dot(correctedAxis));
+        var adjusted = Rotate(returned, correctionAxis, correctionAngle);
+        var guidance = session.GetGuidance(Frame(adjusted, latitude, flipped, Start.AddMinutes(3)));
+        AssertError(guidance.Error, correctedAxis, latitude);
+        var expected = PolarAlignmentGeometry.ProjectDirection(correctedAxis, adjusted, 206264.80624709636 / 4, 1000, 750);
+        Assert.InRange(Math.Abs(guidance.MountAxis!.Value.X - expected!.Value.X), 0, .5);
+        Assert.InRange(Math.Abs(guidance.MountAxis.Value.Y - expected.Value.Y), 0, .5);
+    }
 
     [Theory]
     [InlineData(37.5, false)]
@@ -35,6 +151,11 @@ public sealed class SessionTests {
         Assert.InRange(session.RotationDegrees!.Value, 71.97, 72.03);
         Assert.True(session.UsedApproximateEarthRotation);
         AssertError(session.Measure(second), initialAxis, latitude);
+        var bin2 = second with { Width=second.Width/2, Height=second.Height/2, PixelScaleArcseconds=second.PixelScaleArcseconds*2, IsTracked=true };
+        var originalGuidance=session.GetGuidance(second);
+        var binnedGuidance=session.GetGuidance(bin2);
+        AssertError(binnedGuidance.Error,initialAxis,latitude);
+        Assert.InRange(Math.Abs(binnedGuidance.MountAxis!.Value.X-originalGuidance.MountAxis!.Value.X/2),0,1e-8);
 
         // A rigid camera and mount move together during altitude/azimuth adjustment.
         var correctedAxis = Axis(latitude, altitudeError: .2, azimuthError: .3);

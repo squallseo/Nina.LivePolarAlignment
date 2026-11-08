@@ -8,7 +8,8 @@ public sealed record FieldSolution(double RightAscensionDegrees, double Declinat
 public sealed record FieldFrameRecord(long FrameId, string Kind, bool Accepted, FieldSolution Solution, string Acquisition,
     double ExposureSeconds, double CycleMilliseconds, double FrameAgeSeconds, double? RotationDegrees,
     bool ApproximateEarthRotation, double? AltitudeArcseconds, double? AzimuthArcseconds, double? TotalArcseconds,
-    double? AxisX, double? AxisY, double? PoleX, double? PoleY, string? Failure);
+    double? AxisX, double? AxisY, double? PoleX, double? PoleY, string? Failure,
+    string SolutionSource = "absolute", int TrackedStars = 0, double? TrackingRmsPixels = null);
 public sealed record FieldEntry(long Sequence, DateTimeOffset RecordedAtUtc, string Type, JsonElement Data);
 
 /// <summary>Append-only local evidence; every completed line is flushed independently.</summary>

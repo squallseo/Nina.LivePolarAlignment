@@ -17,19 +17,19 @@ public sealed partial class PolarAlignmentDockableVM {
         }
     }
 
-    public string AlignmentQualityLevel => latestError == null || IsMeasurementStale ? "Unavailable"
+    public string AlignmentQualityLevel => latestError == null || IsMeasurementStale || !CameraConnected || NeedsCalibrationReview ? "Unavailable"
         : IsWithinTarget ? "Within" : latestError.Value.TotalArcminutes * 60 <= validationTarget * 2 ? "Close" : "Adjust";
 
     public string AlignmentQualityText => AlignmentQualityLevel switch {
         "Within" => UiText.Format("QualityWithin", validationTarget),
         "Close" => UiText.Format("QualityClose", validationTarget),
         "Adjust" => UiText.Format("QualityAdjust", validationTarget),
-        _ => UiText.Get("QualityUnavailable")
+        _ => UiText.Get(NeedsCalibrationReview ? "OperatorRecalibrate" : "QualityUnavailable")
     };
 
     public string EstimatedUnguidedDrift {
         get {
-            if (latestError == null || IsMeasurementStale) return "—";
+            if (latestError == null || AlignmentQualityLevel == "Unavailable") return "—";
             var bound = Core.PolarAlignmentImpact.Estimate(latestError.Value.TotalArcminutes * 60, scienceExposureSeconds);
             return UiText.Format("ImpactRate", bound.ArcsecondsPerMinute);
         }
@@ -37,7 +37,7 @@ public sealed partial class PolarAlignmentDockableVM {
 
     public string EstimatedExposureMotion {
         get {
-            if (latestError == null || IsMeasurementStale) return "—";
+            if (latestError == null || AlignmentQualityLevel == "Unavailable") return "—";
             var bound = Core.PolarAlignmentImpact.Estimate(latestError.Value.TotalArcminutes * 60, scienceExposureSeconds);
             return pixelScale > 0 ? UiText.Format("ImpactMotionPixels", bound.ExposureArcseconds,
                 bound.ExposureArcseconds / pixelScale) : UiText.Format("ImpactMotion", bound.ExposureArcseconds);

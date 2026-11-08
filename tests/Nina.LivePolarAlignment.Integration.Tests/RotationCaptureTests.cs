@@ -9,6 +9,73 @@ namespace Nina.LivePolarAlignment.Integration.Tests;
 [Collection("Isolated NINA environment")]
 public sealed class RotationCaptureTests {
     [Theory]
+    [InlineData(false, false)] [InlineData(true, false)] [InlineData(false, true)]
+    [InlineData(false,false,true)] [InlineData(true,false,true)]
+    [InlineData(true,false,true,true)]
+    public async Task ReturnUsesOppositeCommandAndCannotRepeatAfterCancellation(bool reverse, bool cancelReturn, bool continued = false, bool delayedHomeRefresh = false, bool overshoot = false) {
+        using var cancellation = new CancellationTokenSource();
+        double ra = 23;
+        double movingRate = 0;
+        bool tracking = true, returning = false;
+        bool coordinatesRefreshed = false;
+        bool overshootInjected=false;
+        var commands = new List<double>();
+        var device = InterfaceStub.Create<ITelescope>((method, args) => {
+            switch (method.Name) {
+                case "get_Id": return "ASCOM.ASIMount.Telescope";
+                case "get_PrimaryMovingRate": return 8d;
+                case "get_SiderealTime": return 2d;
+                case "get_Connected": case "get_CanMovePrimaryAxis": case "get_CanSetTrackingEnabled": return true;
+                case "get_AtPark": case "get_Slewing": return false;
+                case "get_AlignmentMode": return AlignmentMode.GermanPolar;
+                case "get_TrackingEnabled": return tracking;
+                case "set_TrackingEnabled": tracking = (bool)args![0]!; return null;
+                case "get_RightAscension":
+                    ra = ((ra + movingRate * .25 / 15) % 24 + 24) % 24;
+                    return ra;
+                case "get_Declination":
+                    if (movingRate != 0) coordinatesRefreshed = true;
+                    return delayedHomeRefresh ? (coordinatesRefreshed ? 90d : 86.52472) : 80d;
+                case "get_AtHome": return delayedHomeRefresh && !coordinatesRefreshed;
+                case "get_SideOfPier": return PierSide.pierEast;
+                case "GetAxisRates": return new List<(double, double)> { (overshoot?0:8, 8) };
+                default: throw new InvalidOperationException("Unexpected call: " + method.Name);
+            }
+        });
+        var mediator = InterfaceStub.Create<ITelescopeMediator>((method, args) => {
+            if (method.Name == "GetDevice") return device;
+            if (method.Name == "MoveAxis") {
+                Assert.Equal(TelescopeAxes.Primary, args![0]);
+                movingRate = (double)args[1]!; commands.Add(movingRate);
+                if(overshoot && returning && movingRate==0 && !overshootInjected){ra=(ra-2d/15+24)%24;overshootInjected=true;}
+                if (returning && cancelReturn && movingRate != 0) cancellation.Cancel();
+                return null;
+            }
+            throw new InvalidOperationException("Unexpected mediator call: " + method.Name);
+        });
+        var service = new NinaPolarAlignmentCaptureService(null!, null!, null!, mediator);
+        // Missing origin must not issue a command.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReturnRaToStartAsync(null, default));
+        Assert.Empty(commands);
+        await service.RotateRaAsync(reverse, null, default, continued ? 40 : 60);
+        if(continued) await service.ContinueRaAsync(reverse,null,default,40);
+        returning = true;
+        if (cancelReturn) await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.ReturnRaToStartAsync(null, cancellation.Token));
+        else {
+            await service.ReturnRaToStartAsync(null, default);
+            Assert.InRange(Math.Abs(Core.RaRotation.WrapDegrees((ra - 23) * 15)), 0, .01);
+        }
+        var outbound = new[] { reverse ? -8d : 8d, 0d };
+        if(overshoot)Assert.Contains(.25,commands);
+        else Assert.Equal((continued ? outbound.Concat(outbound) : outbound).Concat(new[] { reverse ? 8d : -8d, 0d }), commands);
+        Assert.True(tracking); Assert.Equal(0, movingRate);
+        int count = commands.Count;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReturnRaToStartAsync(null, default));
+        Assert.Equal(count, commands.Count);
+    }
+    [Fact] public async Task ReturnUsesBoundedSlowCorrectionForStopOvershoot()=>await ReturnUsesOppositeCommandAndCannotRepeatAfterCancellation(false,false,false,false,true);
+
+    [Theory]
     [InlineData(0)] [InlineData(1)] [InlineData(2)] [InlineData(3)] [InlineData(4)]
     public async Task PreparationVerifiesUnparkBeforeAllowingCapture(int failure) {
         using var cancellation = new CancellationTokenSource();
@@ -17,6 +84,8 @@ public sealed class RotationCaptureTests {
         var device = InterfaceStub.Create<ITelescope>((method, _) => method.Name switch {
             "get_Connected" or "get_CanMovePrimaryAxis" or "get_CanSetTrackingEnabled" => true,
             "get_Id" => "ScopeSim.Telescope",
+            "get_PrimaryMovingRate" => 4d,
+            "get_SiderealTime" => 2d,
             "get_CanUnpark" => failure != 3,
             "get_AtPark" => parked,
             "get_Slewing" or "get_TrackingEnabled" => false,
@@ -67,14 +136,18 @@ public sealed class RotationCaptureTests {
             Declination = 80,
             PrimaryAxisRates = new List<(double, double)> { expected == AutoRaAvailability.RateUnsupported ? (2d, 4d) : (0d, 8d) }
         };
-        var mediator = InterfaceStub.Create<ITelescopeMediator>((method, _) => method.Name == "GetInfo" ? info : null);
+        var device = InterfaceStub.Create<ITelescope>((method, _) => method.Name == "get_PrimaryMovingRate" ? 1d : null);
+        var mediator = InterfaceStub.Create<ITelescopeMediator>((method, _) => method.Name switch {
+            "GetInfo" => info, "GetDevice" => device, _ => null
+        });
         var service = new NinaPolarAlignmentCaptureService(null!, null!, null!, mediator);
         Assert.Equal(expected, service.AutoRaAvailability);
         Assert.Equal(expected == AutoRaAvailability.Ready, service.SupportsAutoRaRotation);
     }
 
     [Theory]
-    [InlineData(false, "Real.Mount", 1)] [InlineData(true, "Real.Mount", 1)]
+    [InlineData(false, "ASCOM.ASIMount.Telescope", 8)] [InlineData(true, "ASCOM.ASIMount.Telescope", 8)]
+    [InlineData(false, "Real.Mount", 0.5)] [InlineData(true, "Real.Mount", 2)]
     [InlineData(false, "ScopeSim.Telescope", 4)] [InlineData(true, "ASCOM.OmniSim.Telescope", 4)]
     public async Task AdapterUsesOnlyPrimaryAxisAndCleansUpCancelledMotion(bool reverse, string driverId, double expectedRate) {
         using var cancellation = new CancellationTokenSource();
@@ -83,6 +156,8 @@ public sealed class RotationCaptureTests {
         var device = InterfaceStub.Create<ITelescope>((method, args) => {
             switch (method.Name) {
                 case "get_Id": return driverId;
+                case "get_PrimaryMovingRate": return expectedRate;
+                case "get_SiderealTime": return 2d;
                 case "get_Connected": case "get_CanMovePrimaryAxis": case "get_CanSetTrackingEnabled": return true;
                 case "get_AtPark": case "get_Slewing": return false;
                 case "get_AlignmentMode": return AlignmentMode.GermanPolar;

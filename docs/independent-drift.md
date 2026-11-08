@@ -1,5 +1,9 @@
 # Independent drift verification
 
+Developer reference only. This experimental procedure is not exposed in the
+user interface as of 0.1.0.90 and is not compatible with PoleMaster fixed-pattern
+mode. The following describes numerical tests and offline investigation.
+
 `Independent drift verification` estimates residual polar error from declination drift in two fields during sidereal tracking. It does not reuse the axis estimated by the two-position RA calibration. Move between fields manually. This check sends no GoTo, axis movement, sync, tracking on/off, or guiding-stop commands.
 
 ## Workflow
